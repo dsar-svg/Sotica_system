@@ -1,5 +1,8 @@
 # SOTICA-COSTOS — ciclo 1
 
+> **¿Retomas el proyecto sin contexto?** Empieza por [ESTADO.md](ESTADO.md): dónde vamos, qué está
+> verificado, qué falta para arrancar y la conversación abierta con SOTICA sobre precios y licencias.
+
 ORQ-COST (**OpenAI Agents SDK**) + SUB-CM + SUB-DOC (Excel) + SUB-AVA, con **MCP stdio** como capa de
 herramientas y Postgres como estado. Arquitectura completa en [ARQUITECTURA.md](ARQUITECTURA.md);
 contratos de herramientas en [backend/mcp/HERRAMIENTAS.md](backend/mcp/HERRAMIENTAS.md).
