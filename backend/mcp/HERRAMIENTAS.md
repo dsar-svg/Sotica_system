@@ -3,6 +3,11 @@
 MCP es **la capa de herramientas**, no el orquestador. Cada servidor se conecta a Postgres con su propio
 rol, de modo que los límites de cada agente son del motor de base de datos y no solo del prompt.
 
+Desde la migración a OpenAI Agents SDK son **servidores MCP stdio reales**, no objetos in-process atados a
+un SDK: `python -m backend.mcp.stdio_server sotica_obra`. Los JSON Schema (enums, `required`, descripciones)
+se publican tal cual — el contrato no cambió al cambiar de runtime. El límite por agente se aplica con un
+filtro dinámico sobre `ToolFilterContext.agent`, así que basta un proceso por servidor.
+
 | Servidor | Rol de BD | Herramienta | Quién la usa |
 |---|---|---|---|
 | `sotica_obra` | `rol_avance` | `registrar_avance` | SUB-AVA |
@@ -29,7 +34,7 @@ Las **tres mínimas** que acordamos son `generar_excel_computos`, `registrar_ava
 
 ---
 
-## 1. `registrar_avance` — servidor `sotica-obra`
+## 1. `registrar_avance` — servidor `sotica_obra`
 
 Registra la interpretación estructurada de un reporte de campo, recalcula el estado consolidado y evalúa
 desviaciones **en la misma transacción**. Solo SUB-AVA la tiene permitida.
@@ -37,7 +42,7 @@ desviaciones **en la misma transacción**. Solo SUB-AVA la tiene permitida.
 ```jsonc
 // INPUT
 {
-  "proyecto_id": "uuid",
+  "proyecto": "SOT-2026-014",
   "reporte_id": "uuid",                    // reporte crudo que se está interpretando
   "avances": [{
     "codigo_partida": "E-301",             // código interno o COVENIN del presupuesto BASE
@@ -82,13 +87,13 @@ Comportamiento no negociable:
   (o interpolación lineal). **Siempre evalúa; nunca omite el cálculo por falta de umbral.**
 - Marca el reporte crudo como `procesado`. El reporte en sí queda intacto (append-only).
 
-## 2. `consultar_estado_obra` — servidor `sotica-obra`
+## 2. `consultar_estado_obra` — servidor `sotica_obra`
 
 Única fuente de verdad de ORQ-COST para responder "¿cómo va la obra?". No expone reportes crudos.
 
 ```jsonc
 // INPUT
-{ "proyecto_id": "uuid", "codigo_partida": null, "capitulo": null, "fecha_corte": null,
+{ "proyecto": "SOT-2026-014", "codigo_partida": null, "capitulo": null, "fecha_corte": null,
   "incluir_desviaciones": true }
 ```
 
@@ -125,19 +130,18 @@ Si el proyecto **no tiene ningún avance registrado**, devuelve `ultima_fecha_av
 `advertencia_datos: "No hay avances cargados para esta obra. No es posible informar estado real."`
 — nunca un 0 % silencioso ni el avance planificado disfrazado de real.
 
-## 3. `generar_excel_computos` — servidor `sotica-docs`
+## 3. `generar_excel_computos` — servidor `sotica_docs`
 
 Genera el libro de cómputos en formato SOTICA-CM-01, lo sube al bucket y lo registra en `entregables`.
 
 ```jsonc
 // INPUT
 {
-  "proyecto_id": "uuid",
-  "presupuesto_id": "uuid",
-  "alcance": { "capitulos": ["Fundaciones"], "codigos_partida": null },
-  "incluir": { "hojas_medicion": true, "resumen_por_capitulo": true,
-               "lista_inconsistencias": true, "supuestos": true },
-  "revision": "A"
+  "proyecto": "SOT-2026-014",
+  "capitulos": ["Fundaciones"],
+  "codigos_partida": null,
+  "revision": "A",
+  "titulo": "Libro de cómputos — Edificio administrativo"
 }
 ```
 
@@ -161,12 +165,12 @@ Reglas de generación:
 - Hoja "Inconsistencias" con las cantidades no computables por falta de detalle. Si está vacía, se dice
   explícitamente que está vacía; no se omite la hoja.
 
-## 4. `consultar_presupuesto` — servidor `sotica-obra` *(lectura, plomería)*
+## 4. `consultar_presupuesto` — servidor `sotica_obra` *(lectura, plomería)*
 
 Devuelve el presupuesto base con partidas, unidades, cantidades, precios, etiquetas y fuentes.
 Lectura pura. La usan ORQ-COST, SUB-CM, SUB-DOC y SUB-AVA para saber contra qué se mide.
 
-## 5. `leer_reporte_avance` — servidor `sotica-obra` *(lectura, plomería)*
+## 5. `leer_reporte_avance` — servidor `sotica_obra` *(lectura, plomería)*
 
 Devuelve el reporte crudo (texto, adjuntos, quién y cuándo) para que SUB-AVA lo interprete.
 **Solo SUB-AVA la tiene permitida** — ORQ-COST no lee crudos.

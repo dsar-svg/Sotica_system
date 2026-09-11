@@ -1,44 +1,25 @@
-"""Arranque de ORQ-COST sobre el Claude Agent SDK.
+"""Arranque de ORQ-COST sobre OpenAI Agents SDK.
 
-Una sesión por obra: el orquestador conserva el contexto del proyecto (moneda,
-ente, plantilla FCAS, formatos ratificados) entre mensajes, como pide §10.1.
-Los subagentes son nativos del SDK, con contexto aislado y su propio allowlist.
+Una sesión **persistente por obra**: el historial vive en el mismo Postgres del
+sistema, no en memoria del proceso. Si el usuario pregunta "¿cómo va tal obra?"
+tres días después y tras un reinicio, el contexto sigue ahí.
+
+Los subagentes se invocan como herramientas (agents-as-tools) con contexto
+aislado: ven su briefing, no la conversación del usuario.
 """
 from __future__ import annotations
 
 import datetime as dt
 from typing import AsyncIterator
 
-from claude_agent_sdk import (
-    AssistantMessage,
-    ClaudeAgentOptions,
-    ClaudeSDKClient,
-    ResultMessage,
-    TextBlock,
-)
+from agents import RunConfig, Runner
+from agents.extensions.memory import SQLAlchemySession
+from agents.mcp import MCPServerStdio
+from openai.types.responses import ResponseTextDeltaEvent
 
-from ..mcp import sotica_docs, sotica_obra
 from . import db
-from .agents import herramientas_permitidas, prompt_orquestador, subagentes_activos
-from .config import MODEL
-
-
-def construir_opciones(contexto_obra: str) -> ClaudeAgentOptions:
-    return ClaudeAgentOptions(
-        system_prompt=prompt_orquestador() + "\n\n---\n\n" + contexto_obra,
-        agents=subagentes_activos(),
-        mcp_servers={
-            "sotica_obra": sotica_obra.servidor,
-            "sotica_docs": sotica_docs.servidor,
-        },
-        allowed_tools=herramientas_permitidas(),
-        # Nada de filesystem ni shell: este agente solo habla y usa sus herramientas.
-        disallowed_tools=["Bash", "Write", "Edit", "Read", "WebSearch", "WebFetch"],
-        permission_mode="dontAsk",
-        model=MODEL,
-        setting_sources=None,
-        max_turns=40,
-    )
+from .agents import construir, crear_servidores_mcp
+from .config import MAX_TURNS_ORQUESTADOR, MODEL, session_url
 
 
 async def contexto_obra(proyecto_ref: str | None) -> str:
@@ -79,43 +60,79 @@ async def contexto_obra(proyecto_ref: str | None) -> str:
 - Umbrales de desviación (pp): {cfg.get('umbral_media_pp')} / {cfg.get('umbral_alta_pp')} / {cfg.get('umbral_critica_pp')} · Ponderación: {cfg.get('base_ponderacion')} · Ratificados por SOTICA: {'sí' if cfg.get('ratificado_por_sotica') else 'NO'}
 
 Cuando llames a una herramienta, usa `proyecto = "{p['codigo']}"`.
+Cuando delegues, el briefing lleva estos datos: no se los preguntes de nuevo al usuario.
 """
 
 
 class SesionObra:
-    """Sesión de chat viva contra ORQ-COST, atada a una obra."""
+    """Sesión de chat viva contra ORQ-COST, atada a una obra y persistida."""
 
     def __init__(self, proyecto_ref: str | None = None) -> None:
         self.proyecto_ref = proyecto_ref
-        self._client: ClaudeSDKClient | None = None
+        self._servidores: dict[str, MCPServerStdio] = {}
+        self._orquestador = None
+        self._session: SQLAlchemySession | None = None
+        self._run_config = RunConfig(model=MODEL)
 
     async def abrir(self) -> None:
-        opciones = construir_opciones(await contexto_obra(self.proyecto_ref))
-        self._client = ClaudeSDKClient(options=opciones)
-        await self._client.connect()
+        # Los servidores MCP son procesos: se levantan una vez por sesión.
+        self._servidores = crear_servidores_mcp()
+        for servidor in self._servidores.values():
+            await servidor.connect()
+
+        orquestador, _ = construir(self._servidores, self._run_config)
+        # La memoria de proyecto se antepone a las instrucciones del orquestador.
+        orquestador.instructions = (
+            orquestador.instructions + "\n\n---\n\n" + await contexto_obra(self.proyecto_ref)
+        )
+        self._orquestador = orquestador
+
+        self._session = SQLAlchemySession.from_url(
+            session_id=f"obra:{self.proyecto_ref or '_sin_obra'}",
+            url=session_url(),
+            engine_kwargs={"echo": False},
+            create_tables=True,
+        )
 
     async def cerrar(self) -> None:
-        if self._client is not None:
-            await self._client.disconnect()
-            self._client = None
+        for servidor in self._servidores.values():
+            try:
+                await servidor.cleanup()
+            except Exception:  # noqa: BLE001 — cerrar no debe romper el apagado
+                pass
+        self._servidores = {}
+        self._orquestador = None
 
     async def preguntar(self, mensaje: str) -> AsyncIterator[dict]:
-        """Emite eventos {tipo, ...} para que la API los reenvíe como SSE."""
-        if self._client is None:
+        """Emite eventos {tipo, ...} — mismo contrato SSE que antes, para no tocar
+        el frontend."""
+        if self._orquestador is None:
             await self.abrir()
-        assert self._client is not None
 
-        await self._client.query(mensaje)
-        async for msg in self._client.receive_response():
-            if isinstance(msg, AssistantMessage):
-                for bloque in msg.content:
-                    if isinstance(bloque, TextBlock):
-                        yield {"tipo": "texto", "texto": bloque.text}
-                    elif getattr(bloque, "type", None) == "tool_use":
-                        yield {
-                            "tipo": "herramienta",
-                            "nombre": getattr(bloque, "name", "?"),
-                            "entrada": getattr(bloque, "input", {}),
-                        }
-            elif isinstance(msg, ResultMessage):
-                yield {"tipo": "fin", "resultado": getattr(msg, "subtype", None)}
+        resultado = Runner.run_streamed(
+            self._orquestador,
+            mensaje,
+            session=self._session,
+            max_turns=MAX_TURNS_ORQUESTADOR,
+            run_config=self._run_config,
+        )
+
+        async for evento in resultado.stream_events():
+            if evento.type == "raw_response_event" and isinstance(
+                evento.data, ResponseTextDeltaEvent
+            ):
+                yield {"tipo": "texto", "texto": evento.data.delta}
+            elif evento.type == "run_item_stream_event":
+                item = evento.item
+                if item.type == "tool_call_item":
+                    yield {
+                        "tipo": "herramienta",
+                        "nombre": _nombre_herramienta(item),
+                        "entrada": {},
+                    }
+        yield {"tipo": "fin", "resultado": "completado"}
+
+
+def _nombre_herramienta(item) -> str:
+    crudo = getattr(item, "raw_item", None)
+    return getattr(crudo, "name", None) or getattr(item, "name", None) or "herramienta"

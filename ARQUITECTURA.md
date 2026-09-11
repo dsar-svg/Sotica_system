@@ -1,7 +1,10 @@
 # SOTICA-COSTOS — Arquitectura del sistema multiagente
 
 Sistema: **SOTICA-IA-COST-VE-001**
-Base: Claude Agent SDK (orquestador + subagentes nativos) + servidores MCP como capa de herramientas + Postgres + bucket de archivos.
+Base: **OpenAI Agents SDK** (orquestador + subagentes como herramientas) + servidores **MCP stdio** como capa de herramientas + Postgres + bucket de archivos.
+
+> Migrado desde Claude Agent SDK. Lo que cambió es la capa de orquestación; el esquema de base de datos,
+> la lógica de negocio de los agentes y los contratos de las herramientas MCP se mantienen intactos.
 
 > Fuente de verdad funcional: `Solicitud_Agente_IA_Costos_SOTICA.pdf` v1.0 (sept. 2026).
 > Este documento define **cómo** se construye; el PDF define **qué** debe hacer.
@@ -12,10 +15,10 @@ Base: Claude Agent SDK (orquestador + subagentes nativos) + servidores MCP como 
 
 | Capa | Decisión |
 |---|---|
-| Orquestador | ORQ-COST = agente principal del Claude Agent SDK. Único interlocutor del usuario. |
-| Subagentes | 8 subagentes nativos del SDK (7 del documento + SUB-AVA), cada uno con system prompt propio, herramientas permitidas y contexto aislado. |
-| Herramientas | Servidores MCP. **MCP es la capa de herramientas, nunca el orquestador.** |
-| Persistencia | Postgres (proyecto, presupuesto, partidas, avances, estado consolidado, trazabilidad). |
+| Orquestador | ORQ-COST = `Agent` principal del OpenAI Agents SDK. Único interlocutor del usuario. |
+| Subagentes | 8 subagentes (7 del documento + SUB-AVA) expuestos como **herramientas** del orquestador (*agents-as-tools*), cada uno con system prompt propio, herramientas permitidas y contexto aislado. **No handoffs**: un handoff transfiere la conversación y el control no vuelve, lo que rompería §2, §5.2 y §5.3. |
+| Herramientas | Servidores **MCP stdio reales** (`python -m backend.mcp.stdio_server <servidor>`). **MCP es la capa de herramientas, nunca el orquestador.** Al ser MCP de verdad, sirven a cualquier runtime que hable el protocolo. |
+| Persistencia | Postgres (proyecto, presupuesto, partidas, avances, estado consolidado, trazabilidad) **y la memoria de conversación por obra** (`SQLAlchemySession`, session_id `obra:<código>`), persistente entre procesos. |
 | Archivos | Bucket (S3/MinIO) para planos, fotos de obra, PDFs y entregables generados. |
 | Frontend | Chat web simple + panel de archivos generados + carga de evidencia de obra. |
 | Fuera de alcance fase 1 | .pptx, FIDIC/multilaterales, SUB-ELE/HID/EST/VIA/SUE activos. |
@@ -78,6 +81,10 @@ El código los carga; nunca los duplica en strings.
 | SUB-DOC | Documentación / Excel | `generar_excel_computos`, `consultar_presupuesto`, `consultar_estado_obra` | Sí (solo xlsx) |
 | SUB-AVA | Seguimiento y control de avance | `leer_reporte_avance`, `registrar_avance`, `consultar_presupuesto`, `consultar_estado_obra` | Sí |
 | SUB-ELE / HID / EST / VIA / SUE | Especialidades | según §4.3–4.7 | No — fase 2 |
+
+Cada subagente se convierte en una herramienta `delegar_sub_xxx` de ORQ-COST. El run del subagente es
+anidado y **sin sesión compartida**: ve su briefing, no la conversación del usuario — que es exactamente
+el aislamiento que daban los subagentes nativos del SDK anterior.
 
 Enrutamiento (§2.3), implementado como reglas dentro del prompt de ORQ-COST + posibilidad de forzar
 especialista desde el chat (`@SUB-CM ...`):

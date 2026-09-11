@@ -1,15 +1,18 @@
 # SOTICA-COSTOS — ciclo 1
 
-ORQ-COST (Claude Agent SDK) + SUB-CM + SUB-DOC (Excel) + SUB-AVA, con MCP como capa de
+ORQ-COST (**OpenAI Agents SDK**) + SUB-CM + SUB-DOC (Excel) + SUB-AVA, con **MCP stdio** como capa de
 herramientas y Postgres como estado. Arquitectura completa en [ARQUITECTURA.md](ARQUITECTURA.md);
 contratos de herramientas en [backend/mcp/HERRAMIENTAS.md](backend/mcp/HERRAMIENTAS.md).
+
+> Migrado desde Claude Agent SDK. La base de datos, la lógica de negocio de los agentes y los
+> contratos MCP no cambiaron; cambió la capa de orquestación.
 
 ## Puesta en marcha
 
 ```bash
 python -m venv .venv && .venv/Scripts/activate
 pip install -r requirements.txt
-cp .env.example .env   # completar SOTICA_DATABASE_URL y ANTHROPIC_API_KEY
+cp .env.example .env   # completar SOTICA_DATABASE_URL y OPENAI_API_KEY
 ```
 
 Base de datos (Postgres 14+):
@@ -25,31 +28,47 @@ Servidor:
 uvicorn backend.api.main:app --reload --port 8000
 ```
 
-El panel queda en `http://localhost:8000`: chat con ORQ-COST, estado de obra, carga de
-avances y archivos generados.
+El panel queda en `http://localhost:8000`. Los servidores MCP se lanzan solos como subprocesos; para
+inspeccionarlos a mano:
 
-## Recorrido de prueba del ciclo 1
+```bash
+python -m backend.mcp.stdio_server sotica_obra
+```
 
-1. **Cómputo (ORQ-COST → SUB-CM).** «Computa las paredes de bloque de la planta baja: 45 m
-   lineales por 2,80 m de altura, descontando 6 puertas de 0,90 × 2,10.» SUB-CM computa,
-   persiste con `registrar_computo` en el presupuesto borrador y declara lo no computable.
-2. **Excel (ORQ-COST → SUB-DOC).** «Genera el libro de cómputos.» Sale `SOTICA-CM-01_Rev-A_*.xlsx`
-   con portada, control de revisiones, hojas de medición con fórmulas vivas e inconsistencias.
-3. **Avance (panel → SUB-AVA).** Sube un reporte en «Cargar avance de obra»: texto libre + fotos.
-   Luego, en el chat: «Procesa el último reporte de obra.»
-4. **Consulta rápida (ORQ-COST solo).** «¿Cómo va la obra?» — responde desde el consolidado,
-   citando la última fecha de avance. Si no hay avances, lo dice; no asume cronograma.
-5. **Bloqueo.** Reporta avance en una partida que no existe («se vació la losa de tanquilla»):
-   el avance queda retenido, ORQ-COST plantea la decisión y solo cierra el bloqueo con tu
-   confirmación literal.
+## Delegación: agents-as-tools, no handoffs
+
+ORQ-COST invoca a cada subagente como herramienta (`delegar_sub_cm`, `delegar_sub_doc`,
+`delegar_sub_ava`). El run del subagente es anidado y sin sesión compartida: ve su briefing, no la
+conversación del usuario.
+
+Se descartó `handoffs` a propósito: un handoff transfiere la conversación y el control no vuelve, lo
+que rompería §2 (el usuario solo habla con el orquestador), §5.2 (ORQ-COST resuelve contradicciones
+entre especialistas) y §5.3 (paquete único con anexo de trazabilidad).
+
+El contrato de §5.1 vive en [`backend/core/contratos.py`](backend/core/contratos.py) como esquema
+tipado: `BriefingSOTICA` de ida (todos los campos requeridos) y `RespuestaSubagente` de vuelta
+(`nivel_confianza` obligatorio). Antes era prosa; ahora lo valida el SDK.
+
+## Criterios de aceptación §11
+
+```bash
+python -m tests.aceptacion_11          # todos
+python -m tests.aceptacion_11 11.2     # solo "no inventa"
+```
+
+Corre contra el modelo real usando un servidor MCP de fixtures con **los mismos JSON Schema** que
+producción, así que mide comportamiento del agente (¿delega?, ¿inventa?, ¿declara el vacío?) sin
+depender de Postgres. No sustituye a las pruebas de base de datos.
 
 ## Estado de verificación
 
-- Python: `python -m compileall backend` pasa sin errores.
-- Frontmatter de los 9 agentes: parsea correctamente.
-- **`db/schema.sql` y `db/seed/demo.sql` no se han ejecutado todavía** — no hay Postgres ni
-  Docker disponible en esta máquina. Primera ejecución real pendiente.
-- El ciclo de chat no se ha corrido contra la API de Anthropic (falta `ANTHROPIC_API_KEY`).
+- `compileall` limpio sobre backend y tests.
+- **Servidores MCP verificados por handshake stdio real**: 8 herramientas publicadas, enums de
+  `etiqueta`/`confianza`/`decision` y `required` intactos, semántica `isError` preservada.
+- Grafo de agentes verificado: permisos por agente correctos, `output_type=RespuestaSubagente` en los
+  tres subagentes, briefing §5.1 exigido como esquema requerido.
+- **`db/schema.sql` y el seed siguen sin ejecutarse** — no hay Postgres ni Docker en esta máquina.
+- **Los criterios §11 siguen sin correrse** — falta `OPENAI_API_KEY`.
 
 ## Pendiente de ratificación por SOTICA
 
@@ -60,11 +79,8 @@ avances y archivos generados.
 | Base de ponderación del avance físico | `config_control` + `fn_pct_fisico_obra` | por monto de partida |
 | Formatos de documento | `proyectos.formatos_ratificados` | juego propuesto §7.2 |
 
-Mientras `ratificado_por_sotica` sea `false`, toda salida que use esos valores los declara como
-supuesto de la agencia, no como criterio del cliente.
-
 ## Fuera del ciclo 1
 
 `.pptx`, Word, FIDIC/multilaterales, lectura automática de planos PDF (`sotica_planos`), y los
-subagentes SUB-ELE / SUB-HID / SUB-EST / SUB-VIA / SUB-SUE — escritos en `backend/agents/` con
+subagentes SUB-ELE / SUB-HID / SUB-EST / SUB-VIA / SUB-SUE — ya migrados al formato nuevo y con
 `enabled: false`; activarlos es quitar la bandera y sumarlos a `CICLO_1_AGENTES`.

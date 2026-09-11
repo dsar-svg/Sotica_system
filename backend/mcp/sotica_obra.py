@@ -2,35 +2,26 @@
 
 MCP es la capa de herramientas: aquí no hay criterio de ingeniería, solo
 lectura, escritura y aritmética. El criterio vive en los prompts de los agentes.
+
+Se publica como servidor MCP stdio real (ver `backend/mcp/stdio_server.py`), así
+que estas herramientas sirven a cualquier runtime que hable MCP. Los cuerpos de
+las funciones y los JSON Schema son los mismos desde el ciclo 1.
 """
 from __future__ import annotations
 
 import datetime as dt
-import json
 from typing import Any
-
-from claude_agent_sdk import create_sdk_mcp_server, tool
 
 from ..core import avance as avance_mod
 from ..core import computo, control, db
+from .registry import Registro, error as _error, ok as _ok
 
-
-def _ok(payload: Any) -> dict[str, Any]:
-    return {"content": [{"type": "text", "text": json.dumps(payload, ensure_ascii=False,
-                                                            indent=2, default=str)}]}
-
-
-def _error(mensaje: str) -> dict[str, Any]:
-    return {
-        "content": [{"type": "text", "text": json.dumps(
-            {"error": mensaje}, ensure_ascii=False)}],
-        "isError": True,
-    }
+registro = Registro("sotica_obra")
 
 
 # ---------------------------------------------------------------------------
 
-@tool(
+@registro.herramienta(
     "consultar_presupuesto",
     "Devuelve el presupuesto base de una obra con sus partidas, unidades, cantidades, "
     "precios, etiquetas de dato y fuentes. Lectura pura: es contra esto que se mide "
@@ -86,7 +77,7 @@ async def consultar_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
         })
 
 
-@tool(
+@registro.herramienta(
     "leer_reporte_avance",
     "Devuelve el reporte crudo de campo (texto libre, adjuntos, quién y cuándo) para que "
     "SUB-AVA lo interprete. Solo SUB-AVA debe usarla: ORQ-COST no lee crudos.",
@@ -130,7 +121,7 @@ async def leer_reporte_avance(args: dict[str, Any]) -> dict[str, Any]:
         })
 
 
-@tool(
+@registro.herramienta(
     "registrar_avance",
     "Registra la interpretación estructurada de un reporte de campo, recalcula el estado "
     "consolidado y evalúa desviaciones, todo en una transacción. No toca el presupuesto base. "
@@ -181,7 +172,7 @@ async def registrar_avance(args: dict[str, Any]) -> dict[str, Any]:
         return _error(str(exc))
 
 
-@tool(
+@registro.herramienta(
     "consultar_estado_obra",
     "Estado consolidado de la obra: avance físico real vs. planificado, avance financiero, "
     "desviaciones abiertas y, SIEMPRE, la última fecha de avance y los días sin reporte. "
@@ -214,7 +205,7 @@ async def consultar_estado_obra(args: dict[str, Any]) -> dict[str, Any]:
         ))
 
 
-@tool(
+@registro.herramienta(
     "consultar_bloqueos",
     "Bandeja de bloqueos abiertos por obra: lo que el sistema no resolvió solo y espera "
     "decisión humana, con los avances retenidos que cada uno mantiene fuera del consolidado.",
@@ -236,7 +227,7 @@ async def consultar_bloqueos(args: dict[str, Any]) -> dict[str, Any]:
         return _error(str(exc))
 
 
-@tool(
+@registro.herramienta(
     "resolver_bloqueo",
     "Cierra un bloqueo con una decisión explícita del usuario. Solo ORQ-COST. Exige "
     "`confirmacion_usuario` con la respuesta literal del usuario en el chat: sin ella la "
@@ -272,7 +263,7 @@ async def resolver_bloqueo(args: dict[str, Any]) -> dict[str, Any]:
         return _error(str(exc))
 
 
-@tool(
+@registro.herramienta(
     "registrar_computo",
     "Persiste cómputos métricos: partidas y sus hojas de medición, con etiqueta de dato y "
     "referencia de plano obligatorias. Escribe SOLO en un presupuesto en estado 'borrador' "
@@ -350,16 +341,5 @@ async def registrar_computo(args: dict[str, Any]) -> dict[str, Any]:
         return _error(str(exc))
 
 
-servidor = create_sdk_mcp_server(
-    name="sotica_obra",
-    version="1.0.0",
-    tools=[
-        consultar_presupuesto,
-        registrar_computo,
-        leer_reporte_avance,
-        registrar_avance,
-        consultar_estado_obra,
-        consultar_bloqueos,
-        resolver_bloqueo,
-    ],
-)
+# El servidor MCP se construye en stdio_server.py a partir de este registro.
+__all__ = ["registro"]

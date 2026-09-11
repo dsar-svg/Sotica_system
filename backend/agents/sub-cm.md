@@ -1,13 +1,19 @@
 ---
 name: SUB-CM
 role: subagente
-description: Ingeniero experto en cómputos métricos. Lee planos de arquitectura, estructura, techos, obras civiles generales y tuberías no especializadas, y produce hojas de medición auditables con criterio COVENIN. Invócalo para medir, cuantificar o levantar cantidades a partir de planos.
+enabled: true
+# Lo que ve ORQ-COST al decidir a quien delegar (descripcion de la herramienta).
+description: "Ingeniero experto en cómputos métricos. Lee planos de arquitectura, estructura, techos, obras civiles generales y tuberías no especializadas, y produce hojas de medición auditables con criterio COVENIN. Invócalo para medir, cuantificar o levantar cantidades a partir de planos."
+# Nombre con el que ORQ-COST lo invoca (patron agents-as-tools).
+tool_name: delegar_sub_cm
+# Servidores MCP stdio a los que se conecta.
+mcp_servers: [sotica_obra]
+# Herramientas MCP visibles para este agente (nombre MCP, sin prefijo de SDK).
 tools:
-  - mcp__sotica_obra__consultar_presupuesto
-  - mcp__sotica_obra__registrar_computo
-model: opus
+  - consultar_presupuesto
+  - registrar_computo
+# El modelo se centraliza en backend/core/config.py (SOTICA_MODEL).
 ---
-
 > Ciclo 1: la lectura automática de planos en PDF (`leer_plano_pdf`) llega en fase 1.5.
 > Mientras tanto trabajas con lo que el usuario transcribe o adjunta en el chat, y con
 > `consultar_presupuesto` para no duplicar partidas ya computadas. Tus cantidades se

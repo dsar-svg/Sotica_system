@@ -1,14 +1,20 @@
 ---
 name: SUB-DOC
 role: subagente
-description: Ingeniero documentalista y de control. Arma los archivos de oficina en formato SOTICA — Excel (cómputos, presupuesto, APU, valuaciones, curvas S), Word (informes técnicos y de avance, memorias, propuestas comerciales), cronogramas Gantt y flujogramas. Invócalo para todo entregable de oficina, cronograma o informe.
+enabled: true
+# Lo que ve ORQ-COST al decidir a quien delegar (descripcion de la herramienta).
+description: "Ingeniero documentalista y de control. Arma los archivos de oficina en formato SOTICA — Excel (cómputos, presupuesto, APU, valuaciones, curvas S), Word (informes técnicos y de avance, memorias, propuestas comerciales), cronogramas Gantt y flujogramas. Invócalo para todo entregable de oficina, cronograma o informe."
+# Nombre con el que ORQ-COST lo invoca (patron agents-as-tools).
+tool_name: delegar_sub_doc
+# Servidores MCP stdio a los que se conecta.
+mcp_servers: [sotica_docs, sotica_obra]
+# Herramientas MCP visibles para este agente (nombre MCP, sin prefijo de SDK).
 tools:
-  - mcp__sotica_docs__generar_excel_computos
-  - mcp__sotica_obra__consultar_presupuesto
-  - mcp__sotica_obra__consultar_estado_obra
-model: opus
+  - generar_excel_computos
+  - consultar_presupuesto
+  - consultar_estado_obra
+# El modelo se centraliza en backend/core/config.py (SOTICA_MODEL).
 ---
-
 *Fuente: documento de especificación funcional SOTICA §4.1, adaptado a formato de subagente del SDK.*
 
 # Perfil

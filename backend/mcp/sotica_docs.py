@@ -9,12 +9,14 @@ import json
 from io import BytesIO
 from typing import Any
 
-from claude_agent_sdk import create_sdk_mcp_server, tool
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from ..core import control, db, storage
+from .registry import Registro, error as _error, ok as _ok
+
+registro = Registro("sotica_docs")
 
 AZUL = "1B365D"      # azul corporativo propuesto (§7.2)
 DORADO = "C4A35A"
@@ -29,15 +31,6 @@ _FILL_ACENTO = PatternFill("solid", fgColor=DORADO)
 _BORDE = Border(*(Side(style="thin", color="BFBFBF"),) * 4)
 
 
-def _ok(payload: Any) -> dict[str, Any]:
-    return {"content": [{"type": "text", "text": json.dumps(payload, ensure_ascii=False,
-                                                            indent=2, default=str)}]}
-
-
-def _error(mensaje: str) -> dict[str, Any]:
-    return {"content": [{"type": "text", "text": json.dumps({"error": mensaje},
-                                                            ensure_ascii=False)}],
-            "isError": True}
 
 
 def _encabezado(ws, titulos: list[str], fila: int = 1) -> None:
@@ -177,7 +170,7 @@ def _hoja_simple(wb, titulo: str, cabeceras: list[str], filas: list[list[Any]],
             c.alignment = Alignment(wrap_text=True, vertical="top")
 
 
-@tool(
+@registro.herramienta(
     "generar_excel_computos",
     "Genera el libro de cómputos en formato SOTICA-CM-01 (.xlsx) con portada, control de "
     "revisiones, hojas de medición con fórmulas vivas, resumen por capítulo, supuestos e "
@@ -338,6 +331,5 @@ async def generar_excel_computos(args: dict[str, Any]) -> dict[str, Any]:
         return _error(str(exc))
 
 
-servidor = create_sdk_mcp_server(
-    name="sotica_docs", version="1.0.0", tools=[generar_excel_computos]
-)
+# El servidor MCP se construye en stdio_server.py a partir de este registro.
+__all__ = ["registro"]
