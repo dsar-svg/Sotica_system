@@ -51,12 +51,22 @@ async def contexto_obra(proyecto_ref: str | None) -> str:
         )
 
     dias = (dt.date.today() - ultima).days if ultima else None
+    fase = {
+        "oportunidad": "OFERTA EN ESTUDIO — sin contrato todavía. Se trabaja cómputo, APU, presupuesto "
+                       "de oferta y documentos de licitación. No hay control de avance: si piden "
+                       "avance, explica que la obra no está adjudicada.",
+        "adjudicada": "OBRA ADJUDICADA — en ejecución, con control de avance contra el presupuesto base.",
+        "cerrada": "OBRA CERRADA — solo consulta y documentos de cierre.",
+        "descartada": "OFERTA DESCARTADA — no se ganó o no se presentó; solo consulta.",
+    }.get(p["fase"], p["fase"])
     return f"""## Contexto de sesión — memoria de proyecto
 
-- Obra: **{p['nombre_obra']}** (`{p['codigo']}`)
+- Proyecto: **{p['nombre_obra']}** (`{p['codigo']}`)
+- Fase: {fase}
 - Cliente / ente: {p['cliente'] or '—'} · Tipo de obra: {p['tipo_obra']}
 - Moneda base: {p['moneda_base']} · Fecha base de precios: {p['fecha_base_precios']:%d/%m/%Y}
 - Plantilla FCAS: {p['plantilla_fcas'] or 'no definida'} · Norma rectora: {p['norma_rectora'] or 'COVENIN 2000'}
+- Plazo contractual: {f"{p['fecha_inicio_contractual']:%d/%m/%Y} a {p['fecha_fin_contractual']:%d/%m/%Y}" if p['fecha_inicio_contractual'] and p['fecha_fin_contractual'] else 'no definido'}
 - Formatos SOTICA ratificados: {'sí' if p['formatos_ratificados'] else 'NO — usar juego propuesto §7.2 y marcarlo'}
 - Presupuesto base de control: {'v' + str(base['version']) if base else 'NO DEFINIDO — el seguimiento de obra no puede medir sin él'}
 - Último avance registrado: {ultima.strftime('%d/%m/%Y') + f' (hace {dias} días)' if ultima else 'NINGUNO'}

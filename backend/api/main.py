@@ -46,13 +46,14 @@ async def _proyecto(ref: str):
 async def listar_proyectos() -> list[dict[str, Any]]:
     filas = await db.fetch(
         """
-        SELECT p.id, p.codigo, p.nombre_obra, p.cliente, p.tipo_obra, p.moneda_base,
+        SELECT p.id, p.codigo, p.nombre_obra, p.cliente, p.cliente_id, p.tipo_obra, p.moneda_base,
+               p.fase, p.fecha_inicio_contractual, p.fecha_fin_contractual, p.creado_en,
                eo.pct_fisico_real, eo.pct_fisico_plan, eo.ultima_fecha_avance,
                eo.dias_sin_reporte, eo.bloqueos_abiertos, eo.desviaciones_abiertas
           FROM proyectos p
           LEFT JOIN estado_obra eo ON eo.proyecto_id = p.id
          WHERE p.estado = 'activo'
-         ORDER BY p.codigo
+         ORDER BY p.fase, p.creado_en DESC
         """
     )
     return [dict(f) for f in filas]
@@ -87,7 +88,21 @@ async def listar_clientes() -> list[dict[str, Any]]:
 @app.post("/api/clientes")
 async def crear_cliente(datos: dict[str, Any]) -> dict[str, Any]:
     """Cliente de SOTICA con sus datos habituales; se reutiliza al crear obras."""
-    texto = _textos(datos)
+    valores = _validar_cliente(_textos(datos))
+    try:
+        nuevo = await db.fetchval(
+            f"INSERT INTO clientes ({', '.join(_CAMPOS_CLIENTE)}) "
+            f"VALUES ({', '.join(f'${i}' for i in range(1, len(_CAMPOS_CLIENTE) + 1))}) RETURNING id",
+            *valores.values(),
+        )
+    except asyncpg.UniqueViolationError:
+        raise HTTPException(409, "Ya existe un cliente con ese nombre o RIF.") from None
+    except asyncpg.CheckViolationError as exc:
+        raise HTTPException(400, f"Dato inválido: {exc}") from None
+    return {"id": str(nuevo), "nombre": valores["nombre"]}
+
+
+def _validar_cliente(texto) -> dict[str, Any]:
     valores = {c: texto(c) for c in _CAMPOS_CLIENTE}
     if not valores["nombre"]:
         raise HTTPException(400, "La razón social o nombre del cliente es obligatorio.")
@@ -103,17 +118,65 @@ async def crear_cliente(datos: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(400, "La moneda debe ser USD o VES.")
     if valores["correo"] and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", valores["correo"]):
         raise HTTPException(400, "Correo inválido.")
+    return valores
+
+
+async def _cliente(cliente_id: str):
     try:
-        nuevo = await db.fetchval(
-            f"INSERT INTO clientes ({', '.join(_CAMPOS_CLIENTE)}) "
-            f"VALUES ({', '.join(f'${i}' for i in range(1, len(_CAMPOS_CLIENTE) + 1))}) RETURNING id",
-            *valores.values(),
-        )
+        fila = await db.fetchrow("SELECT * FROM clientes WHERE id = $1", UUID(cliente_id))
+    except ValueError:
+        fila = None
+    if fila is None:
+        raise HTTPException(404, "Cliente no encontrado.")
+    return fila
+
+
+@app.get("/api/clientes/{cliente_id}")
+async def ver_cliente(cliente_id: str) -> dict[str, Any]:
+    c = await _cliente(cliente_id)
+    obras = await db.fetch(
+        "SELECT codigo, nombre_obra, fase FROM proyectos WHERE cliente_id = $1 ORDER BY creado_en DESC",
+        c["id"])
+    return {k: c[k] for k in _CAMPOS_CLIENTE} | {"id": str(c["id"]), "obras": [dict(o) for o in obras]}
+
+
+@app.put("/api/clientes/{cliente_id}")
+async def editar_cliente(cliente_id: str, datos: dict[str, Any]) -> dict[str, Any]:
+    c = await _cliente(cliente_id)
+    valores = _validar_cliente(_textos(datos))
+    try:
+        async with db.transaction() as conn:
+            await conn.execute(
+                f"UPDATE clientes SET {', '.join(f'{k} = ${i}' for i, k in enumerate(_CAMPOS_CLIENTE, 2))} "
+                "WHERE id = $1", c["id"], *valores.values())
+            # El nombre visible en las obras es copia del cliente: se mantiene al día.
+            await conn.execute("UPDATE proyectos SET cliente = $2 WHERE cliente_id = $1",
+                               c["id"], valores["nombre"])
     except asyncpg.UniqueViolationError:
-        raise HTTPException(409, "Ya existe un cliente con ese nombre o RIF.") from None
+        raise HTTPException(409, "Ya existe otro cliente con ese nombre o RIF.") from None
     except asyncpg.CheckViolationError as exc:
         raise HTTPException(400, f"Dato inválido: {exc}") from None
-    return {"id": str(nuevo), "nombre": valores["nombre"]}
+    return {"id": str(c["id"]), "nombre": valores["nombre"]}
+
+
+@app.delete("/api/clientes/{cliente_id}")
+async def borrar_cliente(cliente_id: str) -> dict[str, Any]:
+    c = await _cliente(cliente_id)
+    obras = await db.fetchval("SELECT count(*) FROM proyectos WHERE cliente_id = $1", c["id"])
+    if obras:
+        raise HTTPException(409, f"No se puede borrar: el cliente tiene {obras} proyecto(s). "
+                                 "Reasigna o descarta esos proyectos primero.")
+    await db.execute("DELETE FROM clientes WHERE id = $1", c["id"])
+    return {"ok": True}
+
+
+async def _codigo_siguiente() -> str:
+    """SOT-<año>-NNN siguiente al mayor del año: el código no se reutiliza ni se edita."""
+    anio = dt.date.today().year
+    mayor = await db.fetchval(
+        "SELECT max((regexp_match(codigo, '^SOT-' || $1 || '-(\\d+)$'))[1]::int) FROM proyectos",
+        str(anio))
+    return f"SOT-{anio}-{(mayor or 0) + 1:03d}"
 
 
 @app.post("/api/proyectos")
@@ -134,9 +197,14 @@ async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
             if not texto(campo) and cliente[del_cliente]:
                 datos[campo] = cliente[del_cliente]
 
-    codigo, nombre = texto("codigo"), texto("nombre_obra")
-    if not codigo or not nombre:
-        raise HTTPException(400, "Código y nombre de la obra son obligatorios.")
+    fase = texto("fase") or "oportunidad"
+    if fase not in ("oportunidad", "adjudicada"):
+        raise HTTPException(400, "Un proyecto nuevo es una oferta en estudio o una obra adjudicada.")
+    codigo, nombre = texto("codigo") or await _codigo_siguiente(), texto("nombre_obra")
+    if not nombre:
+        raise HTTPException(400, "El nombre del proyecto es obligatorio.")
+    if not texto("fecha_base_precios"):
+        datos["fecha_base_precios"] = dt.date.today().isoformat()
     tipo_obra = texto("tipo_obra") or "edificacion"
     if tipo_obra not in _TIPOS_OBRA:
         raise HTTPException(400, f"Tipo de obra inválido: {tipo_obra}.")
@@ -159,19 +227,64 @@ async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
             """
             INSERT INTO proyectos (codigo, nombre_obra, cliente_id, cliente, tipo_ente, tipo_obra,
                                    ubicacion, moneda_base, fecha_base_precios, norma_rectora,
-                                   fecha_inicio_contractual, fecha_fin_contractual)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id
+                                   fecha_inicio_contractual, fecha_fin_contractual, fase)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id
             """,
             codigo, nombre, cliente["id"] if cliente else None,
             cliente["nombre"] if cliente else texto("cliente"), tipo_ente, tipo_obra,
             texto("ubicacion"), moneda, fechas["fecha_base_precios"], texto("norma_rectora"),
-            fechas["fecha_inicio_contractual"], fechas["fecha_fin_contractual"],
+            fechas["fecha_inicio_contractual"], fechas["fecha_fin_contractual"], fase,
         )
     except asyncpg.UniqueViolationError:
-        raise HTTPException(409, f"Ya existe una obra con el código {codigo}.") from None
+        raise HTTPException(409, f"Ya existe un proyecto con el código {codigo}.") from None
     except asyncpg.CheckViolationError as exc:
         raise HTTPException(400, f"Dato inválido: {exc}") from None
     return {"id": str(nuevo), "codigo": codigo}
+
+
+@app.get("/api/proyectos/{ref}/avance-detalle")
+async def avance_detalle(ref: str) -> dict[str, Any]:
+    """Curva S semanal (plan y real), capítulos, partidas y reportes para la pantalla de avance."""
+    p = await _proyecto(ref)
+    async with db.acquire() as conn:
+        return await control.serie_avance(conn, p["id"])
+
+
+@app.post("/api/proyectos/{ref}/fase")
+async def cambiar_fase(ref: str, datos: dict[str, Any]) -> dict[str, Any]:
+    """Decisión humana sobre el ciclo comercial. Adjudicar fija el plazo contractual y, si se
+    indica, convierte el presupuesto ofertado en la base de control del avance."""
+    p = await _proyecto(ref)
+    texto = _textos(datos)
+    fase = texto("fase")
+    if fase not in ("oportunidad", "adjudicada", "cerrada", "descartada"):
+        raise HTTPException(400, "Fase inválida.")
+    try:
+        inicio = dt.date.fromisoformat(texto("fecha_inicio_contractual")) if texto("fecha_inicio_contractual") else None
+        fin = dt.date.fromisoformat(texto("fecha_fin_contractual")) if texto("fecha_fin_contractual") else None
+    except ValueError:
+        raise HTTPException(400, "Fecha inválida: usa AAAA-MM-DD.") from None
+    if inicio and fin and fin < inicio:
+        raise HTTPException(400, "El fin contractual no puede ser anterior al inicio.")
+    async with db.transaction() as conn:
+        await conn.execute(
+            """
+            UPDATE proyectos SET fase = $2,
+                   fecha_inicio_contractual = COALESCE($3, fecha_inicio_contractual),
+                   fecha_fin_contractual = COALESCE($4, fecha_fin_contractual)
+             WHERE id = $1
+            """, p["id"], fase, inicio, fin)
+        base = None
+        if fase == "adjudicada" and texto("presupuesto_id"):
+            pres = await conn.fetchrow("SELECT * FROM presupuestos WHERE id = $1 AND proyecto_id = $2",
+                                       UUID(texto("presupuesto_id")), p["id"])
+            if pres is None:
+                raise HTTPException(404, "Presupuesto no encontrado en este proyecto.")
+            await conn.execute("UPDATE presupuestos SET es_base_control = false WHERE proyecto_id = $1", p["id"])
+            await conn.execute("UPDATE presupuestos SET es_base_control = true, estado = 'aprobado' WHERE id = $1",
+                               pres["id"])
+            base = pres["version"]
+    return {"codigo": p["codigo"], "fase": fase, "presupuesto_base": base}
 
 
 @app.get("/api/proyectos/{ref}/estado")
@@ -229,7 +342,7 @@ async def presupuesto(ref: str, origen: str = "auto") -> dict[str, Any]:
     pendiente = sum(float(f["monto"] or 0) for f in filas
                     if f["etiqueta_precio"] == "pendiente_confirmacion")
     return {
-        "presupuesto": {"version": pres["version"], "estado": pres["estado"],
+        "presupuesto": {"id": str(pres["id"]), "version": pres["version"], "estado": pres["estado"],
                         "es_base_control": pres["es_base_control"], "moneda": pres["moneda"]},
         "partidas": [dict(f) for f in filas],
         "costo_directo_firme": round(firme, 2),

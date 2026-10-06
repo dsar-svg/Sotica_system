@@ -20,6 +20,7 @@
   /* Señalética vial: rojo reglamentario detiene, azul informativo orienta, amarillo preventivo
      advierte. Placas de esquina redondeada con filete interior; cifras tabulares en toda cantidad. */
   :root{
+    --serie-real:#2563A8; --serie-plan:#B0702A;
     --rojo:#CB0C0C; --rojo-fuerte:#A30909; --rojo-suave:#FCEBEB; --rojo-tinta:#A30909;
     --azul:#002E54; --azul-placa:#002E54; --azul-suave:#E7EEF5; --azul-tinta:#0B4677;
     --amarillo:#F2B705; --amarillo-suave:#FFF6D6; --verde:#0B6E3A; --verde-suave:#E4F3EA;
@@ -37,6 +38,7 @@
     color-scheme: light;
   }
   :root[data-theme="dark"]{
+    --serie-real:#4A8BD6; --serie-plan:#C28040;
     --rojo:#E5322F; --rojo-fuerte:#C71F1C; --rojo-suave:#3A1717; --rojo-tinta:#FF8F8C;
     --azul-placa:#0E4A80; --azul-suave:#14283B; --azul-tinta:#8EC1F0;
     --amarillo:#F2B705; --amarillo-suave:#3A3012; --verde:#5CC48A; --verde-suave:#14301F;
@@ -92,21 +94,10 @@
   :root[data-theme="dark"] .sb-primario{color:var(--sb)}
   .sb-primario:hover{background:#FDEDED}
 
-  .obra-caja{background:rgba(0,0,0,.14);border-radius:10px;padding:10px;margin-bottom:12px}
-  :root[data-theme="dark"] .obra-caja{background:rgba(0,0,0,.22)}
-  .obra-caja label{display:block;font:600 12px/1 var(--f-rotulo);letter-spacing:.08em;text-transform:uppercase;
-                   color:var(--sb-tinta-2);margin:0 0 7px 2px}
-  .obra-fila{display:flex;gap:6px}
-  .obra-fila select{flex:1;min-width:0;appearance:none;border:1px solid var(--sb-linea);border-radius:7px;
-                    background:rgba(255,255,255,.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 8l4 4 4-4' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 6px center/16px;
-                    color:#fff;padding:7px 26px 7px 9px;font:500 14px/1.2 var(--f-texto);cursor:pointer}
-  .obra-fila select option{color:#12171C}
-  .obra-fila select:focus-visible{outline-color:#fff}
   .icono-btn{display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:7px;cursor:pointer;
              border:1px solid var(--sb-linea);background:rgba(255,255,255,.1);color:#fff}
   .icono-btn:hover{background:rgba(255,255,255,.2)}
   .icono-btn:focus-visible{outline-color:#fff}
-  .obra-dato{font:500 13px/1.35 var(--f-texto);color:var(--sb-tinta-2);margin:8px 2px 0}
 
   .sb-titulo{font:600 12px/1 var(--f-rotulo);letter-spacing:.08em;text-transform:uppercase;
              color:var(--sb-tinta-2);padding:12px 10px 6px}
@@ -326,8 +317,126 @@
   .rejilla .ancho{grid-column:1 / -1}
   .ficha{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--azul-suave);font-size:13.5px;color:var(--tinta-2)}
   .ficha b{color:var(--tinta);font-weight:600}
+  .opcion{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--borde-fuerte);border-radius:10px;cursor:pointer;margin-top:10px}
+  .opcion:has(input:checked){border-color:var(--azul-tinta);background:var(--azul-suave)}
+  .opcion input{margin-top:3px;accent-color:var(--azul-tinta)}
+  .opcion b{display:block;font:600 15px/1.2 var(--f-rotulo)}
+  .opcion small{display:block;color:var(--tinta-3);font-size:13px;margin-top:3px}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
   .velo{display:none}
+
+  /* ---------- proyectos en el sidebar ---------- */
+  .sb-scroll{flex:1;min-height:0;overflow-y:auto;margin:0 -6px;padding:0 6px 6px}
+  .sb-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.35);border-color:var(--sb)}
+  .proy{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;border:0;background:none;
+        color:inherit;text-align:left;padding:7px 10px;border-radius:8px;cursor:pointer;font:inherit}
+  .proy:hover{background:var(--sb-hover)}
+  .proy:focus-visible{outline-color:#fff}
+  .proy:disabled{cursor:not-allowed;opacity:.7}
+  .proy b{font:500 14.5px/1.3 var(--f-texto);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .proy span{font:600 12px/1.3 var(--f-rotulo);letter-spacing:.04em;color:var(--sb-tinta-2)}
+  .proy[aria-current="true"]{background:#fff;color:#A30909}
+  .proy[aria-current="true"] span{color:#A30909;opacity:.8}
+  :root[data-theme="dark"] .proy[aria-current="true"]{color:var(--sb)}
+  .vacio-sb{font-size:13px;color:var(--sb-tinta-2);margin:2px 10px 8px}
+  .sb details summary{list-style:none;cursor:pointer}
+  .sb details summary::-webkit-details-marker{display:none}
+  .sb-sep{border-top:1px solid var(--sb-linea);margin:6px 0 2px}
+
+  /* ---------- barra: fase del proyecto ---------- */
+  .barra .etq{flex:none}
+  .fase-oportunidad{background:var(--amarillo);color:#1A1A1A;border-color:#1A1A1A}
+  .fase-adjudicada{background:var(--azul-placa);color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.85)}
+  .fase-cerrada,.fase-descartada{background:var(--sup-3);color:var(--tinta-2);border-color:var(--borde-fuerte)}
+  .barra-acciones{position:relative}
+  .menu-fase{position:absolute;top:44px;right:0;left:auto;bottom:auto;min-width:260px}
+
+  /* ---------- vistas ---------- */
+  .vista{display:flex;flex-direction:column;flex:1;min-height:0}
+  .vista-pagina{overflow-y:auto;background:var(--sup-2)}
+  .pagina{width:100%;max-width:1180px;margin:0 auto;padding:22px 24px 40px}
+  .pag-cab{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .pag-cab h2{margin:0;font:600 26px/1.15 var(--f-rotulo)}
+  .pag-cab p{margin:4px 0 0;color:var(--tinta-2);font-size:14px}
+  .pag-cab .acciones{margin:0 0 0 auto}
+
+  /* avance: indicadores */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--borde);
+        border:1px solid var(--borde);border-radius:var(--rad);overflow:hidden;margin-bottom:14px}
+  .kpi{background:var(--sup);padding:12px 14px;min-width:0}
+  .kpi dt{font:600 12.5px/1.2 var(--f-rotulo);letter-spacing:.03em;color:var(--tinta-3);margin-bottom:6px}
+  .kpi dd{margin:0;font:600 22px/1.1 var(--f-rotulo)}
+  .kpi dd small{display:block;font:400 12.5px/1.3 var(--f-texto);color:var(--tinta-3);margin-top:4px}
+  .kpi dd > .etq:first-child{font-size:14px;height:26px;margin-top:0}
+  .kpi .etq{margin-top:6px}
+  .kpi .enlace-btn{display:block;margin-top:6px}
+
+  /* avance: panel de ruta por capítulos (gesto propio) */
+  .ruta-caps{display:flex;align-items:stretch;gap:0;overflow-x:auto;margin-bottom:14px;padding:8px;
+             background:var(--azul-placa);border-radius:var(--rad);
+             box-shadow:inset 0 0 0 2px var(--azul-placa), inset 0 0 0 3.5px rgba(255,255,255,.92)}
+  .cap{flex:1 1 0;min-width:150px;display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;
+       border:0;border-radius:6px;background:none;color:#fff;padding:9px 11px;font:inherit}
+  .cap:hover{background:rgba(255,255,255,.08)}
+  .cap:focus-visible{outline-color:#fff;outline-offset:-2px}
+  /* La placa seleccionada es blanca en ambos temas: sus tintas son fijas, no tokens del tema. */
+  .cap[aria-selected="true"]{background:#fff;color:#002E54}
+  .cap b{font:600 15px/1.2 var(--f-rotulo)}
+  .cap .cifras{font:600 12.5px/1.2 var(--f-rotulo);opacity:.85;letter-spacing:.02em}
+  .cap .mini{position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,.22)}
+  .cap[aria-selected="true"] .mini{background:#E1E5EA}
+  .cap .mini i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:#fff}
+  .cap[aria-selected="true"] .mini i{background:#002E54}
+  .cap[aria-selected="true"] .mini u{background:#8A5517}
+  .cap .mini u{position:absolute;top:-3px;bottom:-3px;width:2.5px;margin-left:-1.25px;background:var(--serie-plan)}
+  .cap .estado{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--f-rotulo)}
+  .cap .estado::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .cap .estado.atraso{color:#FF9B98}
+  .cap[aria-selected="true"] .estado.atraso{color:#A30909}
+  .cap-flecha{flex:none;align-self:center;width:18px;height:18px;stroke:rgba(255,255,255,.65);stroke-width:2.2;fill:none;margin:0 2px}
+
+  .av-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:start}
+  .av-grid .bloque,.av-grid2 .bloque{margin-bottom:0}
+  .av-grid2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;align-items:start;margin-top:14px}
+  .seccion-av{margin-top:14px}
+
+  /* curva S */
+  .leyenda{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--tinta-2);margin:-4px 0 8px}
+  .leyenda span{display:inline-flex;align-items:center;gap:6px}
+  .leyenda i{width:16px;height:2.5px;border-radius:2px;background:var(--serie-real)}
+  .leyenda i.plan{background:var(--serie-plan)}
+  .grafico{position:relative}
+  .grafico svg{display:block;width:100%;overflow:visible}
+  .grafico svg:focus-visible{outline:2px solid var(--foco);outline-offset:4px}
+  .grafico text{font:500 12px var(--f-texto);fill:var(--tinta-3);font-variant-numeric:tabular-nums}
+  .grafico .rotulo-serie{font:600 12.5px var(--f-rotulo)}
+  .tooltip{position:absolute;pointer-events:none;background:var(--tinta);color:var(--fondo);border-radius:8px;padding:8px 10px;
+           font-size:13px;line-height:1.45;box-shadow:var(--sombra-2);white-space:nowrap;transform:translate(-50%,-100%);z-index:2}
+  .tooltip b{font:600 13px var(--f-rotulo)}
+  .tabla-datos{margin-top:10px}
+  .tabla-datos summary{font:600 13.5px var(--f-rotulo);color:var(--azul-tinta);cursor:pointer}
+
+  /* barras plan / real por partida */
+  .bala{position:relative;height:10px;border-radius:5px;background:var(--sup-3);min-width:90px}
+  .bala i{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--serie-real)}
+  .bala u{position:absolute;top:-4px;bottom:-4px;width:2.5px;margin-left:-1.25px;border-radius:2px;background:var(--serie-plan)}
+
+  /* bitácora */
+  .reporte{padding:12px 0;border-bottom:1px solid var(--borde)}
+  .reporte:first-of-type{padding-top:0}
+  .reporte:last-child{border-bottom:0;padding-bottom:0}
+  .reporte .cab{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 14.5px/1.2 var(--f-rotulo)}
+  .reporte p{margin:6px 0 4px;font-size:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .enlace-btn{border:0;background:none;padding:0;color:var(--azul-tinta);font:600 13.5px var(--f-rotulo);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+  /* clientes */
+  .cli-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(320px,2fr);gap:14px;align-items:start}
+  .cli-grid .bloque{margin-bottom:0}
+  .buscar{margin-bottom:12px}
+  .fila-cli{cursor:pointer}
+  .fila-cli:hover td{background:var(--sup-2)}
+  .fila-cli[aria-selected="true"] td{background:var(--azul-suave)}
+  .fila-cli td:first-child{font-weight:600}
 
   /* ---------- adaptaciones ---------- */
   @media (max-width:1240px){
@@ -346,6 +455,9 @@
     .marca .sb-cerrar{display:grid}
     .solo-movil{display:flex}
     .sugerencia{grid-template-columns:1fr}
+    .av-grid,.av-grid2,.cli-grid{grid-template-columns:1fr}
+    .pagina{padding:16px 12px 32px}
+    .pag-cab h2{font-size:22px}
     .placa-ruta{justify-self:start;margin-top:6px}
     .hilo-col{padding:20px 16px 8px}
     .compositor{padding:6px 12px 10px}
@@ -397,24 +509,22 @@
       <button class="icono-btn sb-cerrar" id="sb-cerrar" type="button" aria-label="Cerrar menú"><svg class="ico"><use href="#i-cerrar"/></svg></button>
     </div>
 
-    <button class="sb-btn sb-primario" id="nueva" type="button"><svg class="ico"><use href="#i-mas"/></svg>Conversación nueva</button>
+    <button class="sb-btn sb-primario" id="abrir-obra" type="button"><svg class="ico"><use href="#i-mas"/></svg>Nuevo proyecto</button>
 
-    <div class="obra-caja">
-      <label for="obra">Obra</label>
-      <div class="obra-fila">
-        <select id="obra"></select>
-        <button class="icono-btn" id="abrir-obra" type="button" aria-label="Crear obra nueva" title="Crear obra nueva"><svg class="ico"><use href="#i-mas"/></svg></button>
-      </div>
-      <p class="obra-dato" id="obra-dato"></p>
-    </div>
+    <div class="sb-scroll" id="lista-proyectos" aria-label="Proyectos"></div>
 
-    <div class="sb-titulo">Registro de la obra</div>
-    <nav aria-label="Secciones del registro">
-      <button class="sb-btn" type="button" data-seccion="avance"><svg class="ico"><use href="#i-avance"/></svg>Avance<span class="sb-valor" id="v-avance"></span></button>
+    <div class="sb-sep"></div>
+    <div class="sb-titulo" id="sb-titulo-proyecto">Este proyecto</div>
+    <nav aria-label="Secciones del proyecto">
+      <button class="sb-btn" type="button" data-seccion="avance"><svg class="ico"><use href="#i-avance"/></svg>Avance de obra<span class="sb-valor" id="v-avance"></span></button>
       <button class="sb-btn" type="button" data-seccion="presupuesto"><svg class="ico"><use href="#i-presupuesto"/></svg>Presupuesto<span class="sb-valor" id="v-presupuesto"></span></button>
       <button class="sb-btn" type="button" data-seccion="bloqueos"><svg class="ico"><use href="#i-pare"/></svg>Bloqueos<span class="contador" id="n-bloqueos" hidden></span></button>
       <button class="sb-btn" type="button" data-seccion="archivos"><svg class="ico"><use href="#i-archivos"/></svg>Archivos<span class="sb-valor" id="v-archivos"></span><span id="p-archivos-nuevo" hidden title="Hay entregables nuevos"><span class="nuevo-punto" style="display:inline-block" aria-hidden="true"></span><span class="sr">(hay entregables nuevos)</span></span></button>
       <button class="sb-btn" type="button" data-seccion="traza"><svg class="ico"><use href="#i-ruta"/></svg>Quién hizo qué<span class="sb-valor" id="v-traza"></span></button>
+    </nav>
+    <div class="sb-sep"></div>
+    <nav aria-label="Oficina">
+      <button class="sb-btn" type="button" data-vista="clientes"><svg class="ico"><use href="#i-obra"/></svg>Clientes<span class="sb-valor" id="v-clientes"></span></button>
     </nav>
 
     <div class="sb-pie">
@@ -428,12 +538,19 @@
     <header class="barra">
       <button class="boton-barra solo-movil" id="abrir-menu" type="button" aria-label="Abrir menú"><svg class="ico"><use href="#i-menu"/></svg></button>
       <h1 id="titulo-obra">ORQ-COST</h1>
+      <span class="etq" id="fase-placa" hidden></span>
       <div class="barra-acciones">
+        <button class="boton-barra" id="nueva" type="button" title="Borra el historial de esta conversación; los datos del proyecto no se tocan">
+          <svg class="ico"><use href="#i-chat"/></svg><span class="rot">Conversación nueva</span></button>
+        <button class="boton-barra" id="boton-fase" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-fase">
+          <svg class="ico"><use href="#i-obra"/></svg><span class="rot">Fase</span></button>
+        <div class="menu menu-fase" id="menu-fase" role="menu" hidden></div>
         <button class="boton-barra" id="toggle-registro" type="button" aria-pressed="false" aria-controls="registro">
           <svg class="ico"><use href="#i-panel"/></svg><span class="rot">Registro</span></button>
       </div>
     </header>
 
+    <section class="vista" id="vista-chat" aria-label="Conversación">
     <div class="hilo" id="hilo-scroll">
       <div class="hilo-col" id="hilo"></div>
     </div>
@@ -458,6 +575,81 @@
         <p class="aviso-pie">Enter envía · Mayús+Enter salta de línea. Verifica cada número en el registro: ahí está lo que de verdad quedó guardado.</p>
       </form>
     </div>
+    </section>
+
+    <section class="vista vista-pagina" id="vista-avance" aria-label="Avance de obra" hidden>
+      <div class="pagina">
+        <div id="av-contenido"><div class="pag-cab"><div><h2>Avance de obra</h2></div></div></div>
+        <div class="av-grid2">
+          <div class="bloque"><h3>Bitácora de reportes de campo</h3><div id="av-bitacora"></div></div>
+          <div class="bloque">
+            <h3 id="tit-reporte">Cargar reporte de campo</h3>
+            <p class="nota">Queda sin interpretar hasta que pidas a ORQ-COST que lo procese.</p>
+    <form id="fev">
+      <label class="campo" for="quien">Reportado por</label>
+      <input class="ctl" type="text" id="quien" placeholder="Ing. residente" required>
+      <label class="campo" for="fecha">Fecha del avance en obra</label>
+      <input class="ctl" type="date" id="fecha" required>
+      <label class="campo" for="texto">Qué se ejecutó</label>
+      <textarea class="ctl" id="texto" rows="4" placeholder="Se vaciaron 4 zapatas del eje 4 de 2,00 × 2,00 × 0,50 m…"></textarea>
+      <label class="campo" for="files">Fotos, valuaciones o mediciones</label>
+      <input class="ctl" type="file" id="files" multiple>
+      <div class="acciones"><button class="btn" id="subir">Subir reporte</button>
+        <span class="estado-form" id="ev-estado" role="status"></span></div>
+    </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="vista vista-pagina" id="vista-clientes" aria-label="Clientes" hidden>
+      <div class="pagina">
+        <div class="pag-cab">
+          <div><h2>Clientes</h2><p>Entes y empresas para los que SOTICA oferta. Sus datos habituales rellenan cada proyecto nuevo.</p></div>
+          <div class="acciones"><button class="btn" id="cli-nuevo" type="button"><svg class="ico"><use href="#i-mas"/></svg>Nuevo cliente</button></div>
+        </div>
+        <div class="cli-grid">
+          <div class="bloque">
+            <label class="sr" for="cli-buscar">Buscar cliente</label>
+            <input class="ctl buscar" id="cli-buscar" type="search" placeholder="Buscar por nombre, RIF o contacto…">
+            <div class="tabla-scroll"><table><thead><tr><th>Cliente</th><th>RIF</th><th>Contacto</th><th class="num">Proyectos</th></tr></thead>
+              <tbody id="cli-tabla"></tbody></table></div>
+          </div>
+          <div class="bloque" id="cli-panel">
+            <h3 id="cli-titulo">Nuevo cliente</h3>
+            <form id="fcli">
+              <div class="rejilla">
+                <div class="ancho"><label class="campo" for="e-nombre">Razón social o nombre del ente</label>
+                  <input class="ctl" id="e-nombre" required></div>
+                <div><label class="campo" for="e-rif">RIF</label>
+                  <input class="ctl" id="e-rif" placeholder="J-12345678-9"></div>
+                <div><label class="campo" for="e-ente">Tipo de ente</label>
+                  <select class="ctl" id="e-ente"><option value="">—</option>
+                    <option value="publico_nacional">Público nacional</option><option value="publico_estadal">Público estadal</option>
+                    <option value="publico_municipal">Público municipal</option><option value="privado">Privado</option>
+                    <option value="multilateral">Multilateral</option></select></div>
+                <div><label class="campo" for="e-contacto">Persona de contacto</label><input class="ctl" id="e-contacto"></div>
+                <div><label class="campo" for="e-cargo">Cargo</label><input class="ctl" id="e-cargo"></div>
+                <div><label class="campo" for="e-telefono">Teléfono</label><input class="ctl" id="e-telefono" type="tel"></div>
+                <div><label class="campo" for="e-correo">Correo</label><input class="ctl" id="e-correo" type="email"></div>
+                <div class="ancho"><label class="campo" for="e-direccion">Dirección fiscal</label><input class="ctl" id="e-direccion"></div>
+                <div><label class="campo" for="e-ubicacion">Ciudad y estado habitual</label><input class="ctl" id="e-ubicacion"></div>
+                <div><label class="campo" for="e-norma">Norma o pliego habitual</label><input class="ctl" id="e-norma"></div>
+                <div><label class="campo" for="e-moneda">Moneda preferida</label>
+                  <select class="ctl" id="e-moneda"><option value="">—</option><option>USD</option><option>VES</option></select></div>
+                <div class="ancho"><label class="campo" for="e-notas">Notas</label><input class="ctl" id="e-notas"></div>
+              </div>
+              <div id="cli-obras"></div>
+              <div class="acciones">
+                <button class="btn" id="cli-guardar">Guardar</button>
+                <button class="btn sec" type="button" id="cli-borrar" hidden>Eliminar</button>
+                <span class="estado-form" id="cli-estado" role="status"></span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <aside class="registro" id="registro" aria-label="Registro de la obra" inert>
@@ -466,35 +658,13 @@
       <button class="boton-barra" id="cerrar-registro" type="button" aria-label="Cerrar registro"><svg class="ico"><use href="#i-cerrar"/></svg></button>
     </div>
     <div class="reg-tabs" role="tablist" aria-label="Secciones del registro">
-      <button role="tab" id="t-avance" aria-controls="p-avance" aria-selected="true">Avance</button>
-      <button role="tab" id="t-presupuesto" aria-controls="p-presupuesto" aria-selected="false" tabindex="-1">Presupuesto</button>
+      <button role="tab" id="t-presupuesto" aria-controls="p-presupuesto" aria-selected="true">Presupuesto</button>
       <button role="tab" id="t-bloqueos" aria-controls="p-bloqueos" aria-selected="false" tabindex="-1">Bloqueos</button>
       <button role="tab" id="t-archivos" aria-controls="p-archivos" aria-selected="false" tabindex="-1">Archivos</button>
       <button role="tab" id="t-traza" aria-controls="p-traza" aria-selected="false" tabindex="-1">Quién hizo qué</button>
     </div>
     <div class="reg-cuerpo">
-      <section role="tabpanel" id="p-avance" aria-labelledby="t-avance">
-        <div id="avance"></div>
-        <div class="bloque">
-          <details class="form" id="det-reporte">
-            <summary><svg class="ico"><use href="#i-reporte"/></svg>Cargar reporte de campo</summary>
-            <p class="nota">Queda sin interpretar. Después pídele a ORQ-COST que lo procese.</p>
-            <form id="fev">
-              <label class="campo" for="quien">Reportado por</label>
-              <input class="ctl" type="text" id="quien" placeholder="Ing. residente" required>
-              <label class="campo" for="fecha">Fecha del avance en obra</label>
-              <input class="ctl" type="date" id="fecha" required>
-              <label class="campo" for="texto">Qué se ejecutó</label>
-              <textarea class="ctl" id="texto" rows="4" placeholder="Se vaciaron 4 zapatas del eje 4 de 2,00 × 2,00 × 0,50 m…"></textarea>
-              <label class="campo" for="files">Fotos, valuaciones o mediciones</label>
-              <input class="ctl" type="file" id="files" multiple>
-              <div class="acciones"><button class="btn" id="subir">Subir reporte</button>
-                <span class="estado-form" id="ev-estado" role="status"></span></div>
-            </form>
-          </details>
-        </div>
-      </section>
-      <section role="tabpanel" id="p-presupuesto" aria-labelledby="t-presupuesto" hidden></section>
+      <section role="tabpanel" id="p-presupuesto" aria-labelledby="t-presupuesto"></section>
       <section role="tabpanel" id="p-bloqueos" aria-labelledby="t-bloqueos" hidden></section>
       <section role="tabpanel" id="p-archivos" aria-labelledby="t-archivos" hidden>
         <div class="bloque">
@@ -521,17 +691,45 @@
   <button class="velo reg" id="velo-reg" type="button" aria-label="Cerrar registro" tabindex="-1"></button>
 </div>
 
+<dialog id="dlg-adjudicar" aria-labelledby="dlg-adj-tit">
+  <div class="dlg-cab"><svg class="ico"><use href="#i-ok"/></svg><h2 id="dlg-adj-tit">Marcar como adjudicada</h2></div>
+  <form class="dlg-cuerpo" id="fadj" method="dialog">
+    <p class="nota" style="margin-top:12px">La oferta pasa a obra en ejecución: se fija el plazo contractual y empieza el control de avance.</p>
+    <div class="rejilla">
+      <div><label class="campo" for="adj-inicio">Inicio contractual</label><input class="ctl" id="adj-inicio" type="date" required></div>
+      <div><label class="campo" for="adj-fin">Fin contractual</label><input class="ctl" id="adj-fin" type="date" required></div>
+    </div>
+    <label class="opcion" id="adj-base-caja" hidden><input type="checkbox" id="adj-base" checked>
+      <span><b id="adj-base-tit">Usar el presupuesto ofertado como base de control</b>
+        <small>El avance de obra se medirá contra él. Puedes cambiarlo después.</small></span></label>
+    <p class="nota" id="adj-sin-base" hidden style="margin-top:10px">Este proyecto todavía no tiene presupuesto: el control de avance empezará cuando se marque uno como base.</p>
+    <div class="acciones" style="justify-content:flex-end">
+      <span class="estado-form" id="adj-estado" role="status"></span>
+      <button class="btn sec" type="button" id="adj-cancelar">Cancelar</button>
+      <button class="btn" id="adj-confirmar">Marcar adjudicada</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="sr" id="anuncio" role="status" aria-live="polite"></div>
 
 <dialog id="dlg-obra" aria-labelledby="dlg-obra-tit">
-  <div class="dlg-cab"><svg class="ico"><use href="#i-obra"/></svg><h2 id="dlg-obra-tit">Nueva obra</h2></div>
+  <div class="dlg-cab"><svg class="ico"><use href="#i-obra"/></svg><h2 id="dlg-obra-tit">Nuevo proyecto</h2></div>
   <form class="dlg-cuerpo" id="fobra" method="dialog">
-    <p class="nota" style="margin-top:12px">Memoria del proyecto: estos datos no se vuelven a preguntar en cada conversación.</p>
+    <fieldset class="grupo">
+      <legend>Tipo de proyecto</legend>
+      <div class="rejilla" role="radiogroup" aria-label="Tipo de proyecto">
+        <label class="opcion"><input type="radio" name="o-fase" value="oportunidad" checked>
+          <span><b>Oferta o presupuesto</b><small>Todavía sin contrato: cómputo, APU, presupuesto y propuesta.</small></span></label>
+        <label class="opcion"><input type="radio" name="o-fase" value="adjudicada">
+          <span><b>Obra adjudicada</b><small>Con contrato: además lleva control de avance.</small></span></label>
+      </div>
+    </fieldset>
 
     <fieldset class="grupo">
       <legend>Cliente</legend>
-      <label class="campo" for="o-cliente-sel">Cliente</label>
-      <select class="ctl" id="o-cliente-sel" required></select>
+      <label class="sr" for="o-cliente-sel">Cliente</label>
+      <select class="ctl" id="o-cliente-sel"></select>
       <div class="ficha" id="o-cliente-ficha" hidden></div>
       <div id="o-cliente-nuevo" hidden>
         <p class="nota" style="margin-top:10px">El cliente queda guardado para las próximas obras.</p>
@@ -570,14 +768,14 @@
     </fieldset>
 
     <fieldset class="grupo">
-      <legend>Obra</legend>
+      <legend>Proyecto</legend>
       <div class="rejilla">
+        <div class="ancho"><label class="campo" for="o-nombre">Nombre del proyecto</label>
+          <input class="ctl" id="o-nombre" required placeholder="Galpón de almacenamiento — zona industrial"></div>
         <div><label class="campo" for="o-codigo">Código</label>
-          <input class="ctl" id="o-codigo" required placeholder="SOT-2026-015"></div>
+          <input class="ctl" id="o-codigo" placeholder="Automático"></div>
         <div><label class="campo" for="o-fecha">Fecha base de precios</label>
-          <input class="ctl" id="o-fecha" type="date" required></div>
-        <div class="ancho"><label class="campo" for="o-nombre">Nombre de la obra</label>
-          <input class="ctl" id="o-nombre" required></div>
+          <input class="ctl" id="o-fecha" type="date"></div>
         <div><label class="campo" for="o-tipo">Tipo de obra</label>
           <select class="ctl" id="o-tipo"><option value="edificacion">Edificación</option>
             <option value="vialidad">Vialidad</option><option value="hidraulica">Hidráulica</option>
@@ -596,9 +794,9 @@
           <select class="ctl" id="o-moneda"><option>USD</option><option>VES</option></select></div>
         <div class="ancho"><label class="campo" for="o-norma">Norma o pliego rector</label>
           <input class="ctl" id="o-norma" placeholder="COVENIN 2000-II"></div>
-        <div><label class="campo" for="o-inicio">Inicio contractual</label>
+        <div class="solo-adjudicada" hidden><label class="campo" for="o-inicio">Inicio contractual</label>
           <input class="ctl" id="o-inicio" type="date"></div>
-        <div><label class="campo" for="o-fin">Fin contractual</label>
+        <div class="solo-adjudicada" hidden><label class="campo" for="o-fin">Fin contractual</label>
           <input class="ctl" id="o-fin" type="date"></div>
       </div>
       <p class="nota" id="o-autollenado" hidden style="margin-top:10px">Tipo de ente, ubicación, moneda y norma vienen del cliente; puedes cambiarlos para esta obra.</p>
@@ -606,7 +804,7 @@
     <div class="acciones" style="justify-content:flex-end">
       <span class="estado-form" id="o-estado" role="status"></span>
       <button class="btn sec" type="button" id="o-cancelar">Cancelar</button>
-      <button class="btn" id="o-crear">Crear obra</button>
+      <button class="btn" id="o-crear">Crear proyecto</button>
     </div>
   </form>
 </dialog>
@@ -614,6 +812,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let obraActual = null, ocupado = false, obras = [], archivosVistos = null, clientes = [];
+let vistaActual = 'chat', datosEstado = null, datosSerie = null, datosBloqueos = null, capSel = null;
 
 /* ---------- utilidades ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -717,20 +916,19 @@ $('sb-cerrar').onclick = cerrarMenu;
 $('velo-menu').onclick = cerrarMenu;
 
 /* ---------- registro plegable ---------- */
-const SECCIONES = {avance: 'Avance de obra', presupuesto: 'Presupuesto', bloqueos: 'Bloqueos',
+const SECCIONES = {presupuesto: 'Presupuesto', bloqueos: 'Bloqueos',
                    archivos: 'Archivos y planos', traza: 'Quién hizo qué'};
 const pestañas = [...document.querySelectorAll('[role=tab]')];
-let seccionActual = leer('sotica-seccion') || 'avance';
+let seccionActual = SECCIONES[leer('sotica-seccion')] ? leer('sotica-seccion') : 'presupuesto';
 function abrirPestaña(clave) {
-  seccionActual = SECCIONES[clave] ? clave : 'avance';
+  seccionActual = SECCIONES[clave] ? clave : 'presupuesto';
   for (const t of pestañas) {
     const activa = t.id === 't-' + seccionActual;
     t.setAttribute('aria-selected', activa); t.tabIndex = activa ? 0 : -1;
     $(t.getAttribute('aria-controls')).hidden = !activa;
   }
   $('reg-titulo').textContent = SECCIONES[seccionActual];
-  document.querySelectorAll('.sb nav [data-seccion]').forEach((b) =>
-    b.setAttribute('aria-current', app.classList.contains('con-registro') && b.dataset.seccion === seccionActual));
+  marcarNav();
   if (seccionActual === 'archivos') { $('p-archivos-nuevo').hidden = true; archivosVistos = $('v-archivos').dataset.n; }
   guardar('sotica-seccion', seccionActual);
 }
@@ -749,56 +947,36 @@ pestañas.forEach((t, i) => {
     const s = pestañas[(i + d + pestañas.length) % pestañas.length]; s.focus(); abrirPestaña(s.id.slice(2));
   };
 });
+function marcarNav() {
+  document.querySelectorAll('.sb nav [data-seccion]').forEach((b) => b.setAttribute('aria-current',
+    b.dataset.seccion === 'avance' ? vistaActual === 'avance'
+      : app.classList.contains('con-registro') && b.dataset.seccion === seccionActual));
+  document.querySelectorAll('.sb nav [data-vista]').forEach((b) => b.setAttribute('aria-current', vistaActual === b.dataset.vista));
+}
 document.querySelectorAll('.sb nav [data-seccion]').forEach((b) => b.onclick = () => {
+  cerrarMenu();
+  if (b.dataset.seccion === 'avance') return mostrarVista('avance');
+  if (vistaActual === 'clientes') mostrarVista('chat');
   const misma = app.classList.contains('con-registro') && seccionActual === b.dataset.seccion;
-  registro(!misma, b.dataset.seccion); cerrarMenu();
+  registro(!misma, b.dataset.seccion);
 });
+document.querySelectorAll('.sb nav [data-vista]').forEach((b) => b.onclick = () => { cerrarMenu(); mostrarVista(b.dataset.vista); });
 $('toggle-registro').onclick = () => registro(!app.classList.contains('con-registro'));
 $('cerrar-registro').onclick = () => registro(false);
 $('velo-reg').onclick = () => registro(false);
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (!$('menu-adjuntar').hidden) return cerrarAdjuntar();
+  if (!$('menu-fase').hidden) return cerrarMenuFase();
   if (app.classList.contains('con-menu')) return cerrarMenu();
   if (app.classList.contains('con-registro') && window.innerWidth <= 1240) registro(false);
 });
 
 /* ---------- registro de la obra ---------- */
 function pintarAvance(e) {
-  const c = e.configuracion || {};
-  const desv = e.desviacion_pp;
-  const real = Math.min(100, e.avance_fisico_real_pct || 0), plan = e.avance_fisico_plan_pct;
+  datosEstado = e;
   $('v-avance').textContent = e.avance_fisico_real_pct === null || e.avance_fisico_real_pct === undefined ? '' : nf(e.avance_fisico_real_pct, 1) + ' %';
-  const filas = (e.partidas || []).map((p) => `
-    <tr><td><span class="cod">${esc(p.codigo)}</span><div class="sub">${esc(p.descripcion)}</div></td>
-        <td class="num">${nf(p.cantidad_acumulada)} / ${nf(p.cantidad_presupuestada)}<div class="sub">${esc(p.unidad)}</div></td>
-        <td class="num">${pct(p.pct_real)}<div>${etq(p.calidad_dato, 'Sin avance')}</div></td></tr>`).join('');
-  const desvs = (e.desviaciones_abiertas || []).map((d) => `
-    <div class="item"><div class="titulo">${esc(d.tipo.replaceAll('_', ' '))}
-      <span class="etq ${['alta', 'critica'].includes(d.severidad) ? 'alerta' : 'pendiente_confirmacion'}">Severidad ${esc(d.severidad)}</span></div>
-      ${esc(d.descripcion)}</div>`).join('');
-  $('avance').innerHTML = `
-    ${aviso(esc(e.advertencia_datos), e.ultima_fecha_avance ? '' : 'mal')}
-    <div class="bloque">
-      <h3>Avance físico al ${fecha(e.corte)}</h3>
-      <div class="pista-cab"><b>${pct(e.avance_fisico_real_pct)}</b><span>real registrado</span></div>
-      <div class="pista" role="img" aria-label="Avance real ${pct(e.avance_fisico_real_pct)} contra plan ${pct(plan)}">
-        <i style="width:${real}%"></i>
-        ${plan === null || plan === undefined ? '' : `<span class="hito" style="left:${Math.min(100, plan)}%"><span>Plan ${pct(plan)}</span></span>`}
-      </div>
-      <dl class="datos">
-        <dt>Desviación</dt><dd>${desv === null || desv === undefined ? '—' : `<span class="etq ${desv <= -10 ? 'alerta' : desv < 0 ? 'pendiente_confirmacion' : 'ok'}">${(desv > 0 ? '+' : '') + nf(desv)} pp</span>`}</dd>
-        <dt>Avance financiero</dt><dd>${pct(e.avance_financiero_pct)}</dd>
-        <dt>Ejecutado / presupuestado</dt><dd>${nf(e.monto_ejecutado)} / ${nf(e.monto_presupuestado)} ${esc(e.proyecto.moneda)}</dd>
-        <dt>Último avance</dt><dd>${e.ultima_fecha_avance ? `${fecha(e.ultima_fecha_avance)} · hace ${e.dias_sin_reporte} días` : 'Ninguno'}</dd>
-        <dt>Avances retenidos por bloqueo</dt><dd>${e.avances_en_espera}</dd>
-      </dl>
-    </div>
-    ${c.nota ? aviso(`Umbrales de desviación ${nf(c.umbrales_pp.media, 0)} / ${nf(c.umbrales_pp.alta, 0)} / ${nf(c.umbrales_pp.critica, 0)} pp y ponderación por ${esc(c.base_ponderacion)}: valores propuestos por el sistema, pendientes de ratificación por SOTICA.`, 'info') : ''}
-    <div class="bloque"><h3>Partidas del presupuesto base</h3>
-      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th class="num">Ejecutado</th><th class="num">Avance</th></tr></thead>
-      <tbody>${filas || '<tr><td colspan="3" class="vacio">Sin presupuesto base.</td></tr>'}</tbody></table></div></div>
-    <div class="bloque"><h3>Desviaciones abiertas</h3>${desvs || '<p class="vacio">Sin desviaciones abiertas.</p>'}</div>`;
+  if (vistaActual === 'avance') pintarPaginaAvance();
 }
 
 function pintarPresupuesto(d) {
@@ -812,7 +990,7 @@ function pintarPresupuesto(d) {
   $('v-presupuesto').textContent = 'v' + pr.version;
   const filas = d.partidas.map((p) => `
     <tr><td><span class="cod">${esc(p.codigo_interno)}</span><div class="sub">${esc(p.descripcion)}</div>
-          ${p.mediciones ? `<div class="sub">${p.mediciones} línea(s) de medición</div>` : ''}</td>
+          ${p.mediciones ? `<div class="sub">${pl(p.mediciones, 'línea', 'líneas')} de medición</div>` : ''}</td>
         <td class="num">${nf(p.cantidad)} ${esc(p.unidad)}<div>${etq(p.etiqueta_cantidad)}</div></td>
         <td class="num">${p.precio_unitario === null ? '—' : nf(p.precio_unitario)}<div>${etq(p.etiqueta_precio, 'Sin precio')}</div>
           ${p.renglones_apu ? `<div class="sub">${p.renglones_apu} insumos en el APU</div>` : ''}</td>
@@ -838,15 +1016,16 @@ function pintarPresupuesto(d) {
 }
 
 function pintarBloqueos(d) {
+  datosBloqueos = d;
   const n = d.abiertos || 0;
   $('n-bloqueos').hidden = !n; $('n-bloqueos').textContent = n;
   $('t-bloqueos').textContent = n ? `Bloqueos (${n})` : 'Bloqueos';
-  $('p-bloqueos').innerHTML = `${n ? aviso(`<b>${n} decisión(es) esperan a una persona.</b> Los avances retenidos no entran al estado de la obra hasta que alguien decida en el chat.`, 'mal') : ''}
+  $('p-bloqueos').innerHTML = `${n ? aviso(`<b>${n === 1 ? '1 decisión espera' : n + ' decisiones esperan'} a una persona.</b> Los avances retenidos no entran al estado de la obra hasta que alguien decida en el chat.`, 'mal') : ''}
     <div class="bloque"><h3>Decisiones que esperan a una persona</h3>${
     (d.bloqueos || []).map((b) => `<div class="item">
       <div class="titulo"><span class="etq alerta">Abierto</span>${esc(String(b.tipo).replaceAll('_', ' '))}</div>
       ${esc(b.descripcion)}
-      <div class="sub">Reportado por ${esc(b.reportado_por || '—')} el ${fecha(b.fecha_reporte)} · abierto hace ${b.dias_abierto} días · ${b.avances_retenidos} avance(s) retenido(s)</div>
+      <div class="sub">Reportado por ${esc(b.reportado_por || '—')} el ${fecha(b.fecha_reporte)} · abierto hace ${pl(b.dias_abierto, 'día', 'días')} · ${pl(b.avances_retenidos, 'avance retenido', 'avances retenidos')}</div>
     </div>`).join('') ||
     '<p class="vacio">No hay bloqueos abiertos. Cuando un avance no encaja en el presupuesto base, queda retenido aquí hasta que alguien decida en el chat.</p>'
   }</div>`;
@@ -883,7 +1062,7 @@ function pintarTraza(lista) {
     lista.map((d) => `<div class="item">
       <div class="titulo">${esc(d.agente_destino)}<span class="etq ${d.confianza === 'alto' ? 'confirmado' : d.confianza === 'bajo' ? 'pendiente_confirmacion' : 'referencial'}">Confianza ${esc(d.confianza || 'sin declarar')}</span></div>
       ${esc(d.producto || '')}
-      <div class="sub">${fecha(d.finalizada_en)} · herramientas: ${(d.herramientas || []).map(esc).join(', ') || 'ninguna'}${d.bloqueos ? ` · ${d.bloqueos} bloqueo(s) declarado(s)` : ''}</div>
+      <div class="sub">${fecha(d.finalizada_en)} · herramientas: ${(d.herramientas || []).map(esc).join(', ') || 'ninguna'}${d.bloqueos ? ` · ${pl(d.bloqueos, 'bloqueo declarado', 'bloqueos declarados')}` : ''}</div>
     </div>`).join('') ||
     '<p class="vacio">Aquí queda cada encargo que ORQ-COST le hace a un especialista y las herramientas que este usó de verdad.</p>'
   }</div>`;
@@ -900,13 +1079,29 @@ async function refrescar() {
     [`/api/proyectos/${o}/planos`, pintarPlanos],
     [`/api/proyectos/${o}/delegaciones`, pintarTraza],
   ];
+  if (proyecto()?.fase === 'adjudicada') tareas.push([`/api/proyectos/${o}/avance-detalle`, (d) => { datosSerie = d; }]);
   await Promise.all(tareas.map(async ([ruta, pintar]) => {
     try { pintar(await api(ruta)); } catch (err) { console.error(err); }
   }));
+  if (vistaActual === 'avance') pintarPaginaAvance();
 }
 
 /* ---------- conversación ---------- */
 // [ruta, título, descripción, orden]
+const SUGERENCIAS_OFERTA = [
+  ['SUB-CM · Cómputos', 'Computar desde un plano', 'Sube la lámina en Archivos y SUB-CM computa por ejes.',
+   'Computa las paredes de bloque a partir del plano que subí en Archivos. Regístralo en el borrador.'],
+  ['SUB-CM → SUB-DOC', 'Cómputo y libro de cómputos', 'Cantidades con hoja de medición y libro SOTICA-CM-01.',
+   'Computa las paredes de bloque de la planta baja: 45 m lineales por 2,80 m de altura, descontando 6 puertas de 0,90 x 2,10. Regístralo y genera el libro de cómputos en Excel.'],
+  ['ORQ-COST → SUB-DOC', 'Presupuesto de oferta', 'APU con precios citados, indirectos y SOTICA-PRE-01.',
+   'Arma el presupuesto de oferta: ponle precio a las partidas con precios aproximados de materiales de internet, citados, y genera el presupuesto en Excel. Pregúntame lo que falte (mano de obra, indirectos).'],
+  ['ORQ-COST → 4 especialistas', 'Orden mixta', 'Estructura, cloacas y electricidad con su dictamen.',
+   'Vamos a ofertar un anexo de servicios de una planta, 12 x 8 m: estructura de concreto armado (6 columnas de 0,30 x 0,30 m y 3,00 m de alto sobre zapatas aisladas, losa nervada de 25 cm; no hay estudio de suelos), red de aguas servidas hasta la cloaca existente (2 baños, el plano de cloacas no tiene diámetros), instalación eléctrica con un tablero nuevo y 16 luminarias. Dame el paquete integrado.'],
+  ['ORQ-COST · Pliego', 'Revisar el pliego', 'Observaciones, riesgos y qué cláusula manda.',
+   'Revisa las condiciones del pliego de esta oferta y prepara las observaciones y la matriz de riesgos en Word. Pregúntame lo que necesites del pliego.'],
+  ['SUB-DOC · Documentos', 'Propuesta comercial', 'SOTICA-COM-01 con alcance, plazo y exclusiones.',
+   'Prepara la propuesta comercial en Word para esta oferta. El precio y la validez los defino yo: pregúntamelos.'],
+];
 const SUGERENCIAS = [
   ['ORQ-COST · Estado', '¿Cómo va la obra?', 'Avance real contra plan, desviaciones y bloqueos.', '¿Cómo va la obra?'],
   ['SUB-CM → SUB-DOC', 'Computar y generar el libro', 'Paredes de planta baja con descuento de puertas y libro SOTICA-CM-01.',
@@ -920,16 +1115,17 @@ const SUGERENCIAS = [
    'Genera el cronograma Gantt de la obra y dime si es coherente con los rendimientos. Después prepara el informe de avance en Word y una presentación corta para la junta.'],
 ];
 function hiloVacio() {
-  const o = obras.find((x) => x.codigo === obraActual);
+  const o = proyecto(), lista = o && o.fase !== 'adjudicada' ? SUGERENCIAS_OFERTA : SUGERENCIAS;
   $('hilo').innerHTML = `<div class="vacio-chat">
-    <h2>${o ? `¿Qué necesitas de ${esc(o.codigo)}?` : 'Dale una orden a ORQ-COST'}</h2>
-    <p>ORQ-COST reparte el trabajo entre ocho especialistas y te responde con lo que quedó registrado. Cada número del registro muestra su certeza.</p>
-    <ul class="sugerencias" aria-label="Órdenes sugeridas">${SUGERENCIAS.map(([r, t, d], n) =>
+    <h2>${!o ? 'Crea o elige un proyecto' : o.fase === 'oportunidad' ? '¿Qué preparamos para esta oferta?' : `¿Qué necesitas de ${esc(o.codigo)}?`}</h2>
+    <p>${!o ? 'Una oferta solo necesita un nombre: créala con «Nuevo proyecto» y empieza a conversar.'
+      : 'ORQ-COST reparte el trabajo entre ocho especialistas y te responde con lo que quedó registrado. Cada número del registro muestra su certeza.'}</p>
+    ${o ? `<ul class="sugerencias" aria-label="Órdenes sugeridas">${lista.map(([r, t, d], n) =>
       `<li><button class="sugerencia" type="button" data-n="${n}"><span><b>${t}</b><span class="desc">${esc(d)}</span></span>
-        <span class="placa-ruta">${ico('flecha')}${r.split(' → ').map(esc).join(ico('flecha'))}</span></button></li>`).join('')}</ul>
+        <span class="placa-ruta">${ico('flecha')}${r.split(' → ').map(esc).join(ico('flecha'))}</span></button></li>`).join('')}</ul>` : ''}
   </div>`;
   $('hilo').querySelectorAll('.sugerencia').forEach((b) =>
-    b.onclick = () => { $('msg').value = SUGERENCIAS[b.dataset.n][3]; ajustar(); $('msg').focus(); });
+    b.onclick = () => { $('msg').value = lista[b.dataset.n][3]; ajustar(); $('msg').focus(); });
 }
 // El hilo se conserva al recargar la página (por pestaña del navegador y por obra).
 const claveHilo = () => 'sotica-hilo-v2:' + obraActual;
@@ -959,7 +1155,8 @@ const ponerPlaceholder = () => {
 };
 angosta.addEventListener('change', ponerPlaceholder);
 function ponerOcupado(v) {
-  ocupado = v; $('enviar').disabled = v; $('nueva').disabled = v; $('obra').disabled = v;
+  ocupado = v; $('enviar').disabled = v; $('nueva').disabled = v;
+  document.querySelectorAll('.proy').forEach((b) => { b.disabled = v; });
   $('enviar').setAttribute('aria-label', v ? 'ORQ-COST está trabajando' : 'Enviar');
 }
 const AGENTES = {
@@ -977,7 +1174,7 @@ const anunciar = (t) => { $('anuncio').textContent = ''; setTimeout(() => { $('a
 const hora = () => new Date().toLocaleTimeString('es-VE', {hour: '2-digit', minute: '2-digit'});
 
 async function enviar(texto) {
-  if (ocupado || !texto) return;
+  if (ocupado || !texto || !obraActual) return;
   if ($('hilo').querySelector('.vacio-chat')) $('hilo').innerHTML = '';
   const mio = document.createElement('div'); mio.className = 'turno yo';
   const burbuja = document.createElement('div'); burbuja.className = 'burbuja'; burbuja.textContent = texto;
@@ -1069,10 +1266,9 @@ $('adjuntar').onclick = () => {
 };
 document.addEventListener('click', (e) => { if (!e.target.closest('#menu-adjuntar, #adjuntar')) cerrarAdjuntar(); });
 $('menu-adjuntar').querySelectorAll('[data-ir]').forEach((b) => b.onclick = () => {
-  cerrarAdjuntar(); registro(true, b.dataset.ir);
-  const det = b.dataset.ir === 'archivos' ? $('det-plano') : $('det-reporte');
-  det.open = true; det.scrollIntoView({block: 'start'});
-  (b.dataset.ir === 'archivos' ? $('plano-quien') : $('quien')).focus();
+  cerrarAdjuntar();
+  if (b.dataset.ir === 'avance') { mostrarVista('avance'); $('tit-reporte').scrollIntoView({block: 'start'}); $('quien').focus(); return; }
+  registro(true, 'archivos'); $('det-plano').open = true; $('det-plano').scrollIntoView({block: 'start'}); $('plano-quien').focus();
 });
 
 /* ---------- reporte de campo y planos ---------- */
@@ -1086,8 +1282,8 @@ $('fev').onsubmit = async (ev) => {
   $('subir').disabled = true; $('ev-estado').textContent = 'Subiendo…';
   try {
     const r = await api(`/api/proyectos/${encodeURIComponent(obraActual)}/reportes`, {method: 'POST', body: fd});
-    $('ev-estado').textContent = `Cargado con ${r.adjuntos.length} adjunto(s). Pide en el chat que lo procesen.`;
-    $('texto').value = ''; $('files').value = '';
+    $('ev-estado').textContent = `Cargado con ${r.adjuntos.length === 1 ? '1 adjunto' : r.adjuntos.length + ' adjuntos'}. Pide en el chat que lo procesen.`;
+    $('texto').value = ''; $('files').value = ''; refrescar();
   } catch (err) { $('ev-estado').textContent = 'No se pudo subir: ' + err.message; }
   finally { $('subir').disabled = false; }
 };
@@ -1107,38 +1303,386 @@ $('fplano').onsubmit = async (ev) => {
   finally { $('plano-subir').disabled = false; }
 };
 
-/* ---------- obras ---------- */
-const TIPO_OBRA = {edificacion: 'Edificación', vialidad: 'Vialidad', hidraulica: 'Hidráulica',
-                   electrificacion: 'Electrificación', industrial: 'Industrial'};
-function pintarObra() {
-  const o = obras.find((x) => x.codigo === obraActual);
-  $('titulo-obra').innerHTML = o ? `${esc(o.nombre_obra)}<small>${esc(o.codigo)}</small>` : 'ORQ-COST';
-  $('obra-dato').textContent = o ? [o.cliente, TIPO_OBRA[o.tipo_obra] || o.tipo_obra, o.moneda_base].filter(Boolean).join(' · ') : '';
+/* ---------- proyectos: ofertas en estudio y obras adjudicadas ---------- */
+const FASES = {oportunidad: 'Oferta en estudio', adjudicada: 'En ejecución', cerrada: 'Cerrada', descartada: 'Descartada'};
+const proyecto = () => obras.find((x) => x.codigo === obraActual);
+function pintarListaProyectos() {
+  const grupo = (titulo, lista, vacio) => `<div class="sb-titulo">${titulo}</div>${lista.length ? lista.map((o) =>
+    `<button class="proy" type="button" data-codigo="${esc(o.codigo)}" aria-current="${o.codigo === obraActual}"${ocupado ? ' disabled' : ''}>
+      <b>${esc(o.nombre_obra)}</b><span>${esc(o.codigo)}${o.cliente ? ' · ' + esc(o.cliente) : ''}</span></button>`).join('')
+    : `<p class="vacio-sb">${vacio}</p>`}`;
+  const de = (f) => obras.filter((o) => f.includes(o.fase));
+  const archivo = de(['cerrada', 'descartada']);
+  $('lista-proyectos').innerHTML = grupo('Ofertas en estudio', de(['oportunidad']), 'Sin ofertas abiertas.')
+    + grupo('Obras en ejecución', de(['adjudicada']), 'Sin obras adjudicadas.')
+    + (archivo.length ? `<details${archivo.some((o) => o.codigo === obraActual) ? ' open' : ''}><summary class="sb-titulo">Archivo (${archivo.length})</summary>${grupo('', archivo, '').replace('<div class="sb-titulo"></div>', '')}</details>` : '');
+  $('lista-proyectos').querySelectorAll('.proy').forEach((b) => b.onclick = () => {
+    if (ocupado || b.dataset.codigo === obraActual) { cerrarMenu(); return; }
+    elegirProyecto(b.dataset.codigo); cerrarMenu();
+  });
 }
-$('obra').onchange = (ev) => { obraActual = ev.target.value; archivosVistos = null; pintarObra(); restaurarHilo(); refrescar(); };
-async function cargarObras(elegida) {
+function pintarProyecto() {
+  const o = proyecto();
+  $('titulo-obra').innerHTML = vistaActual === 'clientes' ? 'Clientes'
+    : o ? `${esc(o.nombre_obra)}<small>${esc(o.codigo)}</small>` : 'SOTICA-COSTOS';
+  $('fase-placa').hidden = !o || vistaActual === 'clientes';
+  $('boton-fase').hidden = !o || vistaActual === 'clientes';
+  if (o) { $('fase-placa').className = 'etq fase-' + o.fase; $('fase-placa').textContent = FASES[o.fase] || o.fase; }
+  const obra = o && o.fase === 'adjudicada';
+  document.querySelector('[data-seccion=avance]').hidden = !obra;
+  document.querySelector('[data-seccion=bloqueos]').hidden = !obra;
+  $('t-bloqueos').hidden = !obra;
+  if (!obra && seccionActual === 'bloqueos') abrirPestaña('presupuesto');
+  document.querySelectorAll('.sb nav[aria-label="Secciones del proyecto"], #sb-titulo-proyecto').forEach((el) => { el.hidden = !o; });
+  [...$('menu-adjuntar').querySelectorAll('[data-ir=avance]')].forEach((b) => { b.hidden = !obra; });
+  if (vistaActual === 'avance' && !obra) mostrarVista('chat');
+  pintarListaProyectos();
+}
+function elegirProyecto(codigo) {
+  obraActual = codigo; guardar('sotica-proyecto', codigo);
+  archivosVistos = null; datosEstado = datosSerie = datosBloqueos = null; capSel = null;
+  pintarProyecto(); restaurarHilo(); refrescar();
+}
+async function cargarProyectos(elegido) {
   try {
     obras = await api('/api/proyectos');
-    $('obra').innerHTML = obras.map((o) =>
-      `<option value="${esc(o.codigo)}">${esc(o.codigo)}</option>`).join('');
-    if (obras.length) {
-      obraActual = obras.some((o) => o.codigo === elegida) ? elegida : obras[0].codigo;
-      $('obra').value = obraActual; pintarObra(); restaurarHilo(); refrescar();
-    } else {
-      hiloVacio();
-      $('avance').innerHTML = aviso('No hay obras cargadas. Crea una con el botón + junto a «Obra».', 'info');
-    }
   } catch (err) {
-    $('avance').innerHTML = aviso(`No se pudo leer la lista de obras: ${esc(err.message)}`, 'mal');
+    $('lista-proyectos').innerHTML = `<p class="vacio-sb">No se pudo leer la lista de proyectos: ${esc(err.message)}</p>`;
+    return;
   }
+  const guardado = leer('sotica-proyecto');
+  const abiertos = obras.filter((o) => ['oportunidad', 'adjudicada'].includes(o.fase));
+  const cod = [elegido, obraActual, guardado].find((c) => c && obras.some((o) => o.codigo === c))
+    || (abiertos[0] || obras[0] || {}).codigo || null;
+  if (cod) elegirProyecto(cod); else { obraActual = null; pintarProyecto(); hiloVacio(); }
 }
+
+/* ---------- vistas: conversación, avance de obra, clientes ---------- */
+function mostrarVista(v) {
+  if (v === 'avance' && proyecto()?.fase !== 'adjudicada') v = 'chat';
+  vistaActual = v;
+  for (const k of ['chat', 'avance', 'clientes']) $('vista-' + k).hidden = k !== v;
+  $('nueva').hidden = v !== 'chat';
+  $('boton-fase').hidden = v === 'clientes' || !proyecto();
+  $('toggle-registro').hidden = v === 'clientes';
+  if (v === 'clientes' && app.classList.contains('con-registro')) registro(false);
+  pintarProyecto(); marcarNav();
+  if (v === 'avance') pintarPaginaAvance();
+  if (v === 'clientes') cargarPaginaClientes();
+}
+
+/* ---------- fase del proyecto ---------- */
+const ACCIONES_FASE = {
+  oportunidad: [['adjudicar', 'Marcar como adjudicada…', 'Fija el plazo y abre el control de avance'],
+                ['descartada', 'Descartar oferta', 'No se ganó o no se presentará']],
+  adjudicada: [['cerrada', 'Cerrar obra', 'Queda en el archivo, solo consulta']],
+  cerrada: [['adjudicada', 'Reabrir obra', 'Vuelve a obras en ejecución']],
+  descartada: [['oportunidad', 'Reabrir oferta', 'Vuelve a ofertas en estudio']],
+};
+function cerrarMenuFase() { $('menu-fase').hidden = true; $('boton-fase').setAttribute('aria-expanded', 'false'); }
+$('boton-fase').onclick = () => {
+  const o = proyecto(); if (!o) return;
+  const abrir = $('menu-fase').hidden;
+  $('menu-fase').innerHTML = (ACCIONES_FASE[o.fase] || []).map(([id, t, d]) =>
+    `<button type="button" role="menuitem" data-accion="${id}">${ico(id === 'adjudicar' ? 'ok' : 'obra')}<span>${t}<small>${d}</small></span></button>`).join('');
+  $('menu-fase').hidden = !abrir; $('boton-fase').setAttribute('aria-expanded', abrir);
+  $('menu-fase').querySelectorAll('[data-accion]').forEach((b) => b.onclick = () => { cerrarMenuFase(); accionFase(b.dataset.accion); });
+  if (abrir) $('menu-fase').querySelector('button')?.focus();
+};
+document.addEventListener('click', (e) => { if (!e.target.closest('#menu-fase, #boton-fase')) cerrarMenuFase(); });
+async function cambiarFase(datos) {
+  await api(`/api/proyectos/${encodeURIComponent(obraActual)}/fase`, {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos)});
+  await cargarProyectos(obraActual);
+}
+let presupuestoOferta = null;
+async function accionFase(accion) {
+  const o = proyecto();
+  if (accion === 'adjudicar') {
+    $('adj-estado').textContent = ''; $('fadj').reset();
+    try { presupuestoOferta = (await api(`/api/proyectos/${encodeURIComponent(obraActual)}/presupuesto`)).presupuesto; }
+    catch (e) { presupuestoOferta = null; }
+    $('adj-base-caja').hidden = !presupuestoOferta; $('adj-sin-base').hidden = !!presupuestoOferta;
+    if (presupuestoOferta) $('adj-base-tit').textContent = `Usar el presupuesto v${presupuestoOferta.version} como base de control`;
+    $('dlg-adjudicar').showModal(); $('adj-inicio').focus();
+    return;
+  }
+  const textos = {descartada: `¿Descartar la oferta «${o.nombre_obra}»? Queda en el archivo y se puede reabrir.`,
+                  cerrada: `¿Cerrar la obra «${o.nombre_obra}»? Queda en el archivo y se puede reabrir.`};
+  if (textos[accion] && !confirm(textos[accion])) return;
+  try { await cambiarFase({fase: accion}); } catch (err) { alert('No se pudo cambiar la fase: ' + err.message); }
+}
+$('adj-cancelar').onclick = () => $('dlg-adjudicar').close();
+$('fadj').onsubmit = async (ev) => {
+  ev.preventDefault();
+  $('adj-confirmar').disabled = true; $('adj-estado').textContent = 'Guardando…';
+  try {
+    await cambiarFase({fase: 'adjudicada', fecha_inicio_contractual: $('adj-inicio').value,
+      fecha_fin_contractual: $('adj-fin').value,
+      presupuesto_id: presupuestoOferta && $('adj-base').checked ? presupuestoOferta.id : null});
+    $('dlg-adjudicar').close(); mostrarVista('avance');
+  } catch (err) { $('adj-estado').textContent = err.message; }
+  finally { $('adj-confirmar').disabled = false; }
+};
+
+/* ---------- pantalla de avance: ruta por capítulos ---------- */
+const pl = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+const fCorta = (iso) => iso ? new Date(iso + 'T12:00:00').toLocaleDateString('es-VE', {day: '2-digit', month: '2-digit'}) : '—';
+const desvPlaca = (d) => d === null || d === undefined ? '—'
+  : `<span class="etq ${d <= -10 ? 'alerta' : d < 0 ? 'pendiente_confirmacion' : 'ok'}">${(d > 0 ? '+' : '') + nf(d, 1)} pp</span>`;
+function irAlChat(texto) {
+  mostrarVista('chat'); $('msg').value = texto; ajustar(); $('msg').focus();
+}
+function pintarPaginaAvance() {
+  const e = datosEstado, d = datosSerie, o = proyecto();
+  if (!e || !d || !o) {
+    $('av-contenido').innerHTML = '<div class="pag-cab"><div><h2>Avance de obra</h2><p>Cargando el avance de la obra…</p></div></div>';
+    return;
+  }
+  const sinBase = !d.partidas.length;
+  const calidad = Object.fromEntries((e.partidas || []).map((x) => [x.codigo, x.calidad_dato]));
+  const RANGO = {confirmado: 0, referencial: 1, inferido: 2, pendiente_confirmacion: 3};
+  const calidadObra = Object.values(calidad).filter(Boolean).sort((x, y) => RANGO[y] - RANGO[x])[0] || null;
+  const sinProcesar = d.reportes.filter((r) => r.estado === 'pendiente').length;
+  // Atrasos: lo mismo que se ve en la ruta y en la tabla, para que la columna no diga "sin desviaciones".
+  const atrasadas = d.partidas.filter((p) => p.pct_plan !== null && p.pct_real - p.pct_plan <= -10)
+    .sort((x, y) => (x.pct_real - x.pct_plan) - (y.pct_real - y.pct_plan));
+  const bloqueos = datosBloqueos?.abiertos || 0;
+  const caps = d.capitulos;
+  if (capSel && !caps.some((c) => c.capitulo === capSel)) capSel = null;
+  const partidas = d.partidas.filter((p) => !capSel || p.capitulo === capSel);
+  const plazo = o.fecha_inicio_contractual && o.fecha_fin_contractual
+    ? `Plazo ${fecha(o.fecha_inicio_contractual)} – ${fecha(o.fecha_fin_contractual)}` : 'Plazo contractual sin definir';
+  $('av-contenido').innerHTML = `
+    <div class="pag-cab">
+      <div><h2>Avance de obra</h2><p>${esc(o.cliente || 'Sin cliente')} · ${plazo} · corte ${fecha(e.corte)}</p></div>
+      <div class="acciones">
+        <button class="btn sec" type="button" id="av-informe">${ico('reporte')}Informe de avance</button>
+        <button class="btn" type="button" id="av-cargar">${ico('mas')}Cargar reporte</button>
+      </div>
+    </div>
+    ${aviso(esc(e.advertencia_datos), e.ultima_fecha_avance ? '' : 'mal')}
+    ${sinBase ? aviso('La obra no tiene presupuesto base de control: el avance no se puede medir. Márcalo desde Fase al adjudicar o pídelo a ORQ-COST.', 'info') : ''}
+    <dl class="kpis">
+      <div class="kpi"><dt>Real registrado</dt><dd>${pct(e.avance_fisico_real_pct)}<small>al ${fecha(e.ultima_fecha_avance || e.corte)}</small>${calidadObra ? etq(calidadObra) : ''}</dd></div>
+      <div class="kpi"><dt>Planificado a hoy</dt><dd>${pct(e.avance_fisico_plan_pct)}<small>según la planificación</small></dd></div>
+      <div class="kpi"><dt>Desviación</dt><dd>${desvPlaca(e.desviacion_pp)}<small>${e.desviacion_pp !== null && e.desviacion_pp !== undefined && e.desviacion_pp < 0 ? 'obra atrasada' : 'contra el plan'}</small></dd></div>
+      <div class="kpi"><dt>Avance financiero</dt><dd>${pct(e.avance_financiero_pct)}<small>${nf(e.monto_ejecutado)} de ${nf(e.monto_presupuestado)} ${esc(e.proyecto.moneda)}</small></dd></div>
+      <div class="kpi"><dt>Último avance registrado</dt><dd>${e.ultima_fecha_avance ? fCorta(e.ultima_fecha_avance) : 'Ninguno'}<small>${e.dias_sin_reporte !== null && e.dias_sin_reporte !== undefined ? `hace ${pl(e.dias_sin_reporte, 'día', 'días')}` : 'sin datos de campo'}</small>${sinProcesar ? `<span class="etq pendiente_confirmacion">${pl(sinProcesar, 'reporte sin procesar', 'reportes sin procesar')}</span>` : ''}</dd></div>
+      <div class="kpi"><dt>Bloqueos abiertos</dt><dd>${bloqueos ? `<span class="etq alerta">${bloqueos}</span>` : '0'}<small>${pl(e.avances_en_espera, 'avance retenido', 'avances retenidos')}</small>${bloqueos ? '<button class="enlace-btn" type="button" id="av-bloqueos">Ver bloqueos</button>' : ''}</dd></div>
+    </dl>
+    ${caps.length ? `<div class="ruta-caps" role="tablist" aria-label="Capítulos de la obra">
+      <button class="cap" role="tab" type="button" data-cap="" aria-selected="${!capSel}">
+        <b>Toda la obra</b><span class="cifras">Real ${nf(e.avance_fisico_real_pct, 1)} % · Plan ${nf(e.avance_fisico_plan_pct, 1)} %</span>
+        <span class="mini"><i style="width:${Math.min(100, e.avance_fisico_real_pct || 0)}%"></i><u style="left:${Math.min(100, e.avance_fisico_plan_pct || 0)}%"></u></span>
+        <span class="estado${(e.desviacion_pp ?? 0) <= -10 ? ' atraso' : ''}">${(e.desviacion_pp ?? 0) <= -10 ? 'Atrasada' : 'En plan'}</span></button>
+      ${caps.map((c) => {
+        const dv = c.pct_real - c.pct_plan, estado = c.pct_plan === 0 && c.pct_real === 0 ? 'Por iniciar'
+          : c.pct_real >= 100 ? 'Terminado' : dv <= -10 ? 'Atrasado' : dv < 0 ? 'Algo atrasado' : 'Al día';
+        return `<svg class="cap-flecha" aria-hidden="true"><use href="#i-flecha"/></svg>
+        <button class="cap" role="tab" type="button" data-cap="${esc(c.capitulo)}" aria-selected="${capSel === c.capitulo}">
+          <b>${esc(c.capitulo)}</b><span class="cifras">Real ${nf(c.pct_real, 1)} % · Plan ${nf(c.pct_plan, 1)} %</span>
+          <span class="mini"><i style="width:${Math.min(100, c.pct_real)}%"></i><u style="left:${Math.min(100, c.pct_plan)}%"></u></span>
+          <span class="estado${dv <= -10 ? ' atraso' : ''}">${estado} · ${pl(c.partidas, 'partida', 'partidas')}</span></button>`;
+      }).join('')}</div>` : ''}
+    <div class="av-grid">
+      <div class="bloque">
+        <h3>Curva S — avance físico acumulado</h3>
+        <div class="leyenda"><span><i></i>Real registrado</span><span><i class="plan"></i>Plan</span></div>
+        <div class="grafico" id="curva-s"></div>
+        <details class="tabla-datos"><summary>Ver los datos en tabla</summary>
+          <div class="tabla-scroll"><table><thead><tr><th>Semana al</th><th class="num">Plan</th><th class="num">Real</th></tr></thead>
+          <tbody>${d.serie.filter((x) => !x.ultimo).map((x) => `<tr><td>${fecha(x.fecha)}</td><td class="num">${pct(x.plan)}</td><td class="num">${x.real === null ? '—' : pct(x.real)}</td></tr>`).join('')}</tbody></table></div></details>
+      </div>
+      <div class="bloque">
+        <h3>Desviaciones y bloqueos</h3>
+        ${(datosBloqueos?.bloqueos || []).map((b) => `<div class="item"><div class="titulo"><span class="etq alerta">Bloqueo</span>${esc(String(b.tipo).replaceAll('_', ' '))}</div>
+          ${esc(b.descripcion)}<div class="sub">${pl(b.avances_retenidos, 'avance retenido', 'avances retenidos')} · abierto hace ${pl(b.dias_abierto, 'día', 'días')}</div>
+          <button class="enlace-btn" type="button" data-decidir="${esc(b.descripcion)}">Decidir en el chat</button></div>`).join('')}
+        ${(e.desviaciones_abiertas || []).map((x) => `<div class="item"><div class="titulo">${esc(x.tipo.replaceAll('_', ' '))}
+          <span class="etq ${['alta', 'critica'].includes(x.severidad) ? 'alerta' : 'pendiente_confirmacion'}">Severidad ${esc(x.severidad)}</span></div>${esc(x.descripcion)}</div>`).join('')}
+        ${atrasadas.map((p) => `<div class="item"><div class="titulo">${desvPlaca(p.pct_real - p.pct_plan)}<span class="cod">${esc(p.codigo)}</span></div>
+          ${esc(p.descripcion)}<div class="sub">Real ${nf(p.pct_real, 1)} % contra plan ${nf(p.pct_plan, 1)} % · termina ${fCorta(p.fin)}</div>
+          <button class="enlace-btn" type="button" data-atraso="${esc(p.codigo)}">Analizar en el chat</button></div>`).join('')}
+        ${!bloqueos && !(e.desviaciones_abiertas || []).length && !atrasadas.length ? '<p class="vacio">Sin atrasos, desviaciones ni bloqueos abiertos.</p>' : ''}
+      </div>
+    </div>
+    <div class="bloque seccion-av">
+      <h3>${capSel ? 'Partidas de ' + esc(capSel) : 'Partidas del presupuesto base'}</h3>
+      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th>Plazo</th><th class="num">Ejecutado</th><th>Real contra plan</th><th class="num">Desv.</th></tr></thead><tbody>
+      ${partidas.map((p) => `<tr><td><span class="cod">${esc(p.codigo)}</span><div class="sub">${esc(p.descripcion)}</div></td>
+        <td class="sub" style="white-space:nowrap">${fCorta(p.inicio)} – ${fCorta(p.fin)}</td>
+        <td class="num">${nf(p.ejecutada)} / ${nf(p.cantidad)} <span class="sub">${esc(p.unidad)}</span>${p.ejecutada ? `<div>${etq(calidad[p.codigo])}</div>` : ''}</td>
+        <td><div class="bala" role="img" aria-label="Real ${nf(p.pct_real, 1)} %, plan ${p.pct_plan === null ? 'sin plan' : nf(p.pct_plan, 1) + ' %'}"><i style="width:${Math.min(100, p.pct_real)}%"></i>${p.pct_plan === null ? '' : `<u style="left:${Math.min(100, p.pct_plan)}%"></u>`}</div>
+          <div class="sub">Real ${nf(p.pct_real, 1)} % · Plan ${p.pct_plan === null ? '—' : nf(p.pct_plan, 1) + ' %'}</div></td>
+        <td class="num">${desvPlaca(p.pct_plan === null ? null : p.pct_real - p.pct_plan)}</td></tr>`).join('')
+        || '<tr><td colspan="5" class="vacio">Sin partidas en el presupuesto base.</td></tr>'}
+      </tbody></table></div>
+    </div>`;
+  $('av-bitacora').innerHTML = d.reportes.map((r) => `<div class="reporte">
+      <div class="cab">${fecha(r.fecha_reporte)} · ${esc(r.reportado_por)}
+        <span class="etq ${r.estado === 'pendiente' ? 'pendiente_confirmacion' : r.estado === 'procesado' ? 'ok' : 'neutro'}">${r.estado === 'pendiente' ? 'Sin procesar' : r.estado === 'procesado' ? 'Procesado' : esc(r.estado)}</span></div>
+      ${r.texto_libre ? `<p>${esc(r.texto_libre)}</p>` : ''}
+      <div class="sub">${pl(r.avances, 'avance registrado', 'avances registrados')}${r.retenidos ? ` · ${pl(r.retenidos, 'retenido', 'retenidos')} por bloqueo` : ''} · ${pl(r.adjuntos, 'adjunto', 'adjuntos')}${r.procesado_por ? ' · ' + esc(r.procesado_por) : ''}</div>
+      ${r.estado === 'pendiente' ? '<button class="enlace-btn" type="button" data-procesar>Pedir a ORQ-COST que lo procese</button>' : ''}
+    </div>`).join('') || '<p class="vacio">Todavía no hay reportes de campo. El residente los carga aquí; SUB-AVA los interpreta contra el presupuesto base.</p>';
+
+  $('av-contenido').querySelectorAll('.cap').forEach((b, i, todos) => {
+    b.onclick = () => { capSel = b.dataset.cap || null; pintarPaginaAvance(); $('av-contenido').querySelector(`.cap[data-cap="${CSS.escape(capSel || '')}"]`)?.focus(); };
+    b.onkeydown = (ev) => {
+      const paso = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if (paso) todos[(i + paso + todos.length) % todos.length].click();
+    };
+  });
+  $('av-cargar').onclick = () => { $('tit-reporte').scrollIntoView({block: 'start'}); $('quien').focus(); };
+  $('av-informe').onclick = () => irAlChat('Prepara el informe de avance de obra en Word con el estado al día de hoy.');
+  if ($('av-bloqueos')) $('av-bloqueos').onclick = () => registro(true, 'bloqueos');
+  $('av-contenido').querySelectorAll('[data-atraso]').forEach((b) => b.onclick = () =>
+    irAlChat(`La partida ${b.dataset.atraso} va atrasada contra el plan. ¿Qué causas ves y qué medidas propones para recuperar el plazo?`));
+  $('av-contenido').querySelectorAll('[data-decidir]').forEach((b) => b.onclick = () => irAlChat(`Sobre el bloqueo «${b.dataset.decidir}»: `));
+  $('av-bitacora').querySelectorAll('[data-procesar]').forEach((b) => b.onclick = () => irAlChat('Procesa el reporte de avance pendiente del residente.'));
+  dibujarCurva();
+}
+
+/* Curva S: un solo eje en %, plan y real; el real termina en el último avance (no se proyecta). */
+function dibujarCurva() {
+  const cont = $('curva-s');
+  if (!cont || !datosSerie) return;
+  const serie = datosSerie.serie;
+  if (!serie.length) { cont.innerHTML = '<p class="vacio">Sin planificación cargada.</p>'; return; }
+  const W = Math.max(320, cont.clientWidth), H = 260, m = {l: 44, r: 16, t: 12, b: 28};
+  const t0 = new Date(serie[0].fecha + 'T12:00:00').getTime(), t1 = new Date(serie.at(-1).fecha + 'T12:00:00').getTime();
+  const x = (iso) => m.l + (W - m.l - m.r) * ((new Date(iso + 'T12:00:00').getTime() - t0) / Math.max(1, t1 - t0));
+  const y = (v) => m.t + (H - m.t - m.b) * (1 - v / 100);
+  const camino = (k) => serie.filter((p) => p[k] !== null && p[k] !== undefined).map((p, i) => `${i ? 'L' : 'M'}${x(p.fecha).toFixed(1)},${y(p[k]).toFixed(1)}`).join('');
+  const meses = [];
+  for (let dte = new Date(t0); dte.getTime() <= t1; dte.setMonth(dte.getMonth() + 1, 1)) {
+    const iso = new Date(dte.getFullYear(), dte.getMonth(), 1, 12).toISOString().slice(0, 10);
+    if (new Date(iso + 'T12:00:00').getTime() >= t0) meses.push(iso);
+  }
+  const ultimo = serie.find((p) => p.ultimo) || [...serie].reverse().find((p) => p.real !== null);
+  const hoy = datosSerie.hoy, xh = x(hoy);
+  const ultPlan = [...serie].reverse().find((p) => p.plan !== null);
+  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" tabindex="0" role="img"
+      aria-label="Curva S: real ${ultimo ? nf(ultimo.real, 1) + ' % al ' + fecha(ultimo.fecha) : 'sin avances'}; plan a hoy ${pct(datosEstado?.avance_fisico_plan_pct)}. Usa las flechas para recorrer las semanas.">
+    ${[0, 25, 50, 75, 100].map((v) => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--borde)" stroke-width="1"/>
+      <text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${v} %</text>`).join('')}
+    ${meses.map((iso) => `<text x="${x(iso)}" y="${H - 8}" text-anchor="middle">${new Date(iso + 'T12:00:00').toLocaleDateString('es-VE', {month: 'short'})}</text>`).join('')}
+    ${xh >= m.l && xh <= W - m.r ? `<line x1="${xh}" x2="${xh}" y1="${m.t}" y2="${H - m.b}" stroke="var(--tinta-3)" stroke-width="1"/>
+      <text x="${xh + 4}" y="${m.t + 10}">Hoy</text>` : ''}
+    <path d="${camino('plan')}" fill="none" stroke="var(--serie-plan)" stroke-width="2" stroke-linejoin="round"/>
+    <path d="${camino('real')}" fill="none" stroke="var(--serie-real)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${ultPlan ? `<text class="rotulo-serie" x="${Math.min(x(ultPlan.fecha), W - m.r) - 2}" y="${y(ultPlan.plan) - 8}" text-anchor="end" style="fill:var(--tinta-2)">Plan</text>` : ''}
+    ${ultimo ? `<circle cx="${x(ultimo.fecha)}" cy="${y(ultimo.real)}" r="5" fill="var(--serie-real)" stroke="var(--sup)" stroke-width="2"/>
+      <text class="rotulo-serie" x="${x(ultimo.fecha) + 9}" y="${y(ultimo.real) - 8}" style="fill:var(--tinta)">Real ${nf(ultimo.real, 1)} %</text>` : ''}
+    <g id="cruz" visibility="hidden"><line id="cruz-l" y1="${m.t}" y2="${H - m.b}" stroke="var(--tinta-2)" stroke-width="1"/>
+      <circle id="cruz-p" r="4.5" fill="var(--serie-plan)" stroke="var(--sup)" stroke-width="2"/>
+      <circle id="cruz-r" r="4.5" fill="var(--serie-real)" stroke="var(--sup)" stroke-width="2"/></g>
+    <rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" id="cruz-zona"/>
+  </svg><div class="tooltip" id="curva-tip" hidden></div>`;
+  const svg = cont.querySelector('svg'), semanas = serie.filter((p) => !p.ultimo);
+  let idx = semanas.length - 1;
+  const mostrar = (i) => {
+    idx = Math.max(0, Math.min(semanas.length - 1, i));
+    const p = semanas[idx], px = x(p.fecha);
+    $('cruz').setAttribute('visibility', 'visible');
+    $('cruz-l').setAttribute('x1', px); $('cruz-l').setAttribute('x2', px);
+    $('cruz-p').setAttribute('cx', px); $('cruz-p').setAttribute('cy', y(p.plan ?? 0));
+    $('cruz-p').setAttribute('visibility', p.plan === null ? 'hidden' : 'visible');
+    $('cruz-r').setAttribute('cx', px); $('cruz-r').setAttribute('cy', y(p.real ?? 0));
+    $('cruz-r').setAttribute('visibility', p.real === null ? 'hidden' : 'visible');
+    const tip = $('curva-tip');
+    tip.innerHTML = `<b>Semana al ${fecha(p.fecha)}</b><br>Plan ${pct(p.plan)}<br>Real ${p.real === null ? 'sin datos' : pct(p.real)}`;
+    tip.hidden = false;
+    tip.style.left = Math.min(Math.max(px * cont.clientWidth / W, 80), cont.clientWidth - 80) + 'px';
+    tip.style.top = (Math.min(y(p.plan ?? 0), y(p.real ?? 100)) * cont.clientWidth / W - 10) + 'px';
+  };
+  const ocultar = () => { $('cruz').setAttribute('visibility', 'hidden'); $('curva-tip').hidden = true; };
+  $('cruz-zona').addEventListener('mousemove', (ev) => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+    let mejor = 0;
+    semanas.forEach((p, i) => { if (Math.abs(x(p.fecha) - px) < Math.abs(x(semanas[mejor].fecha) - px)) mejor = i; });
+    mostrar(mejor);
+  });
+  $('cruz-zona').addEventListener('mouseleave', ocultar);
+  svg.addEventListener('blur', ocultar);
+  svg.addEventListener('keydown', (ev) => {
+    const paso = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+    if (paso) { ev.preventDefault(); mostrar(idx + paso); }
+  });
+  svg.addEventListener('focus', () => mostrar(idx));
+}
+new ResizeObserver(() => { if (vistaActual === 'avance') dibujarCurva(); }).observe($('vista-avance'));
+
+/* ---------- clientes ---------- */
+async function contarClientes() {
+  try { clientes = await api('/api/clientes'); $('v-clientes').textContent = clientes.length || ''; } catch (e) { /* sin clientes */ }
+}
+let clienteSel = null;
+const CAMPOS_E = {nombre: 'e-nombre', rif: 'e-rif', tipo_ente: 'e-ente', contacto_nombre: 'e-contacto',
+  contacto_cargo: 'e-cargo', telefono: 'e-telefono', correo: 'e-correo', direccion: 'e-direccion',
+  ubicacion: 'e-ubicacion', norma_rectora: 'e-norma', moneda_preferida: 'e-moneda', notas: 'e-notas'};
+function pintarTablaClientes() {
+  const q = $('cli-buscar').value.trim().toLowerCase();
+  const lista = clientes.filter((c) => !q || [c.nombre, c.rif, c.contacto_nombre].some((v) => (v || '').toLowerCase().includes(q)));
+  $('cli-tabla').innerHTML = lista.map((c) => `<tr class="fila-cli" tabindex="0" data-id="${esc(c.id)}" aria-selected="${c.id === clienteSel}">
+      <td>${esc(c.nombre)}<div class="sub">${esc(ENTES[c.tipo_ente] || '')}</div></td><td>${esc(c.rif || '—')}</td>
+      <td>${esc(c.contacto_nombre || '—')}<div class="sub">${esc(c.telefono || '')}</div></td><td class="num">${c.obras}</td></tr>`).join('')
+    || `<tr><td colspan="4" class="vacio">${q ? 'Ningún cliente coincide con la búsqueda.' : 'Todavía no hay clientes. Crea el primero.'}</td></tr>`;
+  $('cli-tabla').querySelectorAll('.fila-cli').forEach((tr) => {
+    tr.onclick = () => abrirCliente(tr.dataset.id);
+    tr.onkeydown = (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirCliente(tr.dataset.id); } };
+  });
+}
+async function cargarPaginaClientes() {
+  await contarClientes(); pintarTablaClientes();
+  if (clienteSel && clientes.some((c) => c.id === clienteSel)) abrirCliente(clienteSel); else nuevoCliente();
+}
+function nuevoCliente() {
+  clienteSel = null; $('fcli').reset(); $('cli-titulo').textContent = 'Nuevo cliente';
+  $('cli-borrar').hidden = true; $('cli-obras').innerHTML = ''; $('cli-estado').textContent = ''; pintarTablaClientes();
+}
+async function abrirCliente(id) {
+  clienteSel = id; pintarTablaClientes(); $('cli-estado').textContent = '';
+  try {
+    const c = await api('/api/clientes/' + encodeURIComponent(id));
+    for (const [k, campo] of Object.entries(CAMPOS_E)) $(campo).value = c[k] || '';
+    $('cli-titulo').textContent = c.nombre; $('cli-borrar').hidden = false;
+    $('cli-obras').innerHTML = `<h3 style="margin-top:18px">Proyectos (${c.obras.length})</h3>${c.obras.map((o) =>
+      `<div class="item"><button class="enlace-btn" type="button" data-codigo="${esc(o.codigo)}">${esc(o.nombre_obra)}</button>
+        <div class="sub">${esc(o.codigo)} · ${esc(FASES[o.fase] || o.fase)}</div></div>`).join('') || '<p class="vacio">Sin proyectos todavía.</p>'}`;
+    $('cli-obras').querySelectorAll('[data-codigo]').forEach((b) => b.onclick = () => { elegirProyecto(b.dataset.codigo); mostrarVista('chat'); });
+  } catch (err) { $('cli-estado').textContent = err.message; }
+}
+$('cli-buscar').oninput = pintarTablaClientes;
+$('cli-nuevo').onclick = () => { nuevoCliente(); $('e-nombre').focus(); };
+$('fcli').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const datos = Object.fromEntries(Object.entries(CAMPOS_E).map(([k, campo]) => [k, $(campo).value.trim()]));
+  $('cli-guardar').disabled = true; $('cli-estado').textContent = 'Guardando…';
+  try {
+    const r = await api(clienteSel ? '/api/clientes/' + encodeURIComponent(clienteSel) : '/api/clientes',
+      {method: clienteSel ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos)});
+    clienteSel = r.id; await contarClientes(); await abrirCliente(r.id);
+    $('cli-estado').textContent = 'Guardado.';
+    if (obras.some((o) => o.cliente_id === r.id)) cargarProyectos(obraActual);
+  } catch (err) { $('cli-estado').textContent = err.message; }
+  finally { $('cli-guardar').disabled = false; }
+};
+$('cli-borrar').onclick = async () => {
+  if (!clienteSel || !confirm(`¿Eliminar el cliente «${$('e-nombre').value}»? No se puede deshacer.`)) return;
+  try {
+    await api('/api/clientes/' + encodeURIComponent(clienteSel), {method: 'DELETE'});
+    await contarClientes(); nuevoCliente(); $('cli-estado').textContent = 'Cliente eliminado.';
+  } catch (err) { $('cli-estado').textContent = err.message; }
+};
 
 /* ---------- nueva obra con su cliente ---------- */
 const ENTES = {publico_nacional: 'Público nacional', publico_estadal: 'Público estadal',
                publico_municipal: 'Público municipal', privado: 'Privado', multilateral: 'Multilateral'};
 async function cargarClientes(elegido) {
   try { clientes = await api('/api/clientes'); } catch (err) { clientes = []; }
-  $('o-cliente-sel').innerHTML = '<option value="">Selecciona un cliente…</option>'
+  $('o-cliente-sel').innerHTML = '<option value="">Sin cliente por ahora</option>'
     + clientes.map((c) => `<option value="${esc(c.id)}">${esc(c.nombre)}${c.rif ? ' · ' + esc(c.rif) : ''}</option>`).join('')
     + '<option value="__nuevo">+ Nuevo cliente…</option>';
   $('o-cliente-sel').value = elegido || '';
@@ -1154,7 +1698,7 @@ function elegirCliente() {
     c.rif && `<b>RIF</b> ${esc(c.rif)}`, c.tipo_ente && esc(ENTES[c.tipo_ente] || c.tipo_ente),
     c.contacto_nombre && `<b>Contacto</b> ${esc(c.contacto_nombre)}${c.contacto_cargo ? ', ' + esc(c.contacto_cargo) : ''}`,
     c.telefono && esc(c.telefono), c.correo && esc(c.correo),
-    c.obras ? `${c.obras} obra(s) registradas` : 'Sin obras todavía'].filter(Boolean).join(' · ');
+    c.obras ? (c.obras === 1 ? '1 proyecto registrado' : `${c.obras} proyectos registrados`) : 'Sin proyectos todavía'].filter(Boolean).join(' · ');
   // Autollenado: lo habitual del cliente; queda editable para esta obra.
   $('o-ente').value = c.tipo_ente || '';
   $('o-ubicacion').value = c.ubicacion || '';
@@ -1166,9 +1710,17 @@ $('o-cliente-sel').onchange = elegirCliente;
 [['c-ente', 'o-ente'], ['c-ubicacion', 'o-ubicacion'], ['c-norma', 'o-norma'], ['c-moneda', 'o-moneda']].forEach(([de, a]) =>
   $(de).addEventListener('input', () => { if ($(de).value) $(a).value = $(de).value; }));
 
+const faseNueva = () => document.querySelector('[name=o-fase]:checked').value;
+function pintarFaseNueva() {
+  const adj = faseNueva() === 'adjudicada';
+  document.querySelectorAll('.solo-adjudicada').forEach((el) => { el.hidden = !adj; });
+  $('o-inicio').required = adj; $('o-fin').required = adj;
+}
+document.querySelectorAll('[name=o-fase]').forEach((r) => { r.onchange = pintarFaseNueva; });
 $('abrir-obra').onclick = async () => {
-  $('o-estado').textContent = ''; $('fobra').reset(); await cargarClientes();
-  $('dlg-obra').showModal(); $('o-cliente-sel').focus();
+  $('o-estado').textContent = ''; $('fobra').reset(); cerrarMenu(); await cargarClientes();
+  $('o-fecha').valueAsDate = new Date(); pintarFaseNueva();
+  $('dlg-obra').showModal(); $('o-nombre').focus();
 };
 $('o-cancelar').onclick = () => $('dlg-obra').close();
 $('fobra').onsubmit = async (ev) => {
@@ -1188,14 +1740,14 @@ $('fobra').onsubmit = async (ev) => {
       // Si la obra falla después, el cliente ya existe: queda seleccionado para no duplicarlo.
       await cargarClientes(clienteId);
     }
-    $('o-estado').textContent = 'Creando obra…';
+    $('o-estado').textContent = 'Creando proyecto…';
     const r = await api('/api/proyectos', {method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({codigo: v('o-codigo'), nombre_obra: v('o-nombre'), cliente_id: clienteId,
+      body: JSON.stringify({codigo: v('o-codigo'), nombre_obra: v('o-nombre'), cliente_id: clienteId, fase: faseNueva(),
         tipo_ente: v('o-ente'), tipo_obra: v('o-tipo'), moneda_base: v('o-moneda'), ubicacion: v('o-ubicacion'),
         norma_rectora: v('o-norma'), fecha_base_precios: v('o-fecha'),
         fecha_inicio_contractual: v('o-inicio'), fecha_fin_contractual: v('o-fin')})});
     $('dlg-obra').close(); $('fobra').reset(); cerrarMenu();
-    await cargarObras(r.codigo);
+    await cargarProyectos(r.codigo); mostrarVista('chat'); $('msg').focus();
   } catch (err) { $('o-estado').textContent = err.message; }
   finally { $('o-crear').disabled = false; }
 };
@@ -1205,7 +1757,8 @@ $('fecha').valueAsDate = new Date();
 pintarTema(); ponerPlaceholder();
 registro(leer('sotica-registro') === '1' && window.innerWidth > 1240, seccionActual);
 hiloVacio();
-cargarObras();
+cargarProyectos();
+contarClientes();
 </script>
 </body>
 </html>

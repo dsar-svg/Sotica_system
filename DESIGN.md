@@ -297,3 +297,10 @@ Placa azul con filete blanco interior y radio 6px que muestra la ruta ORQ-COST �
 - **Don't** usar el rojo como fondo amplio fuera del sidebar y la cabecera de diálogo.
 - **Don't** dar sombra elevada a bloques del registro; solo flota lo que se superpone.
 - **Don't** usar caracteres o emojis como iconos: los iconos son SVG de trazo.
+
+## Gráficas y pantalla de avance (extensión, 06/10/2026)
+
+- **Series de datos**, validadas con el validador de paleta (luminosidad, croma, daltonismo y contraste): real `#2563A8` y plan `#B0702A` en claro; real `#4A8BD6` y plan `#C28040` en oscuro (`--serie-real`, `--serie-plan`). El plan es ocre, nunca el amarillo de estado, y es el mismo en la curva S, en las barras de partidas y en la marca del panel de capítulos.
+- **Curva S**: un solo eje en %, líneas de 2–2,5 px, rejilla de 1 px sólida, línea «Hoy», rótulos directos al final de cada serie, cruz con tooltip al pasar el cursor o con las flechas, y vista en tabla. El real termina en el último avance registrado: nunca se proyecta.
+- **Panel de ruta por capítulos**: placa azul con filete blanco, un tramo por capítulo con real contra plan; el tramo seleccionado es placa blanca con tintas fijas (`#002E54`, atraso `#A30909`) en ambos temas.
+- **Indicadores**: franja de celdas con rótulo semicondensado, cifra grande y línea secundaria; la certeza del dato va como placa debajo.

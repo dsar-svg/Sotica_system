@@ -55,7 +55,10 @@ SUB-VIA, SUB-SUE). Se apagan con `enabled: false` en su archivo de prompt.
 | Reporte de campo → SUB-AVA → avance físico y financiero, desviaciones, bloqueos | Funciona |
 | Panel rediseñado (identidad «Señalética vial», ver DESIGN.md): sidebar, chat moderno, registro plegable, tema claro/oscuro, fuentes servidas desde el proyecto | Funciona |
 | **Clientes**: tabla `clientes` (RIF, contacto, ubicación, norma y moneda habituales); al crear una obra se elige el cliente y se rellenan sus datos | Funciona (`/api/clientes`) |
-| Alta de obra con memoria de proyecto y carga de planos desde el panel | Funciona |
+| **Ciclo comercial**: ofertas en estudio (sin contrato, solo nombre para abrirlas, código automático) y obras adjudicadas; Fase → adjudicar (plazo y presupuesto ofertado como base), descartar, cerrar, reabrir. ORQ-COST recibe la fase | Funciona |
+| **Pantalla de avance** (obras adjudicadas): indicadores, ruta por capítulos, curva S semanal plan vs real reconstruida de `avances_partida` (no se proyecta), partidas con barras, bitácora de reportes y carga de reporte | Funciona (`tests/serie_avance.py`: el real reconstruido = `fn_pct_fisico_obra`) |
+| **Clientes**: pantalla con búsqueda, alta, edición y borrado (bloqueado si tiene proyectos) | Funciona |
+| Alta de proyecto con memoria de proyecto y carga de planos desde el panel | Funciona |
 
 **Criterios de aceptación §11:** 12 de 12 con `gpt-5` (`python -m tests.aceptacion_11`, ~0,75 USD por
 corrida, medido). En la última corrida 11.8 falló una vez por no escribir "desviación"; con el prompt
@@ -90,7 +93,7 @@ recibe el nombre).
 4. **FCAS, administración, utilidad e impuestos** solo se aplican si SOTICA o el pliego los dan.
 5. **Los especialistas no persisten sus propias cantidades**: devuelven dictamen (queda en la bitácora)
    y SUB-CM registra cómputos.
-6. **Usuarios y contraseñas.** Tampoco hay pantalla para editar o borrar clientes (solo alta y uso).
+6. **Usuarios y contraseñas.**
 7. **Despliegue** en el servidor del cliente: no hay Dockerfile ni configuración (y tiene que estar
    fuera de Venezuela o con salida por VPN, por OpenAI).
 8. **Valuaciones y fórmula polinómica** (§3.2, caso 6.3.6): no hay herramienta; ORQ-COST solo razona.

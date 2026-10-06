@@ -21,8 +21,16 @@ VALUES ('SOT-2026-014', 'Edificio administrativo — sede regional', 'Gobernaci�
         'publico_estadal', 'edificacion', 'Barquisimeto, Lara', 'Centro-occidente',
         'USD', DATE '2026-08-01', 'edificacion', 'COVENIN 2000-II', false,
         DATE '2026-09-01', DATE '2027-03-31');
-UPDATE proyectos SET cliente_id = (SELECT id FROM clientes WHERE nombre = 'Gobernación (demo)')
+UPDATE proyectos SET cliente_id = (SELECT id FROM clientes WHERE nombre = 'Gobernación (demo)'),
+                     fase = 'adjudicada'
  WHERE codigo = 'SOT-2026-014';
+
+-- Oferta en estudio: todavía sin contrato ni presupuesto; sirve para mostrar el ciclo comercial.
+INSERT INTO proyectos (codigo, nombre_obra, cliente_id, cliente, tipo_ente, tipo_obra, ubicacion,
+                       moneda_base, fecha_base_precios, norma_rectora, fase)
+SELECT 'SOT-2026-021', 'Galpón de almacenamiento — zona industrial', c.id, c.nombre, c.tipo_ente,
+       'industrial', c.ubicacion, 'USD', DATE '2026-10-01', c.norma_rectora, 'oportunidad'
+  FROM clientes c WHERE c.nombre = 'Constructora Privada (demo)';
 
 INSERT INTO presupuestos (proyecto_id, version, tipo, estado, es_base_control, moneda,
                           fecha_base, clase_estimado, creado_por)

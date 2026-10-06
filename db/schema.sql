@@ -135,6 +135,10 @@ CREATE TABLE proyectos (
   fecha_inicio_contractual date,
   fecha_fin_contractual    date,
   estado              text NOT NULL DEFAULT 'activo',
+  -- Ciclo comercial: una oferta en estudio no tiene contrato ni control de avance; al ganarla
+  -- pasa a 'adjudicada' y su presupuesto ofertado puede volverse la base de control.
+  fase                text NOT NULL DEFAULT 'oportunidad'
+                      CHECK (fase IN ('oportunidad','adjudicada','cerrada','descartada')),
   creado_en           timestamptz NOT NULL DEFAULT now(),
   CHECK (moneda_secundaria IS NULL OR moneda_secundaria <> moneda_base)
 );

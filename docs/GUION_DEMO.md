@@ -30,12 +30,22 @@ El `.env` debe tener `OPENAI_API_KEY`, `SOTICA_MODEL=gpt-5` y la base en el puer
 
 ## Recorrido
 
-Las órdenes están como sugerencias en la pantalla inicial del chat.
+Las órdenes están como sugerencias en la pantalla inicial del chat (cambian según sea oferta u obra).
+
+### 0. El ciclo comercial — ofertas y obras
+
+El sidebar separa **Ofertas en estudio** (sin contrato: cómputo, APU, presupuesto, propuesta) de **Obras en
+ejecución** (con control de avance). La demo trae una de cada una: la oferta `SOT-2026-021` (galpón) y la obra
+`SOT-2026-014`. Con **Nuevo proyecto** se abre una oferta escribiendo solo el nombre; el código se asigna solo.
+Al ganarla, **Fase → Marcar como adjudicada** fija el plazo y convierte el presupuesto ofertado en base de control.
+
+Qué decir: no hace falta "crear una obra" para cotizar algo que todavía no es seguro.
 
 ### 1. Estado de la obra sin datos — "no inventa"
 
-Mostrar la pestaña **Avance** antes de escribir nada: 0 % real contra el planificado a la fecha (~31 %) y el aviso
-en rojo *"No hay avances cargados… No asumir que la obra sigue el cronograma"*.
+En la obra `SOT-2026-014`, abrir **Avance de obra** en el sidebar antes de escribir nada: 0 % real contra el
+planificado a la fecha (~31 %), el panel de capítulos y el aviso en rojo *"No hay avances cargados… No asumir que
+la obra sigue el cronograma"*.
 
 Qué decir: el sistema distingue "no ha avanzado" de "no tengo información".
 
@@ -83,7 +93,7 @@ una cotización "firme" sin proveedor, enlace y fecha.
 
 ### 4. Avance de obra
 
-En **Avance → Cargar reporte de campo**, pegar:
+En **Avance de obra → Cargar reporte**, pegar:
 
 > Semana del 28/09 al 03/10: se terminó la excavación de fundaciones, los 480 m3 completos según
 > levantamiento topográfico. Se vaciaron 14 zapatas de 2,00 x 2,00 x 0,50 m. También se construyó
@@ -94,7 +104,9 @@ Luego en el chat:
 > Procesa el reporte de avance pendiente del residente.
 
 - Avance físico pasa a 11,93 % contra el planificado a la fecha: obra atrasada, y lo dice.
-- La tanquilla no está en el presupuesto: aparece **1** en la pestaña **Bloqueos** y no suma.
+- En **Avance de obra**: la curva S real arranca y se queda en el último reporte (no se proyecta), el tramo
+  **Fundaciones** del panel de capítulos se marca atrasado y la bitácora muestra el reporte procesado.
+- La tanquilla no está en el presupuesto: aparece **1** en **Bloqueos** y no suma.
 - Cerrar el bloqueo en el chat: *"La tanquilla es obra extra, difiérela a obra extra."*
 
 Qué decir: el presupuesto base no se toca desde obra; lo que no encaja espera una decisión humana.
@@ -146,10 +158,10 @@ Qué decir: el sistema no supone porcentajes "típicos"; sin ellos, el precio de
 
 - Responde que manda el pliego venezolano y declara la desviación.
 
-### Opcional: obra nueva
+### Opcional: clientes
 
-Botón **Nueva obra** en el encabezado: código, fecha base de precios, moneda, ente, norma y plazos. Es la
-memoria del proyecto; no se vuelve a preguntar en cada conversación.
+**Clientes** en el sidebar: RIF, contacto, ubicación, norma y moneda habituales. Al crear un proyecto se elige
+el cliente y esos datos se rellenan solos. Un cliente con proyectos no se puede borrar.
 
 ## Lo que hoy NO hace (decirlo si preguntan)
 

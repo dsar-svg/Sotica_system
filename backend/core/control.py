@@ -514,3 +514,96 @@ async def estado_obra(
             for r in desv
         ]
     return salida
+
+
+async def serie_avance(conn: asyncpg.Connection, proyecto_id: UUID,
+                       hoy: dt.date | None = None) -> dict[str, Any]:
+    """Datos de la pantalla de avance: curva S semanal (plan y real), capítulos, partidas y reportes.
+
+    El real histórico se reconstruye de `avances_partida` con la misma regla que
+    `recalcular_partida` (acumulado / cantidad) y la misma ponderación por monto que
+    `fn_pct_fisico_obra`. El real no se proyecta: la serie llega hasta el último avance.
+    """
+    hoy = hoy or dt.date.today()
+    base = await presupuesto_base(conn, proyecto_id)
+    reportes = [dict(r) for r in await conn.fetch(
+        """
+        SELECT r.id::text, r.fecha_reporte, r.reportado_por, r.estado::text, r.canal, r.texto_libre,
+               r.nota_procesamiento, r.procesado_por::text,
+               (SELECT count(*) FROM reporte_adjuntos ra WHERE ra.reporte_id = r.id)  AS adjuntos,
+               (SELECT count(*) FROM avances_partida a WHERE a.reporte_id = r.id)     AS avances,
+               (SELECT count(*) FROM avances_en_espera e WHERE e.reporte_id = r.id)   AS retenidos
+          FROM reportes_avance r WHERE r.proyecto_id = $1
+         ORDER BY r.fecha_reporte DESC, r.recibido_en DESC
+        """, proyecto_id)]
+    if base is None:
+        return {"serie": [], "capitulos": [], "partidas": [], "reportes": reportes, "hoy": hoy.isoformat()}
+
+    partidas = await conn.fetch(
+        """
+        SELECT p.id, p.codigo_interno, p.descripcion, p.unidad, p.capitulo, p.cantidad,
+               COALESCE(p.monto, 0) AS monto, pl.fecha_inicio, pl.fecha_fin,
+               fn_pct_plan_partida(p.id, $2) AS pct_plan_hoy
+          FROM partidas p LEFT JOIN planificacion_partida pl ON pl.partida_id = p.id
+         WHERE p.presupuesto_id = $1 ORDER BY p.orden, p.codigo_interno
+        """, base["id"], hoy)
+    avances = await conn.fetch(
+        """
+        SELECT partida_id, fecha_avance, sum(cantidad_periodo) AS cantidad
+          FROM avances_partida WHERE proyecto_id = $1
+         GROUP BY partida_id, fecha_avance ORDER BY fecha_avance
+        """, proyecto_id)
+    total = sum(float(p["monto"]) for p in partidas)
+    cantidad = {p["id"]: float(p["cantidad"] or 0) for p in partidas}
+    monto = {p["id"]: float(p["monto"]) for p in partidas}
+
+    def real_al(fecha: dt.date) -> float:
+        acum: dict[Any, float] = {}
+        for a in avances:
+            if a["fecha_avance"] <= fecha and a["partida_id"] in cantidad:
+                acum[a["partida_id"]] = acum.get(a["partida_id"], 0.0) + float(a["cantidad"])
+        if not total:
+            return 0.0
+        return round(sum(100.0 * q / cantidad[k] * monto[k] for k, q in acum.items() if cantidad[k])
+                     / total, 2)
+
+    fechas_plan = [p["fecha_inicio"] for p in partidas if p["fecha_inicio"]]
+    fines = [p["fecha_fin"] for p in partidas if p["fecha_fin"]]
+    ultimo = avances[-1]["fecha_avance"] if avances else None
+    inicio = min(fechas_plan + ([avances[0]["fecha_avance"]] if avances else []), default=hoy)
+    fin = max(fines + [hoy], default=hoy)
+    inicio -= dt.timedelta(days=inicio.weekday())               # lunes
+    cierres = [inicio + dt.timedelta(days=6 + 7 * i) for i in range((fin - inicio).days // 7 + 1)]
+    planes = {r["d"]: r["pct"] for r in await conn.fetch(
+        "SELECT d::date AS d, fn_pct_plan_obra($1, d::date) AS pct FROM unnest($2::date[]) AS d",
+        proyecto_id, cierres)}
+    serie = [{"fecha": c.isoformat(), "plan": float(planes[c]) if planes.get(c) is not None else None,
+              "real": real_al(c) if ultimo and c <= ultimo else None} for c in cierres]
+    if ultimo:   # el punto exacto del último avance, para no esconderlo dentro de la semana
+        serie.append({"fecha": ultimo.isoformat(), "plan": None, "real": real_al(ultimo), "ultimo": True})
+        serie.sort(key=lambda x: x["fecha"])
+
+    acum_hoy = {k: 0.0 for k in cantidad}
+    for a in avances:
+        if a["partida_id"] in acum_hoy:
+            acum_hoy[a["partida_id"]] += float(a["cantidad"])
+    filas, capitulos = [], {}
+    for p in partidas:
+        pct_real = round(100.0 * acum_hoy[p["id"]] / cantidad[p["id"]], 2) if cantidad[p["id"]] else 0.0
+        pct_plan = float(p["pct_plan_hoy"]) if p["pct_plan_hoy"] is not None else None
+        filas.append({"codigo": p["codigo_interno"], "descripcion": p["descripcion"], "unidad": p["unidad"],
+                      "capitulo": p["capitulo"], "cantidad": cantidad[p["id"]], "ejecutada": acum_hoy[p["id"]],
+                      "monto": monto[p["id"]], "pct_real": pct_real, "pct_plan": pct_plan,
+                      "inicio": p["fecha_inicio"].isoformat() if p["fecha_inicio"] else None,
+                      "fin": p["fecha_fin"].isoformat() if p["fecha_fin"] else None})
+        c = capitulos.setdefault(p["capitulo"], {"capitulo": p["capitulo"], "monto": 0.0, "real": 0.0,
+                                                 "plan": 0.0, "partidas": 0})
+        c["monto"] += monto[p["id"]]
+        c["real"] += pct_real * monto[p["id"]]
+        c["plan"] += (pct_plan or 0) * monto[p["id"]]
+        c["partidas"] += 1
+    caps = [{"capitulo": c["capitulo"], "monto": round(c["monto"], 2), "partidas": c["partidas"],
+             "pct_real": round(c["real"] / c["monto"], 2) if c["monto"] else 0.0,
+             "pct_plan": round(c["plan"] / c["monto"], 2) if c["monto"] else 0.0} for c in capitulos.values()]
+    return {"serie": serie, "capitulos": caps, "partidas": filas, "reportes": reportes,
+            "hoy": hoy.isoformat(), "ultimo_avance": ultimo.isoformat() if ultimo else None}
