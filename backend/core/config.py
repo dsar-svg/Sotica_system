@@ -49,6 +49,8 @@ PUBLIC_BASE_URL = os.getenv("SOTICA_PUBLIC_BASE_URL", "http://localhost:8000")
 # Modelo del orquestador y de los subagentes. Centralizado aquí a propósito:
 # cambiar de modelo no debe implicar tocar los nueve prompts.
 MODEL = os.getenv("SOTICA_MODEL", "gpt-5")
+# Los subagentes ejecutan tareas acotadas con briefing; pueden ir en un modelo más barato.
+MODEL_SUBAGENTES = os.getenv("SOTICA_MODEL_SUBAGENTES") or MODEL
 
 # Si nadie aporta cotización, ORQ-COST puede buscar precios aproximados de materiales en
 # internet y registrarlos como referenciales con su enlace. Se apaga con SOTICA_BUSCAR_PRECIOS=0.
@@ -56,7 +58,3 @@ BUSCAR_PRECIOS_EN_INTERNET = os.getenv("SOTICA_BUSCAR_PRECIOS", "1") not in ("0"
 
 MAX_TURNS_ORQUESTADOR = int(os.getenv("SOTICA_MAX_TURNS_ORQ", "40"))
 MAX_TURNS_SUBAGENTE = int(os.getenv("SOTICA_MAX_TURNS_SUB", "20"))
-
-# Agentes habilitados en el ciclo 1. El resto está escrito en backend/agents/
-# con `enabled: false` en su frontmatter y no se registra en la sesión.
-CICLO_1_AGENTES = {"SUB-CM", "SUB-DOC", "SUB-AVA"}

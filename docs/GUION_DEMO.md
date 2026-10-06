@@ -19,17 +19,22 @@ cada orden tarda entre 1 y 4 minutos en responder (el panel muestra el tiempo y 
    ```
 
 3. Tener Excel a mano para abrir los archivos que se generan.
+4. Con la VPN activa (OpenAI no atiende desde Venezuela), correr el chequeo previo:
+
+   ```powershell
+   .\.venv\Scripts\python.exe -m scripts.verificar_demo
+   ```
 
 El `.env` debe tener `OPENAI_API_KEY`, `SOTICA_MODEL=gpt-5` y la base en el puerto 5433.
 **No usar `gpt-4o` para la demo**: en las pruebas inventó longitudes y diámetros de tubería.
 
 ## Recorrido
 
-Las cuatro órdenes están como sugerencias en la pantalla inicial del chat.
+Las órdenes están como sugerencias en la pantalla inicial del chat.
 
 ### 1. Estado de la obra sin datos — "no inventa"
 
-Mostrar la pestaña **Avance** antes de escribir nada: 0 % real contra 30,81 % planificado y el aviso
+Mostrar la pestaña **Avance** antes de escribir nada: 0 % real contra el planificado a la fecha (~31 %) y el aviso
 en rojo *"No hay avances cargados… No asumir que la obra sigue el cronograma"*.
 
 Qué decir: el sistema distingue "no ha avanzado" de "no tengo información".
@@ -43,6 +48,21 @@ Qué decir: el sistema distingue "no ha avanzado" de "no tengo información".
 - Resultado: 114,66 m². En **Presupuesto** aparece la partida en el borrador v2, etiquetada.
 - En **Archivos**, abrir `SOTICA-CM-01`: la hoja de medición trae el despiece como fórmula viva.
 - En **Quién hizo qué** queda cada delegación con las herramientas que el especialista usó.
+
+### 2b. Cómputo desde un plano en PDF
+
+En **Archivos → Planos de la obra**, subir `docs/demo/plano_A-02_planta_alta.pdf` (si falta, generarlo
+con `python -m scripts.plano_demo`). Luego en el chat (también está como sugerencia):
+
+> Computa las paredes de bloque de la planta alta a partir del plano A-02 que subí en Archivos.
+> Regístralo en el borrador.
+
+- SUB-CM llama `listar_planos` y `leer_plano_pdf`: aparece en **Quién hizo qué**.
+- Resultado esperado: 60,00 m de muro × 2,80 m = 168,00 m², menos 4 puertas P-1 (7,56 m²) y
+  6 ventanas V-1 (10,80 m²) = **149,64 m²**. La referencia de la hoja de medición cita la lámina A-02.
+
+Qué decir: lee el texto del plano (rótulo, cotas, cuadros); si el PDF es un escaneo sin texto lo dice
+y pide las cotas, no las inventa.
 
 ### 3. Precios con respaldo
 
@@ -73,24 +93,78 @@ Luego en el chat:
 
 > Procesa el reporte de avance pendiente del residente.
 
-- Avance físico pasa a 11,93 % contra 30,81 % planificado: obra atrasada, y lo dice.
+- Avance físico pasa a 11,93 % contra el planificado a la fecha: obra atrasada, y lo dice.
 - La tanquilla no está en el presupuesto: aparece **1** en la pestaña **Bloqueos** y no suma.
 - Cerrar el bloqueo en el chat: *"La tanquilla es obra extra, difiérela a obra extra."*
 
 Qué decir: el presupuesto base no se toca desde obra; lo que no encaja espera una decisión humana.
 
+### 5. Orden mixta — "un equipo, no un prompt" (§11.1)
+
+> Vamos a ofertar un anexo de servicios de una planta, 12 x 8 m: estructura de concreto armado
+> (6 columnas de 0,30 x 0,30 m y 3,00 m de alto sobre zapatas aisladas, losa nervada de 25 cm; no hay
+> estudio de suelos), red de aguas servidas hasta
+> la cloaca existente (2 baños, el plano de cloacas no tiene diámetros), instalación eléctrica con un
+> tablero nuevo y 16 luminarias, y el cronograma de la obra. Dame el paquete integrado.
+
+- En el chat aparecen al menos cuatro especialistas: **SUB-EST**, **SUB-HID** y **SUB-ELE**, más SUB-CM,
+  SUB-DOC o SUB-SUE según el caso (en el ensayo: cinco). Tarda unos 3 minutos.
+- **Bandera roja de suelos**: las fundaciones quedan no computables sin estudio de suelos (§4.7).
+- El cronograma del anexo suele quedar pendiente hasta tener retícula, diámetros y unifilar: es correcto,
+  no inventa duraciones. El Gantt de la obra se muestra en el paso 7.
+- SUB-HID **no inventa diámetros**: la red queda PENDIENTE DE CONFIRMACIÓN con su impacto.
+- En **Quién hizo qué** queda el dictamen de cada uno.
+
+Qué decir: ORQ-COST reparte, cada especialista responde en su dominio y ORQ-COST integra; el juicio de
+un especialista no se silencia, se anexa.
+
+### 6. Precio de oferta
+
+> Para el presupuesto usa administración y gastos generales 15 %, utilidad 10 % e IVA 16 %; es decisión
+> de SOTICA. Genera el presupuesto en Excel.
+
+- ORQ-COST registra los porcentajes con la cita del usuario; SUB-DOC rehace SOTICA-PRE-01.
+- Hoja **Indirectos**: costo directo → administración → utilidad → IVA → **precio de oferta**, todo con
+  fórmulas vivas y la fuente de cada porcentaje.
+
+Qué decir: el sistema no supone porcentajes "típicos"; sin ellos, el precio de oferta queda pendiente.
+
+### 7. Cronograma, curva S e informe
+
+> Genera el cronograma Gantt de la obra y dime si es coherente con los rendimientos. Después prepara el
+> informe de avance en Word y una presentación corta para la junta.
+
+- `SOTICA-PLA-01`: hojas Gantt (columna Coherencia contra rendimientos), Curva S, Premisas, Hitos.
+- `SOTICA-INF-01` (Word): portada, control de revisiones y las 8 secciones del formato; lo que no hay
+  queda PENDIENTE DE CONFIRMACIÓN.
+- `SOTICA-PRS-01` (PowerPoint).
+
+### 8. FIDIC + pliego (§11.8)
+
+> El contrato es FIDIC Libro Rojo adaptado. FIDIC da 56 días para pagar cada certificado, pero el pliego
+> del ente dice 30 días. ¿Cuál manda y qué hago en la oferta?
+
+- Responde que manda el pliego venezolano y declara la desviación.
+
+### Opcional: obra nueva
+
+Botón **Nueva obra** en el encabezado: código, fecha base de precios, moneda, ente, norma y plazos. Es la
+memoria del proyecto; no se vuelve a preguntar en cada conversación.
+
 ## Lo que hoy NO hace (decirlo si preguntan)
 
-- Solo están activos ORQ-COST, SUB-CM, SUB-DOC y SUB-AVA. Eléctrico, hidráulico, estructural,
-  vialidad y suelos están escritos pero apagados.
-- Genera Excel (cómputos y presupuesto). Word, PowerPoint y Gantt no están construidos.
-- No lee planos en PDF ni interpreta el contenido de las fotos: trabaja con lo que se le escribe.
-- El presupuesto es **costo directo**: indirectos, utilidad, impuestos y FCAS esperan datos de SOTICA.
+- Lee el texto de planos PDF exportados desde CAD, no el dibujo ni escaneos (no hay OCR). No
+  interpreta el contenido de las fotos.
+- Los PDF de los entregables no se generan solos: se exportan desde Excel, Word o PowerPoint.
+- FCAS, administración, utilidad e impuestos solo se aplican si SOTICA o el pliego los dan.
 - Los precios de internet son aproximados, y los consumos de material por unidad que no dé el
   usuario los infiere el modelo y los declara como supuesto.
-- No hay usuarios ni contraseñas, ni pantalla para crear una obra nueva.
+- Los especialistas emiten dictamen y cómputo de presupuesto, no proyecto firmado (§12).
+- No hay usuarios ni contraseñas.
 
 ## Si algo falla en vivo
+
+- **"OpenAI rechazó la conexión por la región"**: se cayó la VPN. Reactivarla y reintentar el mensaje.
 
 - **"No se pudo completar"** en el chat: reintentar el mismo mensaje.
 - **El panel no carga**: revisar que `demo_start.ps1` siga corriendo.

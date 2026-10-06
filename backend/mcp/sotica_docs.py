@@ -1,19 +1,22 @@
 """Servidor MCP `sotica_docs` — generación de archivos de oficina.
 
-Ciclo 1: solo .xlsx (libro de cómputos SOTICA-CM-01). Word y PowerPoint son fase 2.
+Excel (cómputos, presupuesto, Gantt), Word y PowerPoint en formato SOTICA (§7).
 """
 from __future__ import annotations
 
 import datetime as dt
 import json
+import math
+import re
 from io import BytesIO
 from typing import Any
 
 from openpyxl import Workbook
+from openpyxl.chart import LineChart, Reference
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from ..core import control, db, storage
+from ..core import control, db, oficina, storage
 from .registry import Registro, error as _error, ok as _ok
 
 registro = Registro("sotica_docs")
@@ -345,7 +348,11 @@ async def generar_excel_computos(args: dict[str, Any]) -> dict[str, Any]:
         return _error(str(exc))
 
 
-_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+_MIME = {
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
 _DET = "'Detalle de partidas'"
 
 
@@ -355,26 +362,32 @@ async def _guardar_entregable(conn, proyecto, wb, codigo_doc: str, revision: str
         _pie(ws, codigo_doc, revision)
     buffer = BytesIO()
     wb.save(buffer)
-    nombre = f"{codigo_doc}_Rev-{revision}_{proyecto['codigo']}.xlsx"
-    storage_key, sha256, tam = storage.put_bytes(proyecto["codigo"], nombre, buffer.getvalue())
+    return await _registrar_entregable(conn, proyecto, buffer.getvalue(), "xlsx",
+                                       codigo_doc, revision, titulo)
+
+
+async def _registrar_entregable(conn, proyecto, datos: bytes, formato: str, codigo_doc: str,
+                                revision: str, titulo: str) -> tuple[Any, str]:
+    nombre = f"{codigo_doc}_Rev-{revision}_{proyecto['codigo']}.{formato}"
+    storage_key, sha256, tam = storage.put_bytes(proyecto["codigo"], nombre, datos)
     archivo_id = await conn.fetchval(
         """
         INSERT INTO archivos (proyecto_id, tipo, nombre, storage_key, mime, bytes, sha256,
                               subido_por)
         VALUES ($1,'entregable',$2,$3,$4,$5,$6,'SUB-DOC') RETURNING id
         """,
-        proyecto["id"], nombre, storage_key, _XLSX, tam, sha256,
+        proyecto["id"], nombre, storage_key, _MIME[formato], tam, sha256,
     )
     await conn.execute(
         """
         INSERT INTO entregables (proyecto_id, archivo_id, codigo_documento, revision, titulo,
                                  formato, generado_por, formato_oficial)
-        VALUES ($1,$2,$3,$4,$5,'xlsx','SUB-DOC',$6)
+        VALUES ($1,$2,$3,$4,$5,$6,'SUB-DOC',$7)
         ON CONFLICT (proyecto_id, codigo_documento, revision)
         DO UPDATE SET archivo_id = EXCLUDED.archivo_id, titulo = EXCLUDED.titulo,
-                      creado_en = now()
+                      formato = EXCLUDED.formato, creado_en = now()
         """,
-        proyecto["id"], archivo_id, codigo_doc, revision, titulo,
+        proyecto["id"], archivo_id, codigo_doc, revision, titulo, formato,
         proyecto["formatos_ratificados"],
     )
     return archivo_id, storage.url_for(storage_key)
@@ -437,6 +450,13 @@ def _hoja_resumen_montos(wb, capitulos: list[str], fila_total_detalle: int) -> N
         for col in ("B", "C"):
             c = ws[f"{col}{fila}"]
             c.value, c.font, c.number_format = f"=SUM({col}2:{col}{fila-1})", _NEG, "#,##0.00"
+
+
+def _oferta(directo: float, pcts: dict[str, Any]) -> float:
+    """Mismo cálculo que la hoja Indirectos, para informarlo en la respuesta."""
+    sub = directo * (1 + float(pcts["adm"]) / 100)
+    sub *= 1 + float(pcts["uti"]) / 100
+    return sub * (1 + float(pcts["imp"]) / 100)
 
 
 @registro.herramienta(
@@ -527,19 +547,44 @@ async def generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
             sin_fcas = sorted({r["codigo_interno"] for r in renglones if r["tipo"] == "mano_obra"}
                               & {p["codigo_interno"] for p in partidas
                                  if p["apu_fcas_pct"] is None})
+            # Filas 2..8: CD, adm (sobre CD), subtotal, utilidad (sobre CD+adm), subtotal,
+            # impuesto (sobre subtotal), precio de oferta. Todo con fórmulas vivas.
+            pcts = {"adm": base["adm_pct"], "uti": base["utilidad_pct"],
+                    "imp": base["impuesto_pct"]}
+            faltan = [n for n, k in (("administración", "adm"), ("utilidad", "uti"),
+                                     ("impuesto", "imp")) if pcts[k] is None]
+            fuente = base["fuente_indirectos"] or ""
+
+            def _linea(nombre, clave, sobre):
+                if pcts[clave] is None:
+                    return [nombre, "—", "PENDIENTE: lo define SOTICA o el pliego. "
+                                         "No se aplica ningún porcentaje."]
+                return [f"{nombre} ({float(pcts[clave]):g} %)",
+                        f"=B{sobre}*{float(pcts[clave]) / 100}", fuente]
+
             _hoja_simple(
-                wb, "Indirectos", ["Concepto", "Valor", "Estado"],
+                wb, "Indirectos", ["Concepto", "Valor", "Estado / fuente"],
                 [["Costo directo firme", f"={_DET}!K{fila_total}" if partidas else 0,
                   "Suma de partidas con precio sustentado."],
-                 ["Administración y gastos generales", "—",
-                  "PENDIENTE: lo define SOTICA o el pliego. No se aplica ningún porcentaje."],
-                 ["Utilidad", "—",
-                  "PENDIENTE: decisión comercial de SOTICA. No se aplica ningún porcentaje."],
-                 ["Impuestos", "—", "PENDIENTE: según pliego y régimen aplicable."]],
+                 _linea("Administración y gastos generales", "adm", 2),
+                 ["Subtotal (costo directo + administración)", "=B2+N(B3)", ""],
+                 _linea("Utilidad e imprevistos", "uti", 4),
+                 ["Subtotal antes de impuestos", "=B4+N(B5)", ""],
+                 _linea("Impuesto", "imp", 6),
+                 ["PRECIO DE OFERTA",
+                  "=B6+N(B7)" if not faltan else "—",
+                  "Decisión final de precio: SOTICA (§12)." if not faltan else
+                  f"No calculable: falta {', '.join(faltan)}."]],
                 "",
             )
-            notas = [["Alcance", "Este libro presenta COSTO DIRECTO. No es precio de oferta: "
-                                 "faltan indirectos, utilidad e impuestos (hoja Indirectos)."]]
+            for fila in range(2, 9):
+                wb["Indirectos"].cell(row=fila, column=2).number_format = "#,##0.00"
+            wb["Indirectos"]["A8"].font = _NEG
+            wb["Indirectos"]["B8"].font = _NEG
+            notas = [["Alcance",
+                      "Costo directo y precio de oferta (hoja Indirectos)." if not faltan else
+                      "Este libro presenta COSTO DIRECTO. No es precio de oferta: falta "
+                      f"{', '.join(faltan)} (hoja Indirectos)."]]
             if not base["es_base_control"]:
                 notas.append(["Estado", f"Presupuesto v{base['version']} en {base['estado']}: "
                                         "no está aprobado ni es base de control de obra."])
@@ -594,8 +639,287 @@ async def generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
                 "partidas_sin_precio": sin_precio,
                 "partidas_con_precio_pendiente": pendientes,
                 "partidas_con_precios_de_internet": de_internet,
+                "precio_de_oferta": (round(_oferta(firme, pcts), 2) if not faltan else
+                                     f"no calculable: falta {', '.join(faltan)}"),
                 "advertencias": [n[0] + ": " + n[1] for n in notas[:6]],
             })
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+def _rendimiento_dia(partida) -> float | None:
+    """Unidades por día: el del APU si existe; si no, el primer número del rendimiento declarado
+    en la planificación ("60 m3/día, 1 retroexcavadora" -> 60)."""
+    if partida["apu_rendimiento"]:
+        return float(partida["apu_rendimiento"])
+    m = re.search(r"\d+(?:[.,]\d+)?", partida["rendimiento_declarado"] or "")
+    return float(m.group(0).replace(",", ".")) if m else None
+
+
+def _dias_habiles(inicio: dt.date, fin: dt.date) -> int:
+    """Igual que NETWORKDAYS de Excel: lunes a viernes, ambos extremos incluidos."""
+    return sum(1 for i in range((fin - inicio).days + 1)
+               if (inicio + dt.timedelta(days=i)).weekday() < 5)
+
+
+@registro.herramienta(
+    "generar_gantt",
+    "Genera el cronograma de obra SOTICA-PLA-01 (.xlsx): portada, Gantt por semanas, curva S, premisas "
+    "de productividad e hitos contractuales, a partir de la planificación del presupuesto base. "
+    "Verifica que el Gantt no contradiga el presupuesto ni los rendimientos: si una partida "
+    "necesita más días hábiles de los que tiene programados, la marca como INCOHERENTE. Solo "
+    "programa partidas que existen en el presupuesto. Solo SUB-DOC.",
+    {
+        "type": "object",
+        "properties": {
+            "proyecto": {"type": "string"},
+            "revision": {"type": "string", "description": "por defecto 'A'"},
+        },
+        "required": ["proyecto"],
+    },
+)
+async def generar_gantt(args: dict[str, Any]) -> dict[str, Any]:
+    revision = args.get("revision") or "A"
+    codigo_doc = "SOTICA-PLA-01"
+    try:
+        async with db.transaction() as conn:
+            proyecto = await control.proyecto_por_ref(conn, args["proyecto"])
+            if proyecto is None:
+                return _error(f"No existe la obra '{args['proyecto']}'.")
+            base = await control.presupuesto_por_origen(conn, proyecto["id"], "base")
+            if base is None:
+                return _error("La obra no tiene presupuesto base de control: no hay qué programar.")
+            partidas = await conn.fetch(
+                """
+                SELECT p.codigo_interno, p.descripcion, p.unidad, p.cantidad, p.capitulo,
+                       p.apu_rendimiento, pl.fecha_inicio, pl.fecha_fin, pl.rendimiento_declarado
+                  FROM partidas p LEFT JOIN planificacion_partida pl ON pl.partida_id = p.id
+                 WHERE p.presupuesto_id = $1
+                 ORDER BY pl.fecha_inicio NULLS LAST, p.capitulo, p.orden
+                """,
+                base["id"],
+            )
+            programadas = [p for p in partidas if p["fecha_inicio"]]
+            if not programadas:
+                return _error("Ninguna partida del presupuesto base tiene fechas de planificación.")
+
+            wb = Workbook()
+            wb.remove(wb.active)
+            _hoja_portada(wb, proyecto, base, codigo_doc, revision,
+                          proyecto["formatos_ratificados"],
+                          titulo="Cronograma de obra", tipo_documento="Cronograma (Gantt)")
+
+            ws = wb.create_sheet("Gantt")
+            lunes = min(p["fecha_inicio"] for p in programadas)
+            lunes -= dt.timedelta(days=lunes.weekday())
+            ultimo = max(p["fecha_fin"] for p in programadas)
+            semanas = [lunes + dt.timedelta(weeks=i)
+                       for i in range((ultimo - lunes).days // 7 + 1)]
+            fijas = ["Código", "Partida", "Unidad", "Cantidad", "Rendimiento (und/día)",
+                     "Días hábiles requeridos", "Inicio", "Fin", "Días hábiles programados",
+                     "Coherencia"]
+            _encabezado(ws, fijas + [f"{s:%d/%m}" for s in semanas])
+            _anchos(ws, [11, 42, 8, 11, 13, 13, 11, 11, 13, 34] + [6] * len(semanas))
+            hoy = dt.date.today()
+            incoherentes, sin_rendimiento = [], []
+            for fila, p in enumerate(programadas, start=2):
+                rend = _rendimiento_dia(p)
+                r = str(fila)
+                _celdas(ws, fila, [
+                    p["codigo_interno"], p["descripcion"], p["unidad"], float(p["cantidad"]),
+                    rend if rend else "—",
+                    f"=IF(ISNUMBER(E{r}),ROUNDUP(D{r}/E{r},0),\"—\")",
+                    p["fecha_inicio"], p["fecha_fin"],
+                    f"=NETWORKDAYS(G{r},H{r})",
+                    f"=IF(ISNUMBER(F{r}),IF(F{r}>I{r},\"INCOHERENTE: faltan \"&(F{r}-I{r})"
+                    f"&\" días hábiles\",\"OK\"),\"Sin rendimiento declarado\")",
+                ], {4: "#,##0.00", 5: "#,##0.00", 7: "DD/MM/YYYY", 8: "DD/MM/YYYY"})
+                for j, s in enumerate(semanas, start=len(fijas) + 1):
+                    c = ws.cell(row=fila, column=j)
+                    c.border = _BORDE
+                    if s <= p["fecha_fin"] and s + dt.timedelta(days=6) >= p["fecha_inicio"]:
+                        c.fill = _FILL_ACENTO
+                    if s <= hoy <= s + dt.timedelta(days=6):
+                        c.border = Border(left=Side(style="medium", color="9C0006"),
+                                          right=Side(style="medium", color="9C0006"))
+                if rend is None:
+                    sin_rendimiento.append(p["codigo_interno"])
+                else:
+                    requeridos = math.ceil(float(p["cantidad"]) / rend)
+                    disponibles = _dias_habiles(p["fecha_inicio"], p["fecha_fin"])
+                    if requeridos > disponibles:
+                        incoherentes.append({
+                            "partida": p["codigo_interno"], "dias_habiles_requeridos": requeridos,
+                            "dias_habiles_programados": disponibles,
+                            "rendimiento": f"{rend:g} {p['unidad']}/día",
+                        })
+
+            # Curva S: % planificado al cierre de cada semana, con la misma ponderación que el
+            # control de obra (fn_pct_plan_obra); el real solo existe a la fecha de hoy.
+            real_hoy = float(await conn.fetchval("SELECT fn_pct_fisico_obra($1)", proyecto["id"]))
+            ws_s = wb.create_sheet("Curva S")
+            _encabezado(ws_s, ["Semana (cierre)", "% planificado acumulado", "% real acumulado"])
+            _anchos(ws_s, [16, 22, 18])
+            for fila, s in enumerate(semanas, start=2):
+                cierre = s + dt.timedelta(days=6)
+                plan = await conn.fetchval("SELECT fn_pct_plan_obra($1, $2)", proyecto["id"], cierre)
+                _celdas(ws_s, fila, [cierre, float(plan or 0),
+                                     real_hoy if s <= hoy <= cierre else None],
+                        {1: "DD/MM/YYYY", 2: "0.00", 3: "0.00"})
+            grafico = LineChart()
+            grafico.title, grafico.y_axis.title = "Curva S — avance físico", "%"
+            grafico.height, grafico.width = 9, 16
+            grafico.x_axis.delete = grafico.y_axis.delete = False  # openpyxl los oculta por defecto
+            grafico.x_axis.number_format = "DD/MM"
+            grafico.y_axis.scaling.min, grafico.y_axis.scaling.max = 0, 100
+            grafico.add_data(Reference(ws_s, min_col=2, max_col=3, min_row=1,
+                                       max_row=len(semanas) + 1), titles_from_data=True)
+            grafico.set_categories(Reference(ws_s, min_col=1, min_row=2, max_row=len(semanas) + 1))
+            grafico.series[1].marker.symbol = "circle"
+            grafico.legend.position = "b"
+            ws_s.add_chart(grafico, "E2")
+
+            no_programadas = [p["codigo_interno"] for p in partidas if not p["fecha_inicio"]]
+            _hoja_simple(
+                wb, "Premisas", ["Partida", "Rendimiento declarado", "Origen del rendimiento"],
+                [[p["codigo_interno"], p["rendimiento_declarado"] or "—",
+                  "APU de la partida" if p["apu_rendimiento"] else
+                  ("Planificación" if p["rendimiento_declarado"] else "No declarado")]
+                 for p in programadas]
+                + [["Jornada", "Lunes a viernes", "Premisa propuesta: los días hábiles se cuentan "
+                                                  "con NETWORKDAYS, sin feriados. Ratificar con SOTICA."]],
+                "",
+            )
+            _hoja_simple(
+                wb, "Hitos", ["Hito", "Fecha", "Nota"],
+                [["Inicio contractual", proyecto["fecha_inicio_contractual"] or "—", ""],
+                 ["Fin contractual", proyecto["fecha_fin_contractual"] or "—", ""],
+                 ["Fin programado", ultimo,
+                  "Excede el plazo contractual." if proyecto["fecha_fin_contractual"]
+                  and ultimo > proyecto["fecha_fin_contractual"] else ""]]
+                + [[f"Sin programar: {c}", "—", "Está en el presupuesto pero no tiene fechas."]
+                   for c in no_programadas],
+                "",
+            )
+            archivo_id, url = await _guardar_entregable(
+                conn, proyecto, wb, codigo_doc, revision,
+                f"Cronograma de obra — {proyecto['nombre_obra']}",
+            )
+            return _ok({
+                "archivo_id": str(archivo_id), "codigo_documento": codigo_doc,
+                "revision": revision, "url_descarga": url,
+                "hojas": [w.title for w in wb.worksheets],
+                "partidas_programadas": len(programadas),
+                "partidas_sin_programar": no_programadas,
+                "inicio": lunes.isoformat(), "fin_programado": ultimo.isoformat(),
+                "incoherencias_con_rendimientos": incoherentes,
+                "partidas_sin_rendimiento": sin_rendimiento,
+                "nota": "Días hábiles lunes a viernes (premisa propuesta, sin feriados).",
+            })
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+_SECCION = {
+    "type": "object",
+    "properties": {
+        "titulo": {"type": "string"},
+        "contenido": {"type": "string",
+                      "description": "Párrafos separados por línea en blanco; viñetas con '- '; "
+                                     "**negrita**."},
+        "tabla": {"type": "object", "properties": {
+            "cabeceras": {"type": "array", "items": {"type": "string"}},
+            "filas": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
+        }, "required": ["cabeceras", "filas"]},
+    },
+    "required": ["titulo"],
+}
+
+
+@registro.herramienta(
+    "generar_word",
+    "Genera un documento Word (.docx) en formato SOTICA: portada SOTICA-DOC-01, control de "
+    "revisiones SOTICA-DOC-02, estilos, A4, pie con código y página. Tú redactas el contenido; "
+    "el sistema ordena las secciones según el formato y marca como PENDIENTE DE CONFIRMACIÓN "
+    "las obligatorias que no traigas. Usa EXACTAMENTE estos títulos de sección por tipo: "
+    + "; ".join(f"{t} ({v['codigo']}): {', '.join(v['secciones'])}"
+                for t, v in oficina.TIPOS.items())
+    + ". Solo SUB-DOC.",
+    {
+        "type": "object",
+        "properties": {
+            "proyecto": {"type": "string"},
+            "tipo": {"type": "string", "enum": sorted(oficina.TIPOS)},
+            "titulo": {"type": "string"},
+            "secciones": {"type": "array", "items": _SECCION},
+            "revision": {"type": "string", "description": "por defecto 'A'"},
+        },
+        "required": ["proyecto", "tipo", "titulo", "secciones"],
+    },
+)
+async def generar_word(args: dict[str, Any]) -> dict[str, Any]:
+    revision = args.get("revision") or "A"
+    tipo = args["tipo"]
+    if tipo not in oficina.TIPOS:
+        return _error(f"Tipo '{tipo}' no existe. Usa uno de: {', '.join(sorted(oficina.TIPOS))}.")
+    codigo_doc = oficina.TIPOS[tipo]["codigo"]
+    try:
+        async with db.transaction() as conn:
+            proyecto = await control.proyecto_por_ref(conn, args["proyecto"])
+            if proyecto is None:
+                return _error(f"No existe la obra '{args['proyecto']}'.")
+            datos, faltantes = oficina.documento_word(
+                tipo, dict(proyecto), args["titulo"], args.get("secciones") or [], revision,
+                proyecto["formatos_ratificados"])
+            archivo_id, url = await _registrar_entregable(
+                conn, proyecto, datos, "docx", codigo_doc, revision, args["titulo"])
+        return _ok({
+            "archivo_id": str(archivo_id), "codigo_documento": codigo_doc, "revision": revision,
+            "url_descarga": url, "secciones_pendientes": faltantes,
+            "advertencias": ([f"Secciones obligatorias sin contenido, marcadas PENDIENTE: "
+                              f"{', '.join(faltantes)}."] if faltantes else [])
+                            + ([] if proyecto["formatos_ratificados"] else
+                               ["Formato SOTICA propuesto — pendiente de ratificación."]),
+        })
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+@registro.herramienta(
+    "generar_presentacion",
+    "Genera una presentación PowerPoint (.pptx) en formato SOTICA (SOTICA-PRS-01, propuesto) "
+    "para comités de licitación, juntas o inspecciones: portada SOTICA y una diapositiva por "
+    "tema con título y viñetas cortas. Solo SUB-DOC.",
+    {
+        "type": "object",
+        "properties": {
+            "proyecto": {"type": "string"},
+            "titulo": {"type": "string"},
+            "diapositivas": {"type": "array", "items": {
+                "type": "object",
+                "properties": {"titulo": {"type": "string"},
+                               "vinetas": {"type": "array", "items": {"type": "string"}}},
+                "required": ["titulo", "vinetas"]}},
+            "revision": {"type": "string", "description": "por defecto 'A'"},
+        },
+        "required": ["proyecto", "titulo", "diapositivas"],
+    },
+)
+async def generar_presentacion(args: dict[str, Any]) -> dict[str, Any]:
+    revision = args.get("revision") or "A"
+    codigo_doc = "SOTICA-PRS-01"
+    try:
+        async with db.transaction() as conn:
+            proyecto = await control.proyecto_por_ref(conn, args["proyecto"])
+            if proyecto is None:
+                return _error(f"No existe la obra '{args['proyecto']}'.")
+            datos = oficina.presentacion(dict(proyecto), args["titulo"], args["diapositivas"],
+                                         codigo_doc, revision, proyecto["formatos_ratificados"])
+            archivo_id, url = await _registrar_entregable(
+                conn, proyecto, datos, "pptx", codigo_doc, revision, args["titulo"])
+        return _ok({"archivo_id": str(archivo_id), "codigo_documento": codigo_doc,
+                    "revision": revision, "url_descarga": url,
+                    "diapositivas": len(args["diapositivas"]) + 1})
     except Exception as exc:  # noqa: BLE001
         return _error(str(exc))
 

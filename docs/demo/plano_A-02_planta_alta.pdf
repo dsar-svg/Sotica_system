@@ -1,0 +1,66 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1553 >>
+stream
+0 0 0 RG 4 w
+60 200 540 240 re S
+330 200 m 330 440 l S
+0.5 w
+BT /F1 9 Tf 300.0 454 Td (Muro eje A: 18,00 m) Tj ET
+BT /F1 9 Tf 300.0 182 Td (Muro eje B: 18,00 m) Tj ET
+BT /F1 9 Tf 10 320.0 Td (Eje 1: 8,00 m) Tj ET
+BT /F1 9 Tf 606 320.0 Td (Eje 3: 8,00 m) Tj ET
+BT /F1 9 Tf 336 300.0 Td (Muro interior eje 2: 8,00 m) Tj ET
+BT /F1 9 Tf 120 208 Td (P-1) Tj ET
+BT /F1 9 Tf 240 208 Td (P-1) Tj ET
+BT /F1 9 Tf 420 208 Td (P-1) Tj ET
+BT /F1 9 Tf 510 208 Td (P-1) Tj ET
+BT /F1 9 Tf 90 426 Td (V-1) Tj ET
+BT /F1 9 Tf 180 426 Td (V-1) Tj ET
+BT /F1 9 Tf 270 426 Td (V-1) Tj ET
+BT /F1 9 Tf 360 426 Td (V-1) Tj ET
+BT /F1 9 Tf 450 426 Td (V-1) Tj ET
+BT /F1 9 Tf 540 426 Td (V-1) Tj ET
+BT /F1 9 Tf 60 150 Td (CUADRO DE PAREDES) Tj ET
+BT /F1 9 Tf 60 137 Td (Pared de bloque de arcilla 15 cm, altura libre 2,80 m \(de losa a viga\)) Tj ET
+BT /F1 9 Tf 60 124 Td (CUADRO DE ABERTURAS) Tj ET
+BT /F1 9 Tf 60 111 Td (P-1 puerta 0,90 x 2,10 m - cantidad 4) Tj ET
+BT /F1 9 Tf 60 98 Td (V-1 ventana 1,50 x 1,20 m - cantidad 6) Tj ET
+BT /F1 9 Tf 60 85 Td (NOTA: cotas en metros a eje de muro) Tj ET
+BT /F1 9 Tf 60 72 Td (NOTA: las aberturas se descuentan del área de pared) Tj ET
+1 w 560 30 212 110 re S
+BT /F1 8 Tf 566 124 Td (PROYECTO: Edificio administrativo - sede regional) Tj ET
+BT /F1 8 Tf 566 111 Td (OBRA: SOT-2026-014) Tj ET
+BT /F1 8 Tf 566 98 Td (LAMINA: A-02) Tj ET
+BT /F1 8 Tf 566 85 Td (CONTENIDO: Planta alta - paredes de bloque) Tj ET
+BT /F1 8 Tf 566 72 Td (ESCALA: 1:100) Tj ET
+BT /F1 8 Tf 566 59 Td (FECHA: 01/09/2026) Tj ET
+BT /F1 8 Tf 566 46 Td (REV: 0) Tj ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001846 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1943
+%%EOF

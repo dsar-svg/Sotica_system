@@ -220,9 +220,16 @@ CREATE TABLE presupuestos (
   moneda          text NOT NULL,
   fecha_base      date NOT NULL,
   clase_estimado  text,                                -- AACE clase 5..1 (PDF 8.2)
+  -- Precio de oferta (PDF 3.4, 8.3). Porcentajes que decide SOTICA o fija el pliego; NULL = pendiente.
+  adm_pct         numeric(6,3) CHECK (adm_pct >= 0),       -- administracion y gastos generales / CD
+  utilidad_pct    numeric(6,3) CHECK (utilidad_pct >= 0),  -- utilidad e imprevistos / (CD + adm)
+  impuesto_pct    numeric(6,3) CHECK (impuesto_pct >= 0),  -- IVA u otro / subtotal
+  fuente_indirectos text,
   creado_por      codigo_agente NOT NULL DEFAULT 'ORQ-COST',
   creado_en       timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (proyecto_id, version)
+  UNIQUE (proyecto_id, version),
+  CHECK (fuente_indirectos IS NOT NULL
+         OR (adm_pct IS NULL AND utilidad_pct IS NULL AND impuesto_pct IS NULL))
 );
 CREATE UNIQUE INDEX presupuesto_base_unico
   ON presupuestos (proyecto_id) WHERE es_base_control;

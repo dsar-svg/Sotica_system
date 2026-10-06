@@ -21,13 +21,10 @@ Base: **OpenAI Agents SDK** (orquestador + subagentes como herramientas) + servi
 | Persistencia | Postgres (proyecto, presupuesto, partidas, avances, estado consolidado, trazabilidad) **y la memoria de conversación por obra** (`SQLAlchemySession`, session_id `obra:<código>`), persistente entre procesos. |
 | Archivos | Bucket (S3/MinIO) para planos, fotos de obra, PDFs y entregables generados. |
 | Frontend | Chat web simple + panel de archivos generados + carga de evidencia de obra. |
-| Fuera de alcance fase 1 | .pptx, FIDIC/multilaterales, SUB-ELE/HID/EST/VIA/SUE activos. |
+| Pendiente | PDF de entregables, OCR de planos, valuaciones / fórmula polinómica (ver ESTADO_ACTUAL.md §5). |
 
-**Ciclo funcional 1 (end-to-end de delegación):**
-`ORQ-COST + SUB-CM + SUB-DOC (solo Excel) + SUB-AVA`
-
-Los otros 5 subagentes quedan escritos y registrados, pero **deshabilitados** en la configuración del ciclo 1
-(`enabled: false` en el registro de agentes), para que activarlos sea un cambio de bandera, no de arquitectura.
+Los nueve agentes están activos. Apagar uno es poner `enabled: false` en su archivo de prompt: es un
+cambio de bandera, no de arquitectura.
 
 ---
 
@@ -50,16 +47,16 @@ Sotica_system/
 │   │   ├── sub-ava.md               # redactado aquí (nuevo, no está en el PDF)
 │   │   ├── sub-cm.md                # casi textual §4.2
 │   │   ├── sub-doc.md               # casi textual §4.1
-│   │   ├── sub-ele.md               # casi textual §4.3   (fase 2)
-│   │   ├── sub-hid.md               # casi textual §4.4   (fase 2)
-│   │   ├── sub-est.md               # casi textual §4.5   (fase 2)
-│   │   ├── sub-via.md               # casi textual §4.6   (fase 2)
-│   │   └── sub-sue.md               # casi textual §4.7   (fase 2)
+│   │   ├── sub-ele.md               # casi textual §4.3
+│   │   ├── sub-hid.md               # casi textual §4.4
+│   │   ├── sub-est.md               # casi textual §4.5
+│   │   ├── sub-via.md               # casi textual §4.6
+│   │   └── sub-sue.md               # casi textual §4.7
 │   ├── mcp/
 │   │   ├── HERRAMIENTAS.md          # contratos de las herramientas MCP
 │   │   ├── sotica-obra/             # registrar_avance, consultar_estado_obra, consultar_presupuesto
-│   │   ├── sotica-docs/             # generar_excel_computos (xlsx). docx/pptx = fase 2
-│   │   └── sotica-planos/           # lectura de PDF de planos (fase 1.5)
+│   │   ├── sotica-docs/             # Excel (CM-01, PRE-01, PLA-01), Word y PowerPoint
+│   │   └── sotica-planos/           # listar_planos, leer_plano_pdf (texto del PDF)
 │   └── api/                         # HTTP: chat SSE, upload evidencia, listado de entregables
 ├── frontend/
 │   └── src/                         # chat + panel de archivos + formulario de avance
@@ -74,13 +71,13 @@ El código los carga; nunca los duplica en strings.
 
 ## 3. Mapa de agentes y matriz de delegación (§2.3)
 
-| Código | Rol | Herramientas MCP permitidas | Ciclo 1 |
+| Código | Rol | Herramientas MCP permitidas | Activo |
 |---|---|---|---|
 | ORQ-COST | Orquestador, presupuesto, APU, integración | `consultar_presupuesto`, `consultar_estado_obra`, delegación a subagentes | Sí |
 | SUB-CM | Cómputos métricos | `leer_plano_pdf` (1.5), `consultar_presupuesto` | Sí |
 | SUB-DOC | Documentación / Excel | `generar_excel_computos`, `consultar_presupuesto`, `consultar_estado_obra` | Sí (solo xlsx) |
 | SUB-AVA | Seguimiento y control de avance | `leer_reporte_avance`, `registrar_avance`, `consultar_presupuesto`, `consultar_estado_obra` | Sí |
-| SUB-ELE / HID / EST / VIA / SUE | Especialidades | según §4.3–4.7 | No — fase 2 |
+| SUB-ELE / HID / EST / VIA / SUE | Especialidades | según §4.3–4.7 | Sí |
 
 Cada subagente se convierte en una herramienta `delegar_sub_xxx` de ORQ-COST. El run del subagente es
 anidado y **sin sesión compartida**: ve su briefing, no la conversación del usuario — que es exactamente
@@ -147,7 +144,7 @@ Residente/inspector --(chat o formulario)--> reportes_avance   (CRUDO, inmutable
                                                    |
                            ORQ-COST lee SOLO el consolidado <--- "¿cómo va la obra?"
                                                    |
-                                   informe formal --> SUB-DOC (Word/PPT, fase 2)
+                                   informe formal --> SUB-DOC (Word/PPT)
 ```
 
 Invariantes:

@@ -302,6 +302,12 @@ async def resolver_bloqueo(args: dict[str, Any]) -> dict[str, Any]:
                             "type": "string",
                             "description": "plano, corte, eje y cota que sustentan la cantidad",
                         },
+                        "modo": {
+                            "type": "string", "enum": ["agregar", "reemplazar"],
+                            "description": "obligatorio si la partida ya está en el borrador: "
+                                           "agregar (otro sector o planta, se suma a la hoja) o "
+                                           "reemplazar (corrige el cómputo anterior)",
+                        },
                         "mediciones": {
                             "type": "array",
                             "items": {
@@ -424,6 +430,70 @@ async def registrar_apu(args: dict[str, Any]) -> dict[str, Any]:
                 conn, args["proyecto"], args["codigo_partida"], args.get("registrado_por", ""),
                 args.get("renglones") or [], args.get("rendimiento"), args.get("fcas_pct"),
             ))
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+@registro.herramienta(
+    "registrar_indirectos",
+    "Fija los porcentajes que convierten el costo directo en precio de oferta: administración y "
+    "gastos generales (sobre el costo directo), utilidad e imprevistos (sobre costo directo + "
+    "administración) e impuesto (sobre el subtotal). Son decisión de SOTICA o los fija el pliego: "
+    "exige la fuente y la confirmación textual del usuario. Lo que no se indique queda pendiente. "
+    "Solo ORQ-COST.",
+    {
+        "type": "object",
+        "properties": {
+            "proyecto": {"type": "string"},
+            "origen": {"type": "string", "enum": ["auto", "borrador", "base"],
+                       "description": "auto (por defecto): el borrador si existe; si no, la base."},
+            "administracion_pct": {"type": "number"},
+            "utilidad_pct": {"type": "number"},
+            "impuesto_pct": {"type": "number", "description": "IVA u otro tributo aplicable"},
+            "fuente": {"type": "string",
+                       "description": "de dónde salen: 'pliego del ente, cláusula X', "
+                                      "'decisión de SOTICA', etc."},
+            "confirmacion_usuario": {"type": "string",
+                                     "description": "cita textual de la instrucción del usuario"},
+        },
+        "required": ["proyecto", "fuente", "confirmacion_usuario"],
+    },
+)
+async def registrar_indirectos(args: dict[str, Any]) -> dict[str, Any]:
+    if all(args.get(k) is None for k in ("administracion_pct", "utilidad_pct", "impuesto_pct")):
+        return _error("No hay porcentajes que registrar. Si el usuario no los dio, no llames esta "
+                      "herramienta: el precio de oferta queda pendiente y se lo dices.")
+    if not (args.get("confirmacion_usuario") or "").strip():
+        return _error("Los indirectos, la utilidad y los impuestos los decide SOTICA o el pliego: "
+                      "falta la confirmación del usuario.")
+    try:
+        async with db.transaction() as conn:
+            proyecto = await control.proyecto_por_ref(conn, args["proyecto"])
+            if proyecto is None:
+                return _error(f"No existe la obra '{args['proyecto']}'.")
+            pres = await control.presupuesto_por_origen(conn, proyecto["id"],
+                                                        args.get("origen") or "auto")
+            if pres is None:
+                return _error("La obra no tiene presupuesto.")
+            await conn.execute(
+                """
+                UPDATE presupuestos SET adm_pct = $2, utilidad_pct = $3, impuesto_pct = $4,
+                       fuente_indirectos = $5 WHERE id = $1
+                """,
+                pres["id"], args.get("administracion_pct"), args.get("utilidad_pct"),
+                args.get("impuesto_pct"),
+                f"{args['fuente']} — confirmado: «{args['confirmacion_usuario'].strip()}»",
+            )
+        pendientes = [n for n, k in (("administración", "administracion_pct"),
+                                     ("utilidad", "utilidad_pct"), ("impuesto", "impuesto_pct"))
+                      if args.get(k) is None]
+        return _ok({"presupuesto": {"version": pres["version"], "estado": pres["estado"]},
+                    "administracion_pct": args.get("administracion_pct"),
+                    "utilidad_pct": args.get("utilidad_pct"),
+                    "impuesto_pct": args.get("impuesto_pct"),
+                    "pendientes": pendientes,
+                    "nota": "SOTICA-PRE-01 calcula el precio de oferta con estos porcentajes en la "
+                            "hoja Indirectos; vuelve a generarlo para verlo."})
     except Exception as exc:  # noqa: BLE001
         return _error(str(exc))
 

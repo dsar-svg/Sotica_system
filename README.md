@@ -1,9 +1,11 @@
-# SOTICA-COSTOS — ciclo 1
+# SOTICA-COSTOS
 
-> **¿Retomas el proyecto sin contexto?** Empieza por [ESTADO.md](ESTADO.md): dónde vamos, qué está
-> verificado, qué falta para arrancar y la conversación abierta con SOTICA sobre precios y licencias.
+> **¿Retomas el proyecto sin contexto?** Empieza por [ESTADO_ACTUAL.md](ESTADO_ACTUAL.md): qué
+> funciona, qué falta y cómo ponerlo en marcha. El guion de la demo está en
+> [docs/GUION_DEMO.md](docs/GUION_DEMO.md).
 
-ORQ-COST (**OpenAI Agents SDK**) + SUB-CM + SUB-DOC (Excel) + SUB-AVA, con **MCP stdio** como capa de
+ORQ-COST (**OpenAI Agents SDK**) + 8 subagentes (SUB-CM, SUB-DOC, SUB-AVA, SUB-ELE, SUB-HID, SUB-EST,
+SUB-VIA, SUB-SUE), con **MCP stdio** como capa de
 herramientas y Postgres como estado. Arquitectura completa en [ARQUITECTURA.md](ARQUITECTURA.md);
 contratos de herramientas en [backend/mcp/HERRAMIENTAS.md](backend/mcp/HERRAMIENTAS.md).
 
@@ -82,8 +84,8 @@ depender de Postgres. No sustituye a las pruebas de base de datos.
 | Base de ponderación del avance físico | `config_control` + `fn_pct_fisico_obra` | por monto de partida |
 | Formatos de documento | `proyectos.formatos_ratificados` | juego propuesto §7.2 |
 
-## Fuera del ciclo 1
+## Pendiente
 
-`.pptx`, Word, FIDIC/multilaterales, lectura automática de planos PDF (`sotica_planos`), y los
-subagentes SUB-ELE / SUB-HID / SUB-EST / SUB-VIA / SUB-SUE — ya migrados al formato nuevo y con
-`enabled: false`; activarlos es quitar la bandera y sumarlos a `CICLO_1_AGENTES`.
+PDF de los entregables, OCR de planos escaneados, interpretación de fotos, valuaciones y fórmula
+polinómica, usuarios y despliegue. Detalle en [ESTADO_ACTUAL.md](ESTADO_ACTUAL.md) §5. Un agente se
+apaga con `enabled: false` en su archivo de `backend/agents/`.

@@ -24,80 +24,80 @@ Hay que copiar ambos documentos a la otra PC a mano.
 
 ## 2. Arquitectura en una mirada
 
-- **Orquestación:** OpenAI Agents SDK. Los subagentes son herramientas de ORQ-COST (`delegar_sub_cm`,
-  `delegar_sub_doc`, `delegar_sub_ava`), con contexto aislado y briefing tipado (§5.1).
-- **Herramientas:** dos servidores MCP stdio (`sotica_obra`, `sotica_docs`) más un tercero de datos
+- **Orquestación:** OpenAI Agents SDK. Los subagentes son herramientas de ORQ-COST (`delegar_sub_cm`, `delegar_sub_hid`,
+  etc.), con contexto aislado y briefing tipado (§5.1).
+- **Herramientas:** tres servidores MCP stdio (`sotica_obra`, `sotica_docs`, `sotica_planos`) más uno de datos
   enlatados (`sotica_fixtures`) que solo usan las pruebas.
 - **Datos:** PostgreSQL. Las reglas duras viven en el esquema (CHECK, triggers, funciones), no solo en
   los prompts.
 - **Panel:** `frontend/index.html`, un solo archivo HTML/CSS/JS servido por FastAPI.
 - **Prompts:** solo en `backend/agents/*.md`. El código los carga; no se duplican.
 
-Agentes activos: **ORQ-COST, SUB-CM, SUB-DOC, SUB-AVA**. Los otros cinco (SUB-ELE, SUB-HID, SUB-EST,
-SUB-VIA, SUB-SUE) tienen prompt escrito pero están apagados (`enabled: false`) y sin herramientas.
+Agentes activos: los **nueve** (ORQ-COST + SUB-CM, SUB-DOC, SUB-AVA, SUB-ELE, SUB-HID, SUB-EST,
+SUB-VIA, SUB-SUE). Se apagan con `enabled: false` en su archivo de prompt.
 
 ## 3. Qué funciona hoy
-
-Todo lo de esta lista se ejecutó de verdad contra Postgres y `gpt-5`.
 
 | Flujo | Estado |
 |---|---|
 | Cómputo por chat → SUB-CM lo registra en un presupuesto borrador con hoja de medición | Funciona |
-| Libro de cómputos en Excel (SOTICA-CM-01) con fórmulas vivas | Funciona |
-| APU con evidencia por insumo: origen, proveedor, enlace, fecha y quién lo cargó | Funciona |
-| Cotización sin evidencia completa → pendiente de confirmar, fuera del total firme | Funciona; lo exige también la base de datos |
+| **La aritmética del cómputo la hace el sistema**: `registrar_computo` evalúa cada expresión y corrige al modelo | Funciona (`tests/aritmetica_computo.py`) |
+| Planos PDF: el panel los sube, SUB-CM y especialistas los leen con `listar_planos` / `leer_plano_pdf` (texto, sin OCR) | Funciona contra la base (`tests/smoke_planos.py`) |
+| Libro de cómputos SOTICA-CM-01 con fórmulas vivas | Funciona |
+| APU con evidencia por insumo; cotización sin evidencia → pendiente, fuera del total firme | Funciona; lo exige también la base |
 | Precios aproximados de materiales buscados en internet, con enlace y fecha | Funciona |
-| Presupuesto en Excel (SOTICA-PRE-01): resumen, detalle, APU, indirectos, notas | Funciona; fórmulas verificadas abriéndolo en Excel |
-| Reporte de campo → SUB-AVA → avance físico y financiero, desviaciones | Funciona |
-| Trabajo no presupuestado → bloqueo que solo se cierra con decisión del usuario | Funciona |
-| Bitácora de delegaciones con las herramientas que usó cada subagente | Funciona |
-| Panel rediseñado: conversación + pestañas de avance, presupuesto, bloqueos, archivos, trazabilidad | Funciona |
+| Presupuesto SOTICA-PRE-01 con **precio de oferta**: administración, utilidad e IVA con `registrar_indirectos` (solo con cita del usuario o pliego) | Funciona; verificado en Excel |
+| **Cronograma SOTICA-PLA-01**: Gantt por semanas, coherencia contra rendimientos (NETWORKDAYS), curva S, premisas, hitos | Funciona; verificado en Excel |
+| **Word** en formato SOTICA: informe de avance (INF-01), técnico (INF-02), propuesta (COM-01), memoria (MEM-01), dictamen (DIC-01), observaciones al pliego (OBS-01) | Funciona; secciones obligatorias faltantes salen PENDIENTE |
+| **PowerPoint** SOTICA-PRS-01 | Funciona |
+| Orden mixta repartida entre especialistas (§11.1) | Funciona con 5 especialistas en la prueba |
+| FIDIC + pliego: declara qué manda (§11.8) | Funciona |
+| Reporte de campo → SUB-AVA → avance físico y financiero, desviaciones, bloqueos | Funciona |
+| Panel: conversación, pestañas, **alta de obra** con memoria de proyecto, carga de planos | Funciona |
 
-**Criterios de aceptación §11:** 8 de 8 con `gpt-5` (`python -m tests.aceptacion_11`). Cubren los
-criterios 1, 2, 3 y 7 del PDF; los criterios 4, 5, 6, 8 y 9 no tienen prueba.
+**Criterios de aceptación §11:** 12 de 12 con `gpt-5` (`python -m tests.aceptacion_11`, ~0,75 USD por
+corrida, medido). En la última corrida 11.8 falló una vez por no escribir "desviación"; con el prompt
+reforzado pasó 3 de 3. Cubren los criterios 1, 2, 3, 4, 5, 7 y 8 del PDF; 6 y 9 no tienen prueba automática.
 
-**No usar `gpt-4o`:** en las pruebas inventó longitudes y diámetros de tubería e ignoró medidas dadas.
+**Modelo:** `gpt-5`. Se midieron `gpt-5-mini`, `gpt-5.4-mini` y `gpt-5.6-luna`: fallan en "no inventa"
+o en aritmética. Opción probada para producción: `SOTICA_MODEL_SUBAGENTES=gpt-5-mini` (orquestador
+en `gpt-5`) pasó 8/8 dos veces con ~28 % menos costo. **No usar `gpt-4o`.**
 
-## 4. Sin verificar al cierre de esta sesión
+**OpenAI no atiende desde Venezuela** (`unsupported_country_region_territory`): la demo necesita VPN o
+un servidor fuera del país. `python -m scripts.verificar_demo` lo comprueba.
 
-Lo último que se tocó quedó a medias; revisarlo antes de confiar en ello.
+## 4. Verificación del 6/10/2026
 
-- **Conservar el chat al recargar la página.** Se implementó con `sessionStorage`, pero la única prueba
-  recargó a mitad de una respuesta y el hilo salió vacío. No se sabe si funciona en el caso normal.
-- **Cerrar un bloqueo desde el panel nuevo.** La herramienta se llamó y la respuesta empezó a llegar,
-  pero se interrumpió antes de comprobar que el contador de la pestaña bajara a cero. Por API sí está
-  verificado.
-- **Diseño en pantalla angosta.** Se corrigió el desborde horizontal y el encabezado; solo se revisó
-  la pantalla inicial.
-- **Carga de fotos en un reporte.** Los archivos se guardan, pero nunca se probó con adjuntos reales.
-- `scripts/db_stop.ps1` no se ha ejecutado nunca.
+Recorrido completo del guion (9 órdenes) contra el panel, la base real y `gpt-5`, sin errores
+(`tmp/recorrido.py`, fuera de git). Verificado en esa corrida y en el navegador:
+
+- Chat conservado al recargar la página (respuesta completa).
+- Cerrar un bloqueo desde el chat: el panel queda en 0 y el avance en 11,93 % real vs 31,92 % plan.
+- Pantalla angosta (375 px): sin desborde horizontal en las cinco pestañas.
+- Plano A-02 subido desde el panel y computado por ejes: 149,64 m², sin pisar la planta baja.
+- `scripts/db_start.ps1` y `db_stop.ps1` ejecutados (Postgres 18.6 de scoop).
+
+Sin verificar: carga de fotos reales en un reporte de campo (los archivos se guardan; el modelo solo
+recibe el nombre).
 
 ## 5. Lo que la propuesta promete y todavía no existe
 
-Es la brecha contra lo vendido. Conviene decidir qué entra en la demo y qué se declara como siguiente fase.
-
-1. **Cinco especialistas apagados** (eléctrico, hidráulico, estructural, vialidad, suelos). El criterio
-   §11.1 del cliente pide una orden mixta con dictámenes de al menos cuatro subagentes: hoy es imposible.
-2. **Word, PowerPoint y Gantt.** Solo se genera Excel.
-3. **Lectura de planos en PDF.** No existe; el panel ni siquiera permite subir un plano.
-4. **Interpretación de fotos.** Al modelo solo le llega el nombre del archivo, no la imagen.
-5. **Indirectos, utilidad, impuestos y FCAS.** El presupuesto es costo directo; esos valores esperan
-   datos de SOTICA y no se suponen.
-6. **Usuarios y contraseñas**, y una forma de **crear una obra** desde el panel (hoy solo por SQL).
-7. **Despliegue** en el servidor del cliente: no hay Dockerfile ni configuración.
-8. **Costos de API medidos.** La propuesta estima 1–4 USD por presupuesto; nunca se midió. Además ahora
-   hay búsqueda web, que suma costo.
+1. **PDF de los entregables.** Se exportan a mano desde Excel, Word o PowerPoint.
+2. **Planos:** solo texto del PDF; sin OCR ni lectura del dibujo. Un escaneo no se puede leer.
+3. **Interpretación de fotos.** Al modelo solo le llega el nombre del archivo, no la imagen.
+4. **FCAS, administración, utilidad e impuestos** solo se aplican si SOTICA o el pliego los dan.
+5. **Los especialistas no persisten sus propias cantidades**: devuelven dictamen (queda en la bitácora)
+   y SUB-CM registra cómputos.
+6. **Usuarios y contraseñas.**
+7. **Despliegue** en el servidor del cliente: no hay Dockerfile ni configuración (y tiene que estar
+   fuera de Venezuela o con salida por VPN, por OpenAI).
+8. **Valuaciones y fórmula polinómica** (§3.2, caso 6.3.6): no hay herramienta; ORQ-COST solo razona.
 
 ## 6. Próximos pasos, en orden
 
-1. Verificar los cinco puntos de la sección 4.
-2. Ensayar el guion completo de `docs/GUION_DEMO.md` de principio a fin, desde el panel.
-3. Actualizar `README.md`, `ARQUITECTURA.md` y `backend/mcp/HERRAMIENTAS.md`: no mencionan
-   `registrar_apu`, `generar_excel_presupuesto`, la búsqueda web ni los scripts nuevos.
-4. Medir el costo real de API de un recorrido completo.
-5. Decidir con el cliente el alcance de la demo frente a la sección 5, y acordar por escrito qué
-   significa "entrega funcional".
-6. Construir lo que falte de la sección 5, empezando por lo que el cliente priorice.
+1. Ensayar `docs/GUION_DEMO.md` en el panel con la VPN de la demo.
+2. Actualizar `README.md` y `ARQUITECTURA.md` con lo de esta sesión.
+3. Decidir con el cliente el alcance frente a la sección 5 y qué significa "entrega funcional".
 
 ## 7. Decisiones tomadas en esta sesión
 
@@ -106,7 +106,8 @@ Es la brecha contra lo vendido. Conviene decidir qué entra en la demo y qué se
 - **La etiqueta de dato de un precio la asigna el sistema** según la evidencia, no el modelo.
 - **Precios de internet:** permitidos solo para materiales, siempre con enlace y fecha, marcados como
   referenciales. Mano de obra y rendimientos los da una persona. Se apaga con `SOTICA_BUSCAR_PRECIOS=0`.
-- **El FCAS no se supone** y los **indirectos no se calculan** hasta que SOTICA los defina.
+- **El FCAS y los indirectos no se suponen**: se aplican solo con cita del usuario o del pliego.
+- **Se queda `gpt-5`** (6/10/2026) por fiabilidad frente al cliente; la propuesta lo nombra.
 - **El avance físico pondera sobre todo el presupuesto base.** Antes promediaba solo las partidas con
   avance y sobrestimaba (45,42 % en vez de 11,93 %).
 - **Los cómputos nuevos van a un presupuesto borrador**; el presupuesto base de control no se toca.
@@ -119,7 +120,7 @@ Es la brecha contra lo vendido. Conviene decidir qué entra en la demo y qué se
 Lo que **no** viaja en el repo: `.env` (clave de OpenAI), `.pgdata/` (la base), `storage/` (archivos
 generados), `.venv/`, el PDF de especificación y la propuesta.
 
-1. **Requisitos:** Python 3.14, PostgreSQL 17 y Git. Excel para abrir los entregables.
+1. **Requisitos:** Python 3.14, PostgreSQL 17 o 18 y Git. Excel para abrir los entregables.
 2. **Clonar y preparar el entorno:**
 
    ```powershell
@@ -161,7 +162,8 @@ generados), `.venv/`, el PDF de especificación y la propuesta.
    .\scripts\demo_start.ps1
    ```
 
-Si PostgreSQL quedó en otra ruta, ajustarla en `scripts/db_start.ps1` y `scripts/db_stop.ps1`.
+`scripts/db_start.ps1` y `scripts/db_stop.ps1` usan el `pg_ctl` del PATH (por ejemplo, Postgres de
+scoop) y, si no hay, `C:\Program Files\PostgreSQL\17\bin`. Probado también con PostgreSQL 18.6.
 El Postgres del proyecto no arranca solo al reiniciar la PC: `demo_start.ps1` lo levanta.
 
 ## 9. Ramas
@@ -188,6 +190,7 @@ backend/core/control.py      aritmética de avance y desviaciones
 backend/core/avance.py       registro de avance y bloqueos
 backend/mcp/sotica_obra.py   herramientas de presupuesto, APU, avance y bloqueos
 backend/mcp/sotica_docs.py   generadores de Excel
+backend/mcp/sotica_planos.py listar_planos y leer_plano_pdf (SUB-CM)
 backend/api/main.py          API HTTP y chat
 frontend/index.html          el panel
 scripts/                     reset_demo, db_start, db_stop, demo_start

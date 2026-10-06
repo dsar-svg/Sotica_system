@@ -25,6 +25,7 @@ from .registry import Registro
 REGISTROS: dict[str, str] = {
     "sotica_obra": "backend.mcp.sotica_obra",
     "sotica_docs": "backend.mcp.sotica_docs",
+    "sotica_planos": "backend.mcp.sotica_planos",
     # Solo para los criterios de aceptación §11: mismos contratos, datos enlatados.
     "sotica_fixtures": "backend.mcp.fixtures",
 }

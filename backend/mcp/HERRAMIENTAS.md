@@ -175,9 +175,50 @@ Lectura pura. La usan ORQ-COST, SUB-CM, SUB-DOC y SUB-AVA para saber contra qué
 Devuelve el reporte crudo (texto, adjuntos, quién y cuándo) para que SUB-AVA lo interprete.
 **Solo SUB-AVA la tiene permitida** — ORQ-COST no lee crudos.
 
+## 6. `listar_planos` y `leer_plano_pdf` — servidor `sotica_planos` *(SUB-CM)*
+
+`listar_planos(proyecto)` devuelve los archivos de tipo plano, pliego o especificación de la obra con
+su `archivo_id`. El usuario los sube en el panel (pestaña Archivos, `POST /api/proyectos/{ref}/planos`,
+solo PDF).
+
+`leer_plano_pdf(archivo_id, max_paginas=50)` extrae con `pypdf` el texto del PDF y devuelve title
+block, cotas lineales con decimales (`4,50 m`), diámetros (`Ø 110 mm`, `Ø 4"`), áreas, volúmenes y
+notas. **Solo lo que está literalmente en el texto**: sin OCR, sin criterio de ingeniería. Un escaneo
+sin capa de texto devuelve `advertencia_datos` y SUB-CM debe pedir el plano vectorial o las cotas
+transcritas. Prueba sin base ni modelo: `python -m tests.smoke_planos`.
+
+Los cinco especialistas (SUB-ELE, SUB-HID, SUB-EST, SUB-VIA, SUB-SUE) tienen `listar_planos`,
+`leer_plano_pdf` y `consultar_presupuesto`.
+
+## 7. `generar_gantt` — servidor `sotica_docs` *(SUB-DOC)*
+
+SOTICA-PLA-01 desde la planificación del presupuesto base: Gantt por semanas, columna Coherencia
+(`NETWORKDAYS` programados contra `ROUNDUP(cantidad / rendimiento)` requeridos), curva S con
+`fn_pct_plan_obra` (la misma ponderación del control de obra), premisas e hitos. Devuelve
+`incoherencias_con_rendimientos`, `partidas_sin_programar` y `partidas_sin_rendimiento`.
+
+## 8. `generar_word` y `generar_presentacion` — servidor `sotica_docs` *(SUB-DOC)*
+
+El agente redacta las secciones; `backend/core/oficina.py` pone portada SOTICA-DOC-01, control de
+revisiones DOC-02, orden de secciones del tipo (INF-01, INF-02, COM-01, MEM-01, DIC-01, OBS-01), A4,
+Calibri y pie con código y página. Las secciones obligatorias que no llegan salen PENDIENTE DE
+CONFIRMACIÓN y se devuelven en `secciones_pendientes`. La presentación es SOTICA-PRS-01 (16:9).
+
+## 9. `registrar_indirectos` — servidor `sotica_obra` *(ORQ-COST)*
+
+Administración (sobre costo directo), utilidad e imprevistos (sobre CD + administración) e impuesto
+(sobre el subtotal). Exige `fuente` y `confirmacion_usuario`; la base exige fuente si hay algún
+porcentaje. SOTICA-PRE-01 calcula el precio de oferta en la hoja Indirectos con fórmulas vivas.
+
+## 10. `registrar_computo` — aritmética del sistema
+
+`backend/core/computo.py` evalúa cada `expresion` (solo números, + - * / y paréntesis; acepta coma
+decimal y ×) y recalcula subtotales y cantidad. Si el modelo se equivocó, guarda el valor correcto y lo
+informa en `correcciones_aritmeticas`. Prueba: `python -m tests.aritmetica_computo`.
+
 ---
 
-## Fase 2 (no implementar ahora)
+## Pendientes
 
-`generar_word_informe`, `generar_ppt`, `generar_gantt`, `registrar_valuacion`, `consultar_precios_civ`,
-`checklist_pliego`, análisis FIDIC y exportación a multilaterales.
+`registrar_valuacion`, fórmula polinómica, `consultar_precios_civ`, `checklist_pliego` y exportación a PDF.
+

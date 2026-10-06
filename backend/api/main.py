@@ -6,6 +6,7 @@ import json
 from typing import Any
 from uuid import UUID
 
+import asyncpg
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -54,6 +55,57 @@ async def listar_proyectos() -> list[dict[str, Any]]:
         """
     )
     return [dict(f) for f in filas]
+
+
+_TIPOS_OBRA = {"edificacion", "vialidad", "hidraulica", "electrificacion", "industrial"}
+_TIPOS_ENTE = {"publico_nacional", "publico_estadal", "publico_municipal", "privado",
+               "multilateral"}
+
+
+@app.post("/api/proyectos")
+async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
+    """Alta de obra con su memoria de proyecto (PDF 10.1): moneda, fecha base, ente, norma."""
+    def texto(campo: str) -> str | None:
+        valor = str(datos.get(campo) or "").strip()
+        return valor or None
+
+    codigo, nombre = texto("codigo"), texto("nombre_obra")
+    if not codigo or not nombre:
+        raise HTTPException(400, "Código y nombre de la obra son obligatorios.")
+    tipo_obra = texto("tipo_obra") or "edificacion"
+    if tipo_obra not in _TIPOS_OBRA:
+        raise HTTPException(400, f"Tipo de obra inválido: {tipo_obra}.")
+    tipo_ente = texto("tipo_ente")
+    if tipo_ente and tipo_ente not in _TIPOS_ENTE:
+        raise HTTPException(400, f"Tipo de ente inválido: {tipo_ente}.")
+    moneda = texto("moneda_base") or "USD"
+    if moneda not in ("USD", "VES"):
+        raise HTTPException(400, "La moneda base debe ser USD o VES.")
+    try:
+        fechas = {c: dt.date.fromisoformat(datos[c]) if texto(c) else None
+                  for c in ("fecha_base_precios", "fecha_inicio_contractual",
+                            "fecha_fin_contractual")}
+    except ValueError:
+        raise HTTPException(400, "Fecha inválida: usa AAAA-MM-DD.") from None
+    if fechas["fecha_base_precios"] is None:
+        raise HTTPException(400, "La fecha base de precios es obligatoria.")
+    try:
+        nuevo = await db.fetchval(
+            """
+            INSERT INTO proyectos (codigo, nombre_obra, cliente, tipo_ente, tipo_obra, ubicacion,
+                                   moneda_base, fecha_base_precios, norma_rectora,
+                                   fecha_inicio_contractual, fecha_fin_contractual)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id
+            """,
+            codigo, nombre, texto("cliente"), tipo_ente, tipo_obra, texto("ubicacion"), moneda,
+            fechas["fecha_base_precios"], texto("norma_rectora"),
+            fechas["fecha_inicio_contractual"], fechas["fecha_fin_contractual"],
+        )
+    except asyncpg.UniqueViolationError:
+        raise HTTPException(409, f"Ya existe una obra con el código {codigo}.") from None
+    except asyncpg.CheckViolationError as exc:
+        raise HTTPException(400, f"Dato inválido: {exc}") from None
+    return {"id": str(nuevo), "codigo": codigo}
 
 
 @app.get("/api/proyectos/{ref}/estado")
@@ -210,6 +262,37 @@ async def cargar_reporte(
     }
 
 
+@app.get("/api/proyectos/{ref}/planos")
+async def listar_planos(ref: str) -> list[dict[str, Any]]:
+    p = await _proyecto(ref)
+    filas = await db.fetch(
+        "SELECT id, nombre, bytes, subido_por, creado_en, storage_key FROM archivos "
+        "WHERE proyecto_id = $1 AND tipo = 'plano' ORDER BY creado_en DESC",
+        p["id"],
+    )
+    return [dict(f) for f in filas]
+
+
+@app.post("/api/proyectos/{ref}/planos")
+async def cargar_plano(
+    ref: str, subido_por: str = Form(...), archivo: UploadFile = File(...)
+) -> dict[str, Any]:
+    """Plano en PDF para que SUB-CM lo lea con `leer_plano_pdf`."""
+    p = await _proyecto(ref)
+    data = await archivo.read()
+    if not data.startswith(b"%PDF"):
+        raise HTTPException(400, "El plano debe ser un PDF.")
+    key, sha, tam = storage.put_bytes(p["codigo"], archivo.filename or "plano.pdf", data)
+    archivo_id = await db.fetchval(
+        """
+        INSERT INTO archivos (proyecto_id, tipo, nombre, storage_key, mime, bytes, sha256, subido_por)
+        VALUES ($1,'plano',$2,$3,'application/pdf',$4,$5,$6) RETURNING id
+        """,
+        p["id"], archivo.filename, key, tam, sha, subido_por,
+    )
+    return {"archivo_id": str(archivo_id), "nombre": archivo.filename}
+
+
 @app.get("/api/archivos/{storage_key:path}")
 async def descargar(storage_key: str):
     ruta = STORAGE_DIR / storage_key
@@ -241,7 +324,12 @@ async def chat(payload: dict[str, Any]):
             async for evento in sesion.preguntar(mensaje):
                 yield f"data: {json.dumps(evento, ensure_ascii=False, default=str)}\n\n"
         except Exception as exc:  # noqa: BLE001
-            yield f"data: {json.dumps({'tipo': 'error', 'texto': str(exc)})}\n\n"
+            texto = str(exc)
+            if "unsupported_country_region_territory" in texto:
+                # OpenAI no atiende desde Venezuela: la salida a internet tiene que ser por otro país.
+                texto = ("OpenAI rechazó la conexión por la región de salida a internet. Activa la "
+                         "VPN (o usa el servidor fuera de Venezuela) y reintenta el mensaje.")
+            yield f"data: {json.dumps({'tipo': 'error', 'texto': texto}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

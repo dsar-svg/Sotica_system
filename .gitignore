@@ -7,3 +7,4 @@ storage/
 .pgdata/
 .pgdata.log
 _e2e.sh
+tmp/

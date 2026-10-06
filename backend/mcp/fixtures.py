@@ -11,9 +11,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from .registry import Registro, ok
+from ..core.computo import recalcular
+from ..core.oficina import TIPOS, ordenar_secciones
+from .registry import Registro, error, ok
 from .sotica_docs import registro as reg_docs
 from .sotica_obra import registro as reg_obra
+from .sotica_planos import registro as reg_planos
 
 registro = Registro("sotica_fixtures")
 
@@ -43,7 +46,7 @@ ESCENARIO: dict[str, Any] = {"con_avances": False}
 
 def _esquema(nombre: str) -> tuple[str, dict]:
     """Toma descripción y JSON Schema del servidor real: el contrato es el mismo."""
-    for reg in (reg_obra, reg_docs):
+    for reg in (reg_obra, reg_docs, reg_planos):
         if nombre in reg.herramientas:
             h = reg.herramientas[nombre]
             return h.descripcion, h.input_schema
@@ -177,7 +180,12 @@ async def _registrar_avance(args: dict[str, Any]) -> dict[str, Any]:
 
 
 async def _registrar_computo(args: dict[str, Any]) -> dict[str, Any]:
+    try:  # misma aritmética que producción
+        correcciones = recalcular(args.get("partidas") or [])
+    except ValueError as exc:
+        return error(str(exc))
     return ok({"presupuesto": {"version": 2, "estado": "borrador", "es_base_control": False},
+               "correcciones_aritmeticas": correcciones or None,
                "partidas_escritas": [{"codigo_interno": p.get("codigo_interno"),
                                       "cantidad": p.get("cantidad"), "unidad": p.get("unidad"),
                                       "etiqueta": p.get("etiqueta_cantidad")}
@@ -193,7 +201,6 @@ async def _consultar_bloqueos(args: dict[str, Any]) -> dict[str, Any]:
 
 async def _resolver_bloqueo(args: dict[str, Any]) -> dict[str, Any]:
     if not (args.get("confirmacion_usuario") or "").strip():
-        from .registry import error
         return error("No se puede resolver un bloqueo sin confirmación explícita del usuario.")
     return ok({"bloqueo_id": args["bloqueo_id"], "decision": args["decision"],
                "avances_promovidos": []})
@@ -238,6 +245,54 @@ async def _generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
                "advertencias": ["Alcance: costo directo, no precio de oferta."]})
 
 
+async def _generar_gantt(args: dict[str, Any]) -> dict[str, Any]:
+    return ok({"archivo_id": "66666666-6666-6666-6666-666666666666",
+               "codigo_documento": "SOTICA-PLA-01", "revision": "A",
+               "url_descarga": "http://localhost:8000/api/archivos/demo-gantt.xlsx",
+               "hojas": ["Portada", "Gantt", "Premisas", "Hitos"],
+               "partidas_programadas": len(PARTIDAS), "partidas_sin_programar": [],
+               "incoherencias_con_rendimientos": [], "partidas_sin_rendimiento": [],
+               "nota": "Días hábiles lunes a viernes (premisa propuesta, sin feriados)."})
+
+
+async def _generar_word(args: dict[str, Any]) -> dict[str, Any]:
+    _, faltantes = ordenar_secciones(args["tipo"], args.get("secciones") or [])
+    return ok({"archivo_id": "77777777-7777-7777-7777-777777777777",
+               "codigo_documento": TIPOS[args["tipo"]]["codigo"], "revision": "A",
+               "url_descarga": "http://localhost:8000/api/archivos/demo.docx",
+               "secciones_pendientes": faltantes})
+
+
+async def _generar_presentacion(args: dict[str, Any]) -> dict[str, Any]:
+    return ok({"archivo_id": "88888888-8888-8888-8888-888888888888",
+               "codigo_documento": "SOTICA-PRS-01", "revision": "A",
+               "url_descarga": "http://localhost:8000/api/archivos/demo.pptx",
+               "diapositivas": len(args.get("diapositivas") or []) + 1})
+
+
+async def _registrar_indirectos(args: dict[str, Any]) -> dict[str, Any]:
+    if all(args.get(k) is None for k in ("administracion_pct", "utilidad_pct", "impuesto_pct")):
+        return error("No hay porcentajes que registrar. Si el usuario no los dio, no llames esta "
+                      "herramienta: el precio de oferta queda pendiente y se lo dices.")
+    if not (args.get("confirmacion_usuario") or "").strip():
+        return error("Los indirectos, la utilidad y los impuestos los decide SOTICA o el pliego: "
+                     "falta la confirmación del usuario.")
+    return ok({"presupuesto": {"version": 2, "estado": "borrador"},
+               **{k: args.get(k) for k in ("administracion_pct", "utilidad_pct", "impuesto_pct")},
+               "pendientes": [k for k in ("administracion_pct", "utilidad_pct", "impuesto_pct")
+                              if args.get(k) is None]})
+
+
+async def _listar_planos(args: dict[str, Any]) -> dict[str, Any]:
+    # El escenario de §11 no trae planos en PDF: lo que haya, lo describe el usuario en la orden.
+    return ok({"obra": "SOT-2026-014", "planos": [],
+               "nota": "Sin planos cargados: trabaja con lo que el usuario describe o pídelos."})
+
+
+async def _leer_plano_pdf(args: dict[str, Any]) -> dict[str, Any]:
+    return error(f"No existe el archivo '{args.get('archivo_id')}'.")
+
+
 for _nombre, _handler in [
     ("consultar_presupuesto", _consultar_presupuesto),
     ("consultar_estado_obra", _consultar_estado_obra),
@@ -249,6 +304,12 @@ for _nombre, _handler in [
     ("generar_excel_computos", _generar_excel),
     ("registrar_apu", _registrar_apu),
     ("generar_excel_presupuesto", _generar_excel_presupuesto),
+    ("generar_gantt", _generar_gantt),
+    ("registrar_indirectos", _registrar_indirectos),
+    ("generar_word", _generar_word),
+    ("generar_presentacion", _generar_presentacion),
+    ("listar_planos", _listar_planos),
+    ("leer_plano_pdf", _leer_plano_pdf),
 ]:
     _copiar(_nombre, _handler)
 

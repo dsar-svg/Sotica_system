@@ -1,7 +1,7 @@
 ---
 name: SUB-VIA
 role: subagente
-enabled: false   # fase 2
+enabled: true
 # Lo que ve ORQ-COST al decidir a quien delegar (descripcion de la herramienta).
 description: "Ingeniero civil experto en vialidad. Computa y presupuesta vías en asfalto y concreto hidráulico, movimiento de tierra vial, bases, carpetas, drenajes y señalización; aplica COVENIN 2000 Parte I y prácticas MPPT."
 # Nombre con el que ORQ-COST lo invoca (patron agents-as-tools).
@@ -10,6 +10,7 @@ tool_name: delegar_sub_via
 mcp_servers: [sotica_planos, sotica_obra]
 # Herramientas MCP visibles para este agente (nombre MCP, sin prefijo de SDK).
 tools:
+  - listar_planos
   - leer_plano_pdf
   - consultar_presupuesto
 # El modelo se centraliza en backend/core/config.py (SOTICA_MODEL).

@@ -24,9 +24,9 @@ from .config import (
     AGENTS_DIR,
     BASE_DIR,
     BUSCAR_PRECIOS_EN_INTERNET,
-    CICLO_1_AGENTES,
     MAX_TURNS_SUBAGENTE,
     MODEL,
+    MODEL_SUBAGENTES,
 )
 from .contratos import BriefingSOTICA, RespuestaSubagente
 
@@ -68,13 +68,8 @@ def cargar_agentes() -> dict[str, AgentFile]:
 
 
 def activos() -> dict[str, AgentFile]:
-    """ORQ-COST + los subagentes del ciclo 1. Los de fase 2 están escritos y con el
-    formato nuevo, pero no se registran hasta quitarles `enabled: false`."""
-    return {
-        codigo: af
-        for codigo, af in cargar_agentes().items()
-        if af.enabled and (af.role == "orquestador" or codigo in CICLO_1_AGENTES)
-    }
+    """Agentes con `enabled: true` en su archivo de prompt."""
+    return {codigo: af for codigo, af in cargar_agentes().items() if af.enabled}
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +223,7 @@ def construir(
         subagentes[codigo] = Agent(
             name=codigo,
             instructions=af.prompt,
-            model=MODEL,
+            model=MODEL_SUBAGENTES,
             mcp_servers=_servidores_de(af, servidores),
             output_type=RespuestaSubagente,
         )

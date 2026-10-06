@@ -25,9 +25,59 @@ import unicodedata
 
 from agents import RunConfig, Runner
 from agents.mcp import MCPServerStdio
+from agents.tracing import TracingProcessor, add_trace_processor
+from agents.tracing.span_data import ResponseSpanData
 
 from backend.core.agents import _filtro_por_agente, _permisos, construir
-from backend.core.config import BASE_DIR, MODEL
+from backend.core.config import BASE_DIR, MODEL, MODEL_SUBAGENTES
+
+
+# USD por 1M tokens (entrada, entrada en caché, salida), tarifa estándar publicada por OpenAI
+# el 06/10/2026. ponytail: tabla fija; actualizarla si cambian precios o se prueba otro modelo.
+PRECIOS = {
+    "gpt-5": (1.25, 0.125, 10.00), "gpt-5-mini": (0.25, 0.025, 2.00),
+    "gpt-5.4-mini": (0.75, 0.075, 4.50), "gpt-5.6-luna": (0.20, 0.02, 1.20),
+    "gpt-5.6-terra": (2.00, 0.20, 12.00), "gpt-5.5": (5.00, 0.50, 30.00),
+}
+
+
+class Consumo(TracingProcessor):
+    """Suma tokens de TODAS las llamadas al modelo, incluidas las de los subagentes."""
+
+    def __init__(self) -> None:
+        self.entrada = self.cache = self.salida = self.llamadas = 0
+        self.dolares = 0.0
+        self.sin_precio: set[str] = set()
+
+    def on_span_end(self, span) -> None:
+        datos = span.span_data
+        respuesta = getattr(datos, "response", None)
+        uso = getattr(respuesta, "usage", None)
+        if not (isinstance(datos, ResponseSpanData) and uso):
+            return
+        cache = getattr(uso.input_tokens_details, "cached_tokens", 0) or 0
+        self.llamadas += 1
+        self.entrada += uso.input_tokens
+        self.cache += cache
+        self.salida += uso.output_tokens
+        # Precio según el modelo que respondió de verdad (orquestador y subagentes pueden diferir).
+        modelo = respuesta.model or ""
+        precio = next((v for k, v in sorted(PRECIOS.items(), key=lambda kv: -len(kv[0]))
+                       if modelo.startswith(k)), None)
+        if precio is None:
+            self.sin_precio.add(modelo)
+            return
+        self.dolares += ((uso.input_tokens - cache) * precio[0] + cache * precio[1]
+                         + uso.output_tokens * precio[2]) / 1e6
+
+    def on_trace_start(self, trace) -> None: ...
+    def on_trace_end(self, trace) -> None: ...
+    def on_span_start(self, span) -> None: ...
+    def shutdown(self) -> None: ...
+    def force_flush(self) -> None: ...
+
+
+CONSUMO = Consumo()
 
 
 def _norm(t: str) -> str:
@@ -71,7 +121,8 @@ CASOS = [
         "titulo": "No inventa — obra sin avances cargados",
         "prompt": "¿Cómo va la obra SOT-2026-014?",
         "herramientas": ["consultar_estado_obra"],
-        "debe": ["no hay avances", "no es posible informar", "sin avances", "ningun avance"],
+        "debe": ["no hay avances", "no es posible informar", "sin avances", "ningun avance",
+                 "no tiene avances"],
         "no_debe": ["segun el cronograma la obra deberia", "asumiendo que va segun plan",
                     "estimamos un avance de"],
     },
@@ -122,6 +173,52 @@ CASOS = [
         "debe": ["ratific", "monto", "supuesto"],
         "no_debe": [],
     },
+    {
+        "id": "11.1m",
+        "titulo": "Orden mixta: dictámenes de al menos cuatro especialistas",
+        "prompt": "Obra SOT-2026-014. Vamos a ofertar un anexo de servicios de una planta, 12 x 8 m: "
+                  "estructura de concreto armado (6 columnas de 0,30 x 0,30 m y 3,00 m de alto "
+                  "sobre zapatas aisladas, losa nervada de 25 cm; no hay estudio de suelos), red "
+                  "de aguas servidas hasta la cloaca existente (2 baños, el plano de cloacas no "
+                  "tiene diámetros), instalación eléctrica con un tablero nuevo y 16 luminarias, "
+                  "y el cronograma Gantt de la obra. Dame el paquete integrado.",
+        # §11.1: dictámenes de al menos cuatro subagentes. El Gantt del anexo puede quedar
+        # pendiente con razón (sin retícula ni diámetros no hay duraciones defendibles).
+        "herramientas": [],
+        "min_delegaciones": 4,
+        "debe": ["pendiente de confirmacion", "falta", "no computable"],
+        "debe_todas": ["resumen ejecutivo"],
+        "no_debe": ["asumo un diametro de", "estimo 110 mm", "tipicamente se usa 4"],
+    },
+    {
+        "id": "11.5",
+        "titulo": "Gantt coherente con el presupuesto",
+        "prompt": "Obra SOT-2026-014: genera el cronograma Gantt de la obra y dime si es coherente "
+                  "con los rendimientos del presupuesto.",
+        "herramientas": ["delegar_sub_doc"],
+        "debe": ["coheren", "incoheren"], "debe_todas": ["sotica-pla-01"],
+        "no_debe": [],
+    },
+    {
+        "id": "11.4",
+        "titulo": "Respeta SOTICA: informe Word con portada, código y revisión",
+        "prompt": "Obra SOT-2026-014: prepárame el informe de avance de obra en Word para el ente.",
+        "herramientas": ["delegar_sub_doc"],
+        "debe": ["rev"], "debe_todas": ["sotica-inf-01"],
+        "no_debe": ["no puedo generar word", "word queda para fase 2"],
+    },
+    {
+        "id": "11.8",
+        "titulo": "FIDIC + pliego venezolano: declara qué manda",
+        "prompt": "Obra SOT-2026-014. El contrato es FIDIC Libro Rojo adaptado. La subcláusula de "
+                  "pagos FIDIC da 56 días para pagar cada certificado, pero el pliego del ente "
+                  "dice que las valuaciones se pagan a 30 días. ¿Cuál manda y qué hago en la oferta?",
+        "herramientas": [],
+        "debe": ["manda el pliego", "prevalece el pliego", "prevalece lo del pliego",
+                 "rige el pliego", "manda lo del pliego"],
+        "debe_todas": ["desviacion"],
+        "no_debe": ["manda fidic", "prevalece fidic"],
+    },
 ]
 
 
@@ -138,6 +235,10 @@ async def correr_caso(caso: dict, orq, run_config) -> dict:
     n = _norm(salida)
 
     faltan_tools = [t for t in caso["herramientas"] if t not in herramientas]
+    delegados = {t for t in herramientas if t.startswith("delegar_")}
+    if len(delegados) < caso.get("min_delegaciones", 0):
+        faltan_tools.append(f"al menos {caso['min_delegaciones']} especialistas "
+                            f"(delegó a {len(delegados)}: {sorted(delegados)})")
     prohibidas = [t for t in caso.get("no_herramientas", []) if t in herramientas]
     debe_ok = ((not caso["debe"]) or any(_norm(s) in n for s in caso["debe"])) and all(
         _norm(s) in n for s in caso.get("debe_todas", [])
@@ -165,6 +266,7 @@ async def main(filtro: str | None) -> int:
         print("FALTA OPENAI_API_KEY. Exporta la clave o ponla en .env antes de correr §11.")
         return 2
 
+    add_trace_processor(CONSUMO)
     permisos = _permisos()
     servidor = MCPServerStdio(
         params={"command": sys.executable,
@@ -174,12 +276,13 @@ async def main(filtro: str | None) -> int:
         tool_filter=_filtro_por_agente(permisos), client_session_timeout_seconds=60,
     )
     await servidor.connect()
-    run_config = RunConfig(model=MODEL)
+    run_config = RunConfig()
     # Todos los agentes apuntan al servidor de fixtures.
-    orq, _ = construir({"sotica_obra": servidor, "sotica_docs": servidor}, run_config)
+    orq, _ = construir({"sotica_obra": servidor, "sotica_docs": servidor, "sotica_planos": servidor},
+                       run_config)
 
     casos = [c for c in CASOS if not filtro or c["id"].startswith(filtro)]
-    print(f"Modelo: {MODEL} · {len(casos)} criterios\n" + "=" * 70)
+    print(f"Modelo: {MODEL} · subagentes: {MODEL_SUBAGENTES} · {len(casos)} criterios\n" + "=" * 70)
     resultados = []
     for caso in casos:
         r = await correr_caso(caso, orq, run_config)
@@ -198,6 +301,10 @@ async def main(filtro: str | None) -> int:
     await servidor.cleanup()
     pasan = sum(1 for r in resultados if r["pasa"])
     print("\n" + "=" * 70 + f"\nRESULTADO: {pasan}/{len(resultados)} criterios pasan")
+    print(f"CONSUMO: {CONSUMO.llamadas} llamadas, {CONSUMO.entrada} tokens de entrada "
+          f"({CONSUMO.cache} en caché), {CONSUMO.salida} de salida, "
+          f"~{CONSUMO.dolares:.3f} USD sin búsquedas web"
+          + (f" (sin precio: {sorted(CONSUMO.sin_precio)})" if CONSUMO.sin_precio else ""))
     return 0 if pasan == len(resultados) else 1
 
 

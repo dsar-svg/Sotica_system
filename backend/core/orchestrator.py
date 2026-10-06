@@ -19,7 +19,7 @@ from openai.types.responses import ResponseTextDeltaEvent
 
 from . import db
 from .agents import construir, crear_servidores_mcp
-from .config import MAX_TURNS_ORQUESTADOR, MODEL, session_url
+from .config import MAX_TURNS_ORQUESTADOR, session_url
 
 
 async def contexto_obra(proyecto_ref: str | None) -> str:
@@ -77,7 +77,7 @@ class SesionObra:
         self._servidores: dict[str, MCPServerStdio] = {}
         self._orquestador = None
         self._session: SQLAlchemySession | None = None
-        self._run_config = RunConfig(model=MODEL)
+        self._run_config = RunConfig()
 
     async def abrir(self) -> None:
         # Los servidores MCP son procesos: se levantan una vez por sesión.

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SOTICA-COSTOS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231B365D'/%3E%3Crect x='3' y='11' width='10' height='2' fill='%23C4A35A'/%3E%3C/svg%3E">
 <style>
   :root{
     /* Marca SOTICA (§7.2): azul #1B365D, dorado #C4A35A. Neutros teñidos hacia el azul. */
@@ -182,6 +183,12 @@
   .item:first-child{padding-top:0} .item:last-child{border-bottom:0;padding-bottom:0}
   .item .titulo{font-weight:600}
   .item a{color:var(--info);font-weight:600;word-break:break-word}
+  dialog.obra-nueva{border:1px solid var(--borde-fuerte);border-radius:var(--radio);padding:20px;
+                    width:min(560px,calc(100vw - 32px));background:var(--superficie);color:var(--tinta)}
+  dialog.obra-nueva::backdrop{background:rgba(20,41,71,.45)}
+  dialog.obra-nueva h2{margin:0 0 4px;font-size:17px}
+  .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  @media (max-width:520px){.rejilla{grid-template-columns:1fr}}
   details summary{cursor:pointer;font-weight:700;font-size:14px}
   details[open] summary{margin-bottom:6px}
 </style>
@@ -193,15 +200,61 @@
   <div class="obra">
     <label for="obra">Obra</label>
     <select id="obra"></select>
+    <button class="btn sec" id="abrir-obra" type="button">Nueva obra</button>
   </div>
 </header>
+
+<dialog class="obra-nueva" id="dlg-obra" aria-labelledby="dlg-obra-tit">
+  <form id="fobra" method="dialog">
+    <h2 id="dlg-obra-tit">Nueva obra</h2>
+    <p class="nota">Memoria del proyecto: estos datos no se vuelven a preguntar en cada conversación.</p>
+    <div class="rejilla">
+      <div><label class="campo" for="o-codigo">Código</label>
+        <input class="ctl" id="o-codigo" required placeholder="SOT-2026-015"></div>
+      <div><label class="campo" for="o-fecha">Fecha base de precios</label>
+        <input class="ctl" id="o-fecha" type="date" required></div>
+    </div>
+    <label class="campo" for="o-nombre">Nombre de la obra</label>
+    <input class="ctl" id="o-nombre" required>
+    <div class="rejilla">
+      <div><label class="campo" for="o-cliente">Cliente / ente</label>
+        <input class="ctl" id="o-cliente" placeholder="Gobernación, CVC, PDVSA…"></div>
+      <div><label class="campo" for="o-ente">Tipo de ente</label>
+        <select class="ctl" id="o-ente"><option value="">—</option>
+          <option value="publico_nacional">Público nacional</option>
+          <option value="publico_estadal">Público estadal</option>
+          <option value="publico_municipal">Público municipal</option>
+          <option value="privado">Privado</option><option value="multilateral">Multilateral</option>
+        </select></div>
+      <div><label class="campo" for="o-tipo">Tipo de obra</label>
+        <select class="ctl" id="o-tipo"><option value="edificacion">Edificación</option>
+          <option value="vialidad">Vialidad</option><option value="hidraulica">Hidráulica</option>
+          <option value="electrificacion">Electrificación</option>
+          <option value="industrial">Industrial / petrolera</option></select></div>
+      <div><label class="campo" for="o-moneda">Moneda base</label>
+        <select class="ctl" id="o-moneda"><option>USD</option><option>VES</option></select></div>
+      <div><label class="campo" for="o-ubicacion">Ubicación</label>
+        <input class="ctl" id="o-ubicacion"></div>
+      <div><label class="campo" for="o-norma">Norma o pliego rector</label>
+        <input class="ctl" id="o-norma" placeholder="COVENIN 2000-II"></div>
+      <div><label class="campo" for="o-inicio">Inicio contractual</label>
+        <input class="ctl" id="o-inicio" type="date"></div>
+      <div><label class="campo" for="o-fin">Fin contractual</label>
+        <input class="ctl" id="o-fin" type="date"></div>
+    </div>
+    <p style="margin:16px 0 0;display:flex;gap:8px;justify-content:flex-end;align-items:center">
+      <span class="nota" id="o-estado" role="status"></span>
+      <button class="btn sec" type="button" id="o-cancelar">Cancelar</button>
+      <button class="btn" id="o-crear">Crear obra</button></p>
+  </form>
+</dialog>
 
 <main>
   <section class="chat" aria-label="Conversación con ORQ-COST">
     <div class="chat-cab">
       <div>
         <h1>ORQ-COST</h1>
-        <p>Ingeniero de costos. Delega en SUB-CM, SUB-DOC y SUB-AVA.</p>
+        <p>Ingeniero de costos. Delega en 8 especialistas.</p>
       </div>
       <button class="btn sec" id="nueva" type="button">Conversación nueva</button>
     </div>
@@ -245,7 +298,21 @@
       </div>
       <div role="tabpanel" id="p-presupuesto" aria-labelledby="t-presupuesto" hidden></div>
       <div role="tabpanel" id="p-bloqueos" aria-labelledby="t-bloqueos" hidden></div>
-      <div role="tabpanel" id="p-archivos" aria-labelledby="t-archivos" hidden></div>
+      <div role="tabpanel" id="p-archivos" aria-labelledby="t-archivos" hidden>
+        <div class="bloque"><h2>Planos de la obra</h2>
+          <div id="planos"></div>
+          <p class="nota">PDF con capa de texto (exportado desde CAD). Un escaneo no se puede leer. Luego pide en el chat que SUB-CM compute a partir del plano.</p>
+          <form id="fplano">
+            <label class="campo" for="plano-quien">Subido por</label>
+            <input class="ctl" type="text" id="plano-quien" placeholder="Ing. residente" required>
+            <label class="campo" for="plano-file">Plano en PDF</label>
+            <input class="ctl" type="file" id="plano-file" accept="application/pdf,.pdf" required>
+            <p style="margin:12px 0 0"><button class="btn sec" id="plano-subir">Subir plano</button>
+              <span class="nota" id="plano-estado" role="status"></span></p>
+          </form>
+        </div>
+        <div id="entregables"></div>
+      </div>
       <div role="tabpanel" id="p-traza" aria-labelledby="t-traza" hidden></div>
     </div>
   </section>
@@ -270,7 +337,11 @@ const etq = (e, vacio = '—') => e
   : `<span class="etq neutro">${vacio}</span>`;
 const api = async (ruta, opciones) => {
   const r = await fetch(ruta, opciones);
-  if (!r.ok) throw new Error(`${r.status} en ${ruta}`);
+  if (!r.ok) {
+    let detalle = '';
+    try { detalle = (await r.json()).detail || ''; } catch (e) { /* respuesta sin JSON */ }
+    throw new Error(typeof detalle === 'string' && detalle ? detalle : `${r.status} en ${ruta}`);
+  }
   return r.json();
 };
 // Los enlaces a archivos se sirven desde este mismo origen, sea cual sea el puerto.
@@ -399,7 +470,7 @@ function pintarBloqueos(d) {
 }
 
 function pintarArchivos(lista) {
-  $('p-archivos').innerHTML = `<div class="bloque"><h2>Entregables generados</h2>${
+  $('entregables').innerHTML = `<div class="bloque"><h2>Entregables generados</h2>${
     lista.map((a) => `<div class="item">
       <a href="/api/archivos/${encodeURI(a.storage_key)}">${esc(a.nombre)}</a>
       <div>${esc(a.titulo)}</div>
@@ -407,6 +478,13 @@ function pintarArchivos(lista) {
     </div>`).join('') ||
     '<p class="vacio">Todavía no hay archivos. Pide el libro de cómputos o el presupuesto en Excel.</p>'
   }</div>`;
+}
+
+function pintarPlanos(lista) {
+  $('planos').innerHTML = lista.map((a) => `<div class="item">
+      <a href="/api/archivos/${encodeURI(a.storage_key)}">${esc(a.nombre)}</a>
+      <div class="sub">${esc(a.subido_por)} · ${fecha(a.creado_en)} · ${nf(a.bytes / 1024, 0)} KB</div>
+    </div>`).join('') || '<p class="vacio">Todavía no hay planos cargados.</p>';
 }
 
 function pintarTraza(lista) {
@@ -428,6 +506,7 @@ async function refrescar() {
     [`/api/proyectos/${o}/presupuesto`, pintarPresupuesto],
     [`/api/proyectos/${o}/bloqueos`, pintarBloqueos],
     [`/api/proyectos/${o}/entregables`, pintarArchivos],
+    [`/api/proyectos/${o}/planos`, pintarPlanos],
     [`/api/proyectos/${o}/delegaciones`, pintarTraza],
   ];
   await Promise.all(tareas.map(async ([ruta, pintar]) => {
@@ -439,6 +518,7 @@ async function refrescar() {
 const SUGERENCIAS = [
   ['Computar y generar el libro', 'Computa las paredes de bloque de la planta baja: 45 m lineales por 2,80 m de altura, descontando 6 puertas de 0,90 x 2,10. Regístralo y genera el libro de cómputos en Excel.'],
   ['Poner precio con respaldo', 'Ponle precio a la partida de paredes. No tengo cotizaciones: busca precios aproximados de los materiales en internet. Mano de obra por experiencia del Ing. Pérez: 1 albañil a 40 USD/día y 1 ayudante a 25 USD/día, rendimiento 12 m2 por día. Luego genera el presupuesto en Excel.'],
+  ['Computar desde un plano', 'Computa las paredes de bloque de la planta alta a partir del plano A-02 que subí en Archivos. Regístralo en el borrador.'],
   ['Consultar el avance', '¿Cómo va la obra?'],
   ['Procesar un reporte de campo', 'Procesa el reporte de avance pendiente del residente.'],
 ];
@@ -471,17 +551,20 @@ function ponerOcupado(v) {
 }
 const PASOS = {
   delegar_sub_cm: ['SUB-CM · cómputos', 1], delegar_sub_doc: ['SUB-DOC · documentos', 1],
-  delegar_sub_ava: ['SUB-AVA · avance de obra', 1], busqueda_web: ['Buscando precios en internet', 0],
+  delegar_sub_ava: ['SUB-AVA · avance de obra', 1],
+  delegar_sub_ele: ['SUB-ELE · electricidad', 1], delegar_sub_hid: ['SUB-HID · acueductos y cloacas', 1],
+  delegar_sub_est: ['SUB-EST · estructuras', 1], delegar_sub_via: ['SUB-VIA · vialidad', 1],
+  delegar_sub_sue: ['SUB-SUE · suelos', 1], busqueda_web: ['Buscando precios en internet', 0],
   consultar_presupuesto: ['Leyó el presupuesto', 0], consultar_estado_obra: ['Leyó el estado de obra', 0],
   consultar_bloqueos: ['Revisó bloqueos', 0], resolver_bloqueo: ['Resolvió un bloqueo', 0],
-  registrar_apu: ['Registró el APU', 0],
+  registrar_apu: ['Registró el APU', 0], registrar_indirectos: ['Registró indirectos y utilidad', 0],
 };
 
 async function enviar(texto) {
   if (ocupado || !texto) return;
   if ($('hilo').querySelector('.vacio-chat')) $('hilo').innerHTML = '';
   const mio = document.createElement('div'); mio.className = 'turno yo'; mio.textContent = texto;
-  $('hilo').appendChild(mio);
+  $('hilo').appendChild(mio); guardarHilo();  // si recargan a mitad de respuesta, la pregunta queda
 
   const turno = document.createElement('div'); turno.className = 'turno';
   turno.innerHTML = `<div class="autor">ORQ-COST</div><ul class="pasos"></ul>
@@ -563,21 +646,59 @@ $('fev').onsubmit = async (ev) => {
   finally { $('subir').disabled = false; }
 };
 
+$('fplano').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const fd = new FormData();
+  fd.append('subido_por', $('plano-quien').value);
+  fd.append('archivo', $('plano-file').files[0]);
+  $('plano-subir').disabled = true; $('plano-estado').textContent = ' Subiendo…';
+  try {
+    const r = await api(`/api/proyectos/${encodeURIComponent(obraActual)}/planos`, {method: 'POST', body: fd});
+    $('plano-estado').textContent = ` ${r.nombre} cargado.`;
+    $('plano-file').value = '';
+    refrescar();
+  } catch (err) { $('plano-estado').textContent = ' No se pudo subir: ' + err.message; }
+  finally { $('plano-subir').disabled = false; }
+};
+
 /* ---------- arranque ---------- */
 $('obra').onchange = (ev) => { obraActual = ev.target.value; restaurarHilo(); refrescar(); };
-(async () => {
-  $('fecha').valueAsDate = new Date();
-  hiloVacio();
+async function cargarObras(elegida) {
   try {
     const obras = await api('/api/proyectos');
     $('obra').innerHTML = obras.map((o) =>
       `<option value="${esc(o.codigo)}">${esc(o.codigo)} — ${esc(o.nombre_obra)}</option>`).join('');
-    if (obras.length) { obraActual = obras[0].codigo; restaurarHilo(); refrescar(); }
-    else $('avance').innerHTML = '<div class="aviso">No hay obras cargadas en el sistema.</div>';
+    if (obras.length) {
+      obraActual = obras.some((o) => o.codigo === elegida) ? elegida : obras[0].codigo;
+      $('obra').value = obraActual; restaurarHilo(); refrescar();
+    } else $('avance').innerHTML = '<div class="aviso">No hay obras cargadas. Crea una con «Nueva obra».</div>';
   } catch (err) {
     $('avance').innerHTML = `<div class="aviso mal">No se pudo leer la lista de obras: ${esc(err.message)}</div>`;
   }
-})();
+}
+
+/* ---------- nueva obra ---------- */
+$('abrir-obra').onclick = () => { $('o-estado').textContent = ''; $('dlg-obra').showModal(); $('o-codigo').focus(); };
+$('o-cancelar').onclick = () => $('dlg-obra').close();
+$('fobra').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const v = (id) => $(id).value.trim();
+  $('o-crear').disabled = true; $('o-estado').textContent = 'Creando…';
+  try {
+    const r = await api('/api/proyectos', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({codigo: v('o-codigo'), nombre_obra: v('o-nombre'), cliente: v('o-cliente'),
+        tipo_ente: v('o-ente'), tipo_obra: v('o-tipo'), moneda_base: v('o-moneda'), ubicacion: v('o-ubicacion'),
+        norma_rectora: v('o-norma'), fecha_base_precios: v('o-fecha'),
+        fecha_inicio_contractual: v('o-inicio'), fecha_fin_contractual: v('o-fin')})});
+    $('dlg-obra').close(); $('fobra').reset();
+    await cargarObras(r.codigo);
+  } catch (err) { $('o-estado').textContent = err.message; }
+  finally { $('o-crear').disabled = false; }
+};
+
+$('fecha').valueAsDate = new Date();
+hiloVacio();
+cargarObras();
 </script>
 </body>
 </html>
