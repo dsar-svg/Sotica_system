@@ -1,179 +1,530 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SOTICA-COSTOS</title>
 <style>
   :root{
-    --azul:#1B365D; --dorado:#C4A35A; --fondo:#F5F6F8; --panel:#fff;
-    --borde:#DFE3E8; --texto:#1c2430; --tenue:#5d6b7a; --alerta:#9C0006;
+    /* Marca SOTICA (§7.2): azul #1B365D, dorado #C4A35A. Neutros teñidos hacia el azul. */
+    --azul:#1B365D; --azul-fuerte:#142947; --azul-suave:#E8EEF6; --dorado:#C4A35A;
+    --fondo:#F3F5F8; --superficie:#FFFFFF; --superficie-2:#F8FAFC;
+    --borde:#D9DFE7; --borde-fuerte:#B9C3D0;
+    --tinta:#16202E; --tinta-2:#3F4C5E; --tinta-3:#5A6779;
+    --ok:#17603A; --ok-fondo:#E5F3EA;
+    --aviso:#7A4E00; --aviso-fondo:#FBF0D9;
+    --info:#1D4E89; --info-fondo:#E6EFFA;
+    --mal:#96201B; --mal-fondo:#FBE9E7;
+    --radio:8px; --salida:cubic-bezier(.22,1,.36,1);
+    --z-fijo:10;
   }
   *{box-sizing:border-box}
-  body{margin:0;font:14px/1.5 Calibri,Arial,system-ui,sans-serif;color:var(--texto);
-       background:var(--fondo);height:100vh;display:flex;flex-direction:column}
-  header{background:var(--azul);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:16px}
-  header b{font-size:16px;letter-spacing:.5px}
-  header .linea{height:3px;background:var(--dorado)}
-  select{font:inherit;padding:4px 8px;border-radius:4px;border:1px solid #ffffff55;
-         background:#ffffff18;color:#fff}
-  main{flex:1;display:grid;grid-template-columns:1fr 360px;gap:14px;padding:14px;min-height:0}
-  .col{display:flex;flex-direction:column;min-height:0;gap:12px}
-  .card{background:var(--panel);border:1px solid var(--borde);border-radius:8px;
-        display:flex;flex-direction:column;min-height:0}
-  .card h2{margin:0;padding:9px 12px;font-size:12px;text-transform:uppercase;
-           letter-spacing:.6px;color:var(--tenue);border-bottom:1px solid var(--borde)}
-  #chat{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
-  .msg{max-width:85%;padding:9px 12px;border-radius:8px;white-space:pre-wrap}
-  .yo{align-self:flex-end;background:var(--azul);color:#fff}
-  .orq{align-self:flex-start;background:#EDF1F6;border:1px solid var(--borde)}
-  .tool{align-self:flex-start;font-size:12px;color:var(--tenue);font-family:Consolas,monospace}
-  form.chat{display:flex;gap:8px;padding:10px;border-top:1px solid var(--borde)}
-  textarea{flex:1;resize:none;font:inherit;padding:8px;border:1px solid var(--borde);border-radius:6px}
-  button{font:inherit;background:var(--azul);color:#fff;border:0;border-radius:6px;
-         padding:8px 14px;cursor:pointer}
-  button.sec{background:#fff;color:var(--azul);border:1px solid var(--azul)}
-  .cuerpo{padding:12px;overflow-y:auto;font-size:13px}
-  .kv{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
-  .kv span:last-child{font-weight:700}
-  .aviso{background:#FDF3F3;border:1px solid #F0C8C8;color:var(--alerta);
-         padding:8px 10px;border-radius:6px;margin-bottom:10px;font-size:12.5px}
-  .item{border-top:1px solid var(--borde);padding:7px 0;font-size:12.5px}
-  .item:first-child{border-top:0}
-  a{color:var(--azul)}
-  label{display:block;font-size:12px;color:var(--tenue);margin:6px 0 2px}
-  input[type=text],input[type=date],input[type=file],form.ev textarea{
-    width:100%;font:inherit;padding:6px;border:1px solid var(--borde);border-radius:5px}
+  html,body{height:100%}
+  body{margin:0;font:14px/1.5 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+       color:var(--tinta);background:var(--fondo);display:flex;flex-direction:column;
+       font-variant-numeric:tabular-nums}
+  button,input,textarea,select{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:4px}
+  .oculto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+  /* ---------- Barra superior ---------- */
+  header{background:var(--azul);color:#fff;display:flex;align-items:center;gap:20px;
+         padding:0 20px;height:56px;border-bottom:3px solid var(--dorado);flex:none}
+  .marca{font-weight:700;font-size:16px;letter-spacing:.02em;white-space:nowrap}
+  .marca span{font-weight:400;opacity:.8}
+  .obra{display:flex;align-items:center;gap:10px;min-width:0;margin-left:auto}
+  .obra label{font-size:13px;color:#D5DEEA;white-space:nowrap}
+  .obra select{background:var(--azul-fuerte);color:#fff;border:1px solid #4A6388;border-radius:6px;
+               padding:6px 10px;max-width:46vw}
+  .obra select:focus-visible{outline-color:#fff}
+
+  /* ---------- Estructura ---------- */
+  main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,460px)}
+  @media (max-width:980px){
+    body{height:auto;min-height:100%}
+    main{grid-template-columns:1fr}
+    .chat{height:78vh}
+    .registro{border-left:0;border-top:1px solid var(--borde)}
+  }
+
+  /* ---------- Conversación ---------- */
+  .chat{display:flex;flex-direction:column;min-height:0;background:var(--superficie)}
+  .chat-cab{display:flex;align-items:center;gap:12px;padding:12px 20px;
+            border-bottom:1px solid var(--borde);flex:none}
+  .chat-cab h1{margin:0;font-size:15px;font-weight:600}
+  .chat-cab p{margin:0;color:var(--tinta-3);font-size:13px}
+  .chat-cab button{margin-left:auto}
+  #hilo{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;
+        scroll-behavior:smooth}
+  .turno{max-width:76ch}
+  .turno.yo{align-self:flex-end;background:var(--azul);color:#fff;padding:9px 13px;
+            border-radius:var(--radio);white-space:pre-wrap;max-width:min(70ch,85%)}
+  .autor{font-size:12px;font-weight:600;color:var(--tinta-3);margin-bottom:4px}
+  .prosa>*:first-child{margin-top:0} .prosa>*:last-child{margin-bottom:0}
+  .prosa p{margin:0 0 9px;text-wrap:pretty}
+  .prosa h3{font-size:14px;font-weight:700;margin:14px 0 5px;color:var(--azul)}
+  .prosa ul,.prosa ol{margin:0 0 9px;padding-left:20px}
+  .prosa li{margin:2px 0}
+  .prosa code{font:12.5px Consolas,"Cascadia Mono",monospace;background:var(--superficie-2);
+              border:1px solid var(--borde);border-radius:4px;padding:0 4px}
+  .prosa a{color:var(--info);font-weight:600;word-break:break-all}
+  .pasos{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+  .paso{font-size:12px;color:var(--tinta-2);background:var(--superficie-2);
+        border:1px solid var(--borde);border-radius:999px;padding:2px 10px;
+        animation:entra .25s var(--salida)}
+  .paso.agente{background:var(--azul-suave);border-color:#C3D2E6;color:var(--azul);font-weight:600}
+  .trabajando{display:flex;align-items:center;gap:8px;color:var(--tinta-3);font-size:13px}
+  .pulso{width:8px;height:8px;border-radius:50%;background:var(--dorado);
+         animation:pulso 1.2s ease-in-out infinite}
+  .error{background:var(--mal-fondo);color:var(--mal);border:1px solid #EBC2BE;
+         border-radius:var(--radio);padding:9px 12px}
+  @keyframes pulso{50%{opacity:.25}}
+  @keyframes entra{from{opacity:0;transform:translateY(4px)}}
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  }
+
+  .vacio-chat{margin:auto;max-width:56ch;text-align:left}
+  .vacio-chat h2{font-size:17px;margin:0 0 6px;text-wrap:balance}
+  .vacio-chat p{color:var(--tinta-2);margin:0 0 14px}
+  .sugerencias{display:grid;gap:8px}
+  .sugerencia{text-align:left;background:var(--superficie);border:1px solid var(--borde-fuerte);
+              border-radius:var(--radio);padding:9px 12px;cursor:pointer;
+              transition:background .15s,border-color .15s}
+  .sugerencia:hover{background:var(--azul-suave);border-color:var(--azul)}
+  .sugerencia b{display:block;font-weight:600}
+  .sugerencia span{color:var(--tinta-3);font-size:13px}
+
+  form.entrada{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--borde);
+               background:var(--superficie-2);flex:none;align-items:flex-end}
+  form.entrada textarea{flex:1;resize:none;min-height:44px;max-height:160px;padding:10px 12px;
+                        border:1px solid var(--borde-fuerte);border-radius:var(--radio);
+                        background:var(--superficie)}
+  ::placeholder{color:var(--tinta-3);opacity:1}
+
+  /* ---------- Controles ---------- */
+  .btn{background:var(--azul);color:#fff;border:1px solid var(--azul);border-radius:6px;
+       padding:9px 16px;font-weight:600;cursor:pointer;transition:background .15s}
+  .btn:hover{background:var(--azul-fuerte)}
+  .btn:disabled{background:#8E9BAD;border-color:#8E9BAD;cursor:not-allowed}
+  .btn.sec{background:var(--superficie);color:var(--azul);border-color:var(--borde-fuerte);
+           padding:6px 12px;font-weight:600}
+  .btn.sec:hover{background:var(--azul-suave);border-color:var(--azul)}
+  .btn.sec:disabled{color:#8E9BAD;background:var(--superficie-2);border-color:var(--borde)}
+  label.campo{display:block;font-size:13px;font-weight:600;margin:10px 0 3px}
+  .ctl{width:100%;padding:7px 9px;border:1px solid var(--borde-fuerte);border-radius:6px;
+       background:var(--superficie)}
+
+  /* ---------- Registro (panel derecho) ---------- */
+  .registro{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--borde);
+            background:var(--fondo)}
+  [role=tablist]{display:flex;gap:2px;padding:0 12px;background:var(--superficie);
+                 border-bottom:1px solid var(--borde);overflow-x:auto;flex:none}
+  [role=tab]{background:none;border:0;border-bottom:3px solid transparent;padding:13px 10px 10px;
+             font-weight:600;color:var(--tinta-3);cursor:pointer;white-space:nowrap;
+             transition:color .15s,border-color .15s}
+  [role=tab]:hover{color:var(--tinta)}
+  [role=tab][aria-selected=true]{color:var(--azul);border-bottom-color:var(--dorado)}
+  .cuenta{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:999px;
+          background:var(--mal);color:#fff;font-size:11px;line-height:18px;text-align:center}
+  .cuenta[hidden]{display:none}
+  .paneles{flex:1;min-height:0;overflow-y:auto;padding:16px}
+  [role=tabpanel][hidden]{display:none}
+  .bloque{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+          padding:14px;margin-bottom:12px}
+  .bloque h2{margin:0 0 10px;font-size:14px;font-weight:700}
+  .nota{font-size:13px;color:var(--tinta-2);margin:0}
+  .aviso{border-radius:6px;padding:9px 11px;font-size:13px;margin-bottom:12px;
+         background:var(--aviso-fondo);color:var(--aviso);border:1px solid #EBD6A6}
+  .aviso.mal{background:var(--mal-fondo);color:var(--mal);border-color:#EBC2BE}
+  .vacio{color:var(--tinta-2);font-size:13px;padding:6px 0}
+
+  .medida{margin-bottom:12px}
+  .medida .fila{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}
+  .medida .fila b{font-size:15px}
+  .barra{height:8px;border-radius:4px;background:#E3E8EF;overflow:hidden;margin-top:4px}
+  .barra i{display:block;height:100%;border-radius:4px;background:var(--azul);
+           transition:width .5s var(--salida)}
+  .barra.plan i{background:var(--dorado)}
+  dl.datos{display:grid;grid-template-columns:1fr auto;gap:5px 12px;margin:0;font-size:13px}
+  dl.datos dt{color:var(--tinta-2)} dl.datos dd{margin:0;font-weight:600;text-align:right}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-weight:600;color:var(--tinta-2);padding:6px 6px;
+     border-bottom:1px solid var(--borde-fuerte);white-space:nowrap}
+  td{padding:7px 6px;border-bottom:1px solid var(--borde);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .num{text-align:right;white-space:nowrap}
+  .cod{font-weight:600;white-space:nowrap}
+  .sub{color:var(--tinta-3);font-size:12px}
+  .tabla-scroll{overflow-x:auto}
+
+  .etq{display:inline-block;font-size:11.5px;font-weight:600;line-height:18px;padding:0 7px;
+       border-radius:4px;white-space:nowrap;border:1px solid transparent}
+  .etq.confirmado{background:var(--ok-fondo);color:var(--ok);border-color:#BFDFCB}
+  .etq.inferido{background:var(--aviso-fondo);color:var(--aviso);border-color:#EBD6A6}
+  .etq.referencial{background:var(--info-fondo);color:var(--info);border-color:#C2D6F0}
+  .etq.pendiente_confirmacion{background:var(--mal-fondo);color:var(--mal);border-color:#EBC2BE}
+  .etq.neutro{background:var(--superficie-2);color:var(--tinta-2);border-color:var(--borde)}
+
+  .item{padding:10px 0;border-bottom:1px solid var(--borde);font-size:13px}
+  .item:first-child{padding-top:0} .item:last-child{border-bottom:0;padding-bottom:0}
+  .item .titulo{font-weight:600}
+  .item a{color:var(--info);font-weight:600;word-break:break-word}
+  details summary{cursor:pointer;font-weight:700;font-size:14px}
+  details[open] summary{margin-bottom:6px}
 </style>
+</head>
+<body>
 
 <header>
-  <b>SOTICA-COSTOS</b>
-  <span style="font-size:12px;opacity:.75">ORQ-COST · SUB-CM · SUB-DOC · SUB-AVA</span>
-  <select id="obra" style="margin-left:auto"></select>
+  <div class="marca">SOTICA<span>-COSTOS</span></div>
+  <div class="obra">
+    <label for="obra">Obra</label>
+    <select id="obra"></select>
+  </div>
 </header>
-<div class="linea" style="height:3px;background:var(--dorado)"></div>
 
 <main>
-  <div class="col">
-    <div class="card" style="flex:1">
-      <h2>Chat con el orquestador</h2>
-      <div id="chat"></div>
-      <form class="chat" id="fchat">
-        <textarea id="msg" rows="2" placeholder="¿Cómo va la obra? / Computa las zapatas del eje 4 / Genera el Excel de cómputos"></textarea>
-        <button>Enviar</button>
-      </form>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card">
-      <h2>Estado de obra</h2>
-      <div class="cuerpo" id="estado">Selecciona una obra.</div>
-    </div>
-    <div class="card">
-      <h2>Cargar avance de obra</h2>
-      <div class="cuerpo">
-        <form class="ev" id="fev">
-          <label>Reportado por</label>
-          <input type="text" id="quien" placeholder="Ing. residente" required>
-          <label>Fecha del avance en obra</label>
-          <input type="date" id="fecha" required>
-          <label>Reporte (texto libre)</label>
-          <textarea id="texto" rows="3" placeholder="Se vaciaron 4 zapatas del eje 4..."></textarea>
-          <label>Fotos / valuaciones</label>
-          <input type="file" id="files" multiple>
-          <button class="sec" style="margin-top:10px">Subir reporte</button>
-        </form>
+  <section class="chat" aria-label="Conversación con ORQ-COST">
+    <div class="chat-cab">
+      <div>
+        <h1>ORQ-COST</h1>
+        <p>Ingeniero de costos. Delega en SUB-CM, SUB-DOC y SUB-AVA.</p>
       </div>
+      <button class="btn sec" id="nueva" type="button">Conversación nueva</button>
     </div>
-    <div class="card" style="flex:1">
-      <h2>Archivos generados</h2>
-      <div class="cuerpo" id="entregables">—</div>
+    <div id="hilo" aria-live="polite"></div>
+    <form class="entrada" id="fchat">
+      <label class="oculto" for="msg">Mensaje para ORQ-COST</label>
+      <textarea id="msg" rows="1" placeholder="Escribe la orden para ORQ-COST…"></textarea>
+      <button class="btn" id="enviar">Enviar</button>
+    </form>
+  </section>
+
+  <section class="registro" aria-label="Registro de la obra">
+    <div role="tablist" aria-label="Secciones del registro">
+      <button role="tab" id="t-avance" aria-controls="p-avance" aria-selected="true">Avance</button>
+      <button role="tab" id="t-presupuesto" aria-controls="p-presupuesto" aria-selected="false" tabindex="-1">Presupuesto</button>
+      <button role="tab" id="t-bloqueos" aria-controls="p-bloqueos" aria-selected="false" tabindex="-1">Bloqueos<span class="cuenta" id="n-bloqueos" hidden></span></button>
+      <button role="tab" id="t-archivos" aria-controls="p-archivos" aria-selected="false" tabindex="-1">Archivos</button>
+      <button role="tab" id="t-traza" aria-controls="p-traza" aria-selected="false" tabindex="-1">Quién hizo qué</button>
     </div>
-  </div>
+    <div class="paneles">
+      <div role="tabpanel" id="p-avance" aria-labelledby="t-avance">
+        <div id="avance"></div>
+        <div class="bloque">
+          <details id="det-reporte">
+            <summary>Cargar reporte de campo</summary>
+            <p class="nota">El reporte queda sin interpretar. Luego pídele a ORQ-COST que lo procese.</p>
+            <form id="fev">
+              <label class="campo" for="quien">Reportado por</label>
+              <input class="ctl" type="text" id="quien" placeholder="Ing. residente" required>
+              <label class="campo" for="fecha">Fecha del avance en obra</label>
+              <input class="ctl" type="date" id="fecha" required>
+              <label class="campo" for="texto">Qué se ejecutó</label>
+              <textarea class="ctl" id="texto" rows="4" placeholder="Se vaciaron 4 zapatas del eje 4 de 2,00 × 2,00 × 0,50 m…"></textarea>
+              <label class="campo" for="files">Fotos, valuaciones o mediciones</label>
+              <input class="ctl" type="file" id="files" multiple>
+              <p style="margin:12px 0 0"><button class="btn sec" id="subir">Subir reporte</button>
+                <span class="nota" id="ev-estado" role="status"></span></p>
+            </form>
+          </details>
+        </div>
+      </div>
+      <div role="tabpanel" id="p-presupuesto" aria-labelledby="t-presupuesto" hidden></div>
+      <div role="tabpanel" id="p-bloqueos" aria-labelledby="t-bloqueos" hidden></div>
+      <div role="tabpanel" id="p-archivos" aria-labelledby="t-archivos" hidden></div>
+      <div role="tabpanel" id="p-traza" aria-labelledby="t-traza" hidden></div>
+    </div>
+  </section>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
-let obraActual = null;
+let obraActual = null, ocupado = false;
 
-async function cargarObras(){
-  const obras = await (await fetch('/api/proyectos')).json();
-  $('obra').innerHTML = obras.map(o =>
-    `<option value="${o.codigo}">${o.codigo} — ${o.nombre_obra}</option>`).join('');
-  if (obras.length) { obraActual = obras[0].codigo; refrescar(); }
+/* ---------- utilidades ---------- */
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = (v, d = 2) => v === null || v === undefined ? '—' :
+  Number(v).toLocaleString('es-VE', {minimumFractionDigits: d, maximumFractionDigits: d});
+const pct = (v) => v === null || v === undefined ? '—' : nf(v) + ' %';
+const fecha = (iso) => iso ? new Date(iso.length > 10 ? iso : iso + 'T12:00:00')
+  .toLocaleDateString('es-VE', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '—';
+const ETQ = {confirmado: 'Confirmado', inferido: 'Inferido', referencial: 'Referencial',
+             pendiente_confirmacion: 'Pendiente de confirmar'};
+const etq = (e, vacio = '—') => e
+  ? `<span class="etq ${esc(e)}">${ETQ[e] || esc(e)}</span>`
+  : `<span class="etq neutro">${vacio}</span>`;
+const api = async (ruta, opciones) => {
+  const r = await fetch(ruta, opciones);
+  if (!r.ok) throw new Error(`${r.status} en ${ruta}`);
+  return r.json();
+};
+// Los enlaces a archivos se sirven desde este mismo origen, sea cual sea el puerto.
+const local = (url) => { const i = String(url).indexOf('/api/archivos/'); return i >= 0 ? String(url).slice(i) : url; };
+
+/* ---------- markdown mínimo y seguro (se escapa antes de dar formato) ---------- */
+function enLinea(t) {
+  return esc(t)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, a, u) => `<a href="${local(u)}" target="_blank" rel="noopener">${a}</a>`)
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,;])/g, (_, p, u) => `${p}<a href="${local(u)}" target="_blank" rel="noopener">${u}</a>`);
 }
-
-async function refrescar(){
-  if (!obraActual) return;
-  const e = await (await fetch(`/api/proyectos/${obraActual}/estado`)).json();
-  const c = e.configuracion || {};
-  const pct = (v) => v === null || v === undefined ? '—' : v.toFixed(2) + ' %';
-  $('estado').innerHTML = `
-    <div class="aviso">${e.advertencia_datos}</div>
-    <div class="kv"><span>Avance físico real</span><span>${pct(e.avance_fisico_real_pct)}</span></div>
-    <div class="kv"><span>Avance planificado</span><span>${pct(e.avance_fisico_plan_pct)}</span></div>
-    <div class="kv"><span>Desviación</span><span>${e.desviacion_pp === null ? '—' : e.desviacion_pp.toFixed(2)+' pp'}</span></div>
-    <div class="kv"><span>Avance financiero</span><span>${pct(e.avance_financiero_pct)}</span></div>
-    <div class="kv"><span>Partidas sin avance</span><span>${e.partidas_sin_avance}</span></div>
-    <div class="kv"><span>Bloqueos abiertos</span><span>${e.bloqueos_abiertos}</span></div>
-    <div class="kv"><span>Avances retenidos</span><span>${e.avances_en_espera}</span></div>
-    ${c.nota ? `<div class="aviso" style="margin-top:10px">${c.nota}<br>
-      Umbrales ${c.umbrales_pp.media}/${c.umbrales_pp.alta}/${c.umbrales_pp.critica} pp ·
-      ponderación por ${c.base_ponderacion}.</div>` : ''}
-    ${(e.desviaciones_abiertas||[]).map(d =>
-      `<div class="item"><b>${d.severidad.toUpperCase()} · ${d.tipo}</b><br>${d.descripcion}</div>`).join('')}
-  `;
-  const ent = await (await fetch(`/api/proyectos/${obraActual}/entregables`)).json();
-  $('entregables').innerHTML = ent.length ? ent.map(a =>
-    `<div class="item"><a href="${a.url}">${a.nombre}</a><br>
-     <span style="color:var(--tenue)">${a.codigo_documento} Rev.${a.revision} · ${a.generado_por}
-     ${a.formato_oficial ? '' : ' · formato propuesto'}</span></div>`).join('')
-    : 'Sin archivos generados todavía.';
-}
-
-function burbuja(clase, texto){
-  const d = document.createElement('div');
-  d.className = 'msg ' + clase;
-  d.textContent = texto;
-  $('chat').appendChild(d);
-  $('chat').scrollTop = $('chat').scrollHeight;
-  return d;
-}
-
-$('obra').onchange = (ev) => { obraActual = ev.target.value; $('chat').innerHTML=''; refrescar(); };
-
-$('fchat').onsubmit = async (ev) => {
-  ev.preventDefault();
-  const texto = $('msg').value.trim();
-  if (!texto) return;
-  burbuja('yo', texto);
-  $('msg').value = '';
-  const resp = await fetch('/api/chat', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({proyecto: obraActual, mensaje: texto})
-  });
-  const lector = resp.body.getReader();
-  const dec = new TextDecoder();
-  let buffer = '', actual = null;
-  while (true) {
-    const {done, value} = await lector.read();
-    if (done) break;
-    buffer += dec.decode(value, {stream:true});
-    const partes = buffer.split('\n\n'); buffer = partes.pop();
-    for (const p of partes) {
-      if (!p.startsWith('data: ')) continue;
-      const ev2 = JSON.parse(p.slice(6));
-      if (ev2.tipo === 'texto') {
-        if (!actual) actual = burbuja('orq', '');
-        actual.textContent += ev2.texto;
-        $('chat').scrollTop = $('chat').scrollHeight;
-      } else if (ev2.tipo === 'herramienta') {
-        burbuja('tool', '⚙ ' + ev2.nombre); actual = null;
-      } else if (ev2.tipo === 'error') {
-        burbuja('tool', '⚠ ' + ev2.texto);
-      } else if (ev2.tipo === 'fin') {
-        actual = null; refrescar();
-      }
+function markdown(texto) {
+  const salida = []; let lista = null, parrafo = [];
+  const cerrar = () => {
+    if (parrafo.length) { salida.push(`<p>${parrafo.join('<br>')}</p>`); parrafo = []; }
+    if (lista) { salida.push(`</${lista}>`); lista = null; }
+  };
+  for (const cruda of texto.split('\n')) {
+    const l = cruda.trimEnd();
+    let m;
+    if (!l.trim()) { cerrar(); continue; }
+    if ((m = l.match(/^#{1,6}\s+(.*)$/))) { cerrar(); salida.push(`<h3>${enLinea(m[1])}</h3>`); continue; }
+    if ((m = l.match(/^\s*(?:[-*•]|(\d+)[.)])\s+(.*)$/))) {
+      const tipo = m[1] ? 'ol' : 'ul';
+      if (parrafo.length) { salida.push(`<p>${parrafo.join('<br>')}</p>`); parrafo = []; }
+      if (lista !== tipo) { if (lista) salida.push(`</${lista}>`); salida.push(`<${tipo}>`); lista = tipo; }
+      salida.push(`<li>${enLinea(m[2])}</li>`); continue;
     }
+    if (lista) { salida.push(`</${lista}>`); lista = null; }
+    parrafo.push(enLinea(l));
   }
+  cerrar();
+  return salida.join('');
+}
+
+/* ---------- pestañas ---------- */
+const pestañas = [...document.querySelectorAll('[role=tab]')];
+function abrirPestaña(tab) {
+  for (const t of pestañas) {
+    const activa = t === tab;
+    t.setAttribute('aria-selected', activa); t.tabIndex = activa ? 0 : -1;
+    $(t.getAttribute('aria-controls')).hidden = !activa;
+  }
+}
+pestañas.forEach((t, i) => {
+  t.onclick = () => abrirPestaña(t);
+  t.onkeydown = (e) => {
+    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (!d) return;
+    const s = pestañas[(i + d + pestañas.length) % pestañas.length]; s.focus(); abrirPestaña(s);
+  };
+});
+
+/* ---------- registro de la obra ---------- */
+function pintarAvance(e) {
+  const c = e.configuracion || {};
+  const desv = e.desviacion_pp;
+  const filas = (e.partidas || []).map((p) => `
+    <tr><td><span class="cod">${esc(p.codigo)}</span><div class="sub">${esc(p.descripcion)}</div></td>
+        <td class="num">${nf(p.cantidad_acumulada)} / ${nf(p.cantidad_presupuestada)}<div class="sub">${esc(p.unidad)}</div></td>
+        <td class="num">${pct(p.pct_real)}</td>
+        <td>${etq(p.calidad_dato, 'Sin avance')}</td></tr>`).join('');
+  const desvs = (e.desviaciones_abiertas || []).map((d) => `
+    <div class="item"><div class="titulo">${esc(d.tipo.replaceAll('_', ' '))} · severidad ${esc(d.severidad)}</div>
+      ${esc(d.descripcion)}</div>`).join('');
+  $('avance').innerHTML = `
+    <div class="aviso ${e.ultima_fecha_avance ? '' : 'mal'}">${esc(e.advertencia_datos)}</div>
+    <div class="bloque">
+      <h2>Avance físico al ${fecha(e.corte)}</h2>
+      <div class="medida"><div class="fila"><span>Real registrado</span><b>${pct(e.avance_fisico_real_pct)}</b></div>
+        <div class="barra"><i style="width:${Math.min(100, e.avance_fisico_real_pct || 0)}%"></i></div></div>
+      <div class="medida"><div class="fila"><span>Planificado a la fecha</span><b>${pct(e.avance_fisico_plan_pct)}</b></div>
+        <div class="barra plan"><i style="width:${Math.min(100, e.avance_fisico_plan_pct || 0)}%"></i></div></div>
+      <dl class="datos">
+        <dt>Desviación</dt><dd>${desv === null || desv === undefined ? '—' : (desv > 0 ? '+' : '') + nf(desv) + ' pp'}</dd>
+        <dt>Avance financiero</dt><dd>${pct(e.avance_financiero_pct)}</dd>
+        <dt>Ejecutado / presupuestado</dt><dd>${nf(e.monto_ejecutado)} / ${nf(e.monto_presupuestado)} ${esc(e.proyecto.moneda)}</dd>
+        <dt>Último avance</dt><dd>${e.ultima_fecha_avance ? `${fecha(e.ultima_fecha_avance)} · hace ${e.dias_sin_reporte} días` : 'Ninguno'}</dd>
+        <dt>Avances retenidos por bloqueo</dt><dd>${e.avances_en_espera}</dd>
+      </dl>
+    </div>
+    ${c.nota ? `<div class="aviso">Umbrales de desviación ${nf(c.umbrales_pp.media, 0)} / ${nf(c.umbrales_pp.alta, 0)} / ${nf(c.umbrales_pp.critica, 0)} pp y ponderación por ${esc(c.base_ponderacion)}: valores propuestos por el sistema, pendientes de ratificación por SOTICA.</div>` : ''}
+    <div class="bloque"><h2>Partidas del presupuesto base</h2>
+      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th class="num">Ejecutado</th><th class="num">Avance</th><th>Dato</th></tr></thead>
+      <tbody>${filas}</tbody></table></div></div>
+    <div class="bloque"><h2>Desviaciones abiertas</h2>${desvs || '<p class="vacio">Sin desviaciones abiertas.</p>'}</div>`;
+}
+
+function pintarPresupuesto(d) {
+  const el = $('p-presupuesto');
+  if (!d.presupuesto) { el.innerHTML = '<div class="bloque"><p class="vacio">La obra todavía no tiene presupuesto.</p></div>'; return; }
+  const pr = d.presupuesto;
+  const filas = d.partidas.map((p) => `
+    <tr><td><span class="cod">${esc(p.codigo_interno)}</span><div class="sub">${esc(p.descripcion)}</div></td>
+        <td class="num">${nf(p.cantidad)} ${esc(p.unidad)}<div>${etq(p.etiqueta_cantidad)}</div></td>
+        <td class="num">${p.precio_unitario === null ? '—' : nf(p.precio_unitario)}<div>${etq(p.etiqueta_precio, 'Sin precio')}</div>
+          <div class="sub">${p.renglones_apu ? p.renglones_apu + ' insumos en el APU' : ''}</div></td>
+        <td class="num">${p.precio_unitario === null ? '—' : nf(p.monto)}</td></tr>`).join('');
+  el.innerHTML = `
+    <div class="bloque">
+      <h2>Presupuesto v${pr.version} · ${pr.es_base_control ? 'base de control de obra' : esc(pr.estado) + ', sin aprobar'}</h2>
+      <dl class="datos">
+        <dt>Costo directo con precio sustentado</dt><dd>${nf(d.costo_directo_firme)} ${esc(pr.moneda)}</dd>
+        <dt>Con precio pendiente de confirmar</dt><dd>${nf(d.monto_pendiente_confirmacion)} ${esc(pr.moneda)}</dd>
+      </dl>
+      <p class="nota" style="margin-top:10px">Es costo directo. Administración, utilidad e impuestos los define SOTICA.</p>
+    </div>
+    <div class="bloque"><h2>Partidas</h2>
+      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th class="num">Cantidad</th><th class="num">Precio unit.</th><th class="num">Monto</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="4" class="vacio">Sin partidas. Pídele a ORQ-COST que compute.</td></tr>'}</tbody></table></div></div>`;
+}
+
+function pintarBloqueos(d) {
+  const n = d.abiertos || 0;
+  $('n-bloqueos').hidden = !n; $('n-bloqueos').textContent = n;
+  $('p-bloqueos').innerHTML = `<div class="bloque"><h2>Decisiones que esperan a una persona</h2>${
+    (d.bloqueos || []).map((b) => `<div class="item">
+      <div class="titulo">${esc(String(b.tipo).replaceAll('_', ' '))} · abierto hace ${b.dias_abierto} días</div>
+      ${esc(b.descripcion)}
+      <div class="sub">Reportado por ${esc(b.reportado_por || '—')} el ${fecha(b.fecha_reporte)} · ${b.avances_retenidos} avance(s) retenido(s)</div>
+    </div>`).join('') ||
+    '<p class="vacio">No hay bloqueos abiertos. Cuando un avance no encaja en el presupuesto base, queda retenido aquí hasta que alguien decida en el chat.</p>'
+  }</div>`;
+}
+
+function pintarArchivos(lista) {
+  $('p-archivos').innerHTML = `<div class="bloque"><h2>Entregables generados</h2>${
+    lista.map((a) => `<div class="item">
+      <a href="/api/archivos/${encodeURI(a.storage_key)}">${esc(a.nombre)}</a>
+      <div>${esc(a.titulo)}</div>
+      <div class="sub">${esc(a.codigo_documento)} Rev. ${esc(a.revision)} · ${esc(a.generado_por)} · ${fecha(a.creado_en)} · ${nf(a.bytes / 1024, 0)} KB${a.formato_oficial ? '' : ' · formato SOTICA propuesto, sin ratificar'}</div>
+    </div>`).join('') ||
+    '<p class="vacio">Todavía no hay archivos. Pide el libro de cómputos o el presupuesto en Excel.</p>'
+  }</div>`;
+}
+
+function pintarTraza(lista) {
+  $('p-traza').innerHTML = `<div class="bloque"><h2>Delegaciones de ORQ-COST</h2>${
+    lista.map((d) => `<div class="item">
+      <div class="titulo">${esc(d.agente_destino)} · confianza ${esc(d.confianza || 'sin declarar')}</div>
+      ${esc(d.producto || '')}
+      <div class="sub">${fecha(d.finalizada_en)} · herramientas usadas: ${(d.herramientas || []).map(esc).join(', ') || 'ninguna'}${d.bloqueos ? ` · ${d.bloqueos} bloqueo(s) declarado(s)` : ''}</div>
+    </div>`).join('') ||
+    '<p class="vacio">Aquí queda cada encargo que ORQ-COST le hace a un especialista y las herramientas que este usó de verdad.</p>'
+  }</div>`;
+}
+
+async function refrescar() {
+  if (!obraActual) return;
+  const o = encodeURIComponent(obraActual);
+  const tareas = [
+    [`/api/proyectos/${o}/estado`, pintarAvance],
+    [`/api/proyectos/${o}/presupuesto`, pintarPresupuesto],
+    [`/api/proyectos/${o}/bloqueos`, pintarBloqueos],
+    [`/api/proyectos/${o}/entregables`, pintarArchivos],
+    [`/api/proyectos/${o}/delegaciones`, pintarTraza],
+  ];
+  await Promise.all(tareas.map(async ([ruta, pintar]) => {
+    try { pintar(await api(ruta)); } catch (err) { console.error(err); }
+  }));
+}
+
+/* ---------- conversación ---------- */
+const SUGERENCIAS = [
+  ['Computar y generar el libro', 'Computa las paredes de bloque de la planta baja: 45 m lineales por 2,80 m de altura, descontando 6 puertas de 0,90 x 2,10. Regístralo y genera el libro de cómputos en Excel.'],
+  ['Poner precio con respaldo', 'Ponle precio a la partida de paredes. No tengo cotizaciones: busca precios aproximados de los materiales en internet. Mano de obra por experiencia del Ing. Pérez: 1 albañil a 40 USD/día y 1 ayudante a 25 USD/día, rendimiento 12 m2 por día. Luego genera el presupuesto en Excel.'],
+  ['Consultar el avance', '¿Cómo va la obra?'],
+  ['Procesar un reporte de campo', 'Procesa el reporte de avance pendiente del residente.'],
+];
+function hiloVacio() {
+  $('hilo').innerHTML = `<div class="vacio-chat">
+    <h2>Dale una orden a ORQ-COST</h2>
+    <p>Él delega en los especialistas y te responde con lo que quedó registrado. A la derecha ves el estado real de la obra.</p>
+    <div class="sugerencias">${SUGERENCIAS.map(([t, p], i) =>
+      `<button class="sugerencia" type="button" data-i="${i}"><b>${t}</b><span>${esc(p)}</span></button>`).join('')}</div>
+  </div>`;
+  $('hilo').querySelectorAll('.sugerencia').forEach((b) =>
+    b.onclick = () => { $('msg').value = SUGERENCIAS[b.dataset.i][1]; ajustar(); $('msg').focus(); });
+}
+function abajo() { $('hilo').scrollTop = $('hilo').scrollHeight; }
+function ajustar() { const t = $('msg'); t.style.height = 'auto'; t.style.height = Math.min(160, t.scrollHeight) + 'px'; }
+function ponerOcupado(v) {
+  ocupado = v; $('enviar').disabled = v; $('nueva').disabled = v; $('obra').disabled = v;
+  $('enviar').textContent = v ? 'Trabajando…' : 'Enviar';
+}
+const PASOS = {
+  delegar_sub_cm: ['SUB-CM · cómputos', 1], delegar_sub_doc: ['SUB-DOC · documentos', 1],
+  delegar_sub_ava: ['SUB-AVA · avance de obra', 1], busqueda_web: ['Buscando precios en internet', 0],
+  consultar_presupuesto: ['Leyó el presupuesto', 0], consultar_estado_obra: ['Leyó el estado de obra', 0],
+  consultar_bloqueos: ['Revisó bloqueos', 0], resolver_bloqueo: ['Resolvió un bloqueo', 0],
+  registrar_apu: ['Registró el APU', 0],
 };
 
+async function enviar(texto) {
+  if (ocupado || !texto) return;
+  if ($('hilo').querySelector('.vacio-chat')) $('hilo').innerHTML = '';
+  const mio = document.createElement('div'); mio.className = 'turno yo'; mio.textContent = texto;
+  $('hilo').appendChild(mio);
+
+  const turno = document.createElement('div'); turno.className = 'turno';
+  turno.innerHTML = `<div class="autor">ORQ-COST</div><ul class="pasos"></ul>
+    <div class="prosa"></div><div class="trabajando"><span class="pulso"></span><span class="reloj">Trabajando… 0 s</span></div>`;
+  $('hilo').appendChild(turno); abajo();
+  const pasos = turno.querySelector('.pasos'), prosa = turno.querySelector('.prosa'),
+        espera = turno.querySelector('.trabajando');
+  const inicio = Date.now();
+  const reloj = setInterval(() => {
+    espera.querySelector('.reloj').textContent = `Trabajando… ${Math.round((Date.now() - inicio) / 1000)} s`;
+  }, 1000);
+  ponerOcupado(true);
+  let acumulado = '';
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({proyecto: obraActual, mensaje: texto}),
+    });
+    if (!resp.ok) throw new Error(`El servidor respondió ${resp.status}.`);
+    const lector = resp.body.getReader(), dec = new TextDecoder();
+    let buffer = '';
+    for (;;) {
+      const {done, value} = await lector.read();
+      if (done) break;
+      buffer += dec.decode(value, {stream: true});
+      const partes = buffer.split('\n\n'); buffer = partes.pop();
+      for (const p of partes) {
+        if (!p.startsWith('data: ')) continue;
+        const ev = JSON.parse(p.slice(6));
+        if (ev.tipo === 'texto') { acumulado += ev.texto; prosa.innerHTML = markdown(acumulado); abajo(); }
+        else if (ev.tipo === 'herramienta') {
+          const [rotulo, esAgente] = PASOS[ev.nombre] || [ev.nombre, 0];
+          const li = document.createElement('li'); li.className = 'paso' + (esAgente ? ' agente' : '');
+          li.textContent = rotulo; pasos.appendChild(li); abajo();
+        } else if (ev.tipo === 'error') { throw new Error(ev.texto); }
+      }
+    }
+  } catch (err) {
+    const e = document.createElement('div'); e.className = 'error';
+    e.textContent = `No se pudo completar: ${err.message} Puedes reintentar el mensaje.`;
+    turno.appendChild(e);
+  } finally {
+    clearInterval(reloj); espera.remove(); ponerOcupado(false); abajo(); refrescar();
+  }
+}
+
+$('fchat').onsubmit = (ev) => {
+  ev.preventDefault();
+  const texto = $('msg').value.trim();
+  if (!texto || ocupado) return;
+  $('msg').value = ''; ajustar(); enviar(texto);
+};
+$('msg').oninput = ajustar;
+$('msg').onkeydown = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('fchat').requestSubmit(); }
+};
+$('nueva').onclick = async () => {
+  if (ocupado || !obraActual) return;
+  ponerOcupado(true);
+  try { await api(`/api/chat/${encodeURIComponent(obraActual)}`, {method: 'DELETE'}); hiloVacio(); }
+  catch (err) { alert('No se pudo iniciar una conversación nueva: ' + err.message); }
+  finally { ponerOcupado(false); }
+};
+
+/* ---------- reporte de campo ---------- */
 $('fev').onsubmit = async (ev) => {
   ev.preventDefault();
   const fd = new FormData();
@@ -181,11 +532,30 @@ $('fev').onsubmit = async (ev) => {
   fd.append('fecha_reporte', $('fecha').value);
   fd.append('texto_libre', $('texto').value);
   for (const f of $('files').files) fd.append('archivos', f);
-  const r = await (await fetch(`/api/proyectos/${obraActual}/reportes`, {method:'POST', body:fd})).json();
-  burbuja('tool', `📎 Reporte ${r.reporte_id} cargado (crudo, sin interpretar).`);
-  $('texto').value = ''; $('files').value = '';
+  $('subir').disabled = true; $('ev-estado').textContent = ' Subiendo…';
+  try {
+    const r = await api(`/api/proyectos/${encodeURIComponent(obraActual)}/reportes`, {method: 'POST', body: fd});
+    $('ev-estado').textContent = ` Cargado con ${r.adjuntos.length} adjunto(s). Pide en el chat que lo procesen.`;
+    $('texto').value = ''; $('files').value = '';
+  } catch (err) { $('ev-estado').textContent = ' No se pudo subir: ' + err.message; }
+  finally { $('subir').disabled = false; }
 };
 
-$('fecha').valueAsDate = new Date();
-cargarObras();
+/* ---------- arranque ---------- */
+$('obra').onchange = (ev) => { obraActual = ev.target.value; hiloVacio(); refrescar(); };
+(async () => {
+  $('fecha').valueAsDate = new Date();
+  hiloVacio();
+  try {
+    const obras = await api('/api/proyectos');
+    $('obra').innerHTML = obras.map((o) =>
+      `<option value="${esc(o.codigo)}">${esc(o.codigo)} — ${esc(o.nombre_obra)}</option>`).join('');
+    if (obras.length) { obraActual = obras[0].codigo; refrescar(); }
+    else $('avance').innerHTML = '<div class="aviso">No hay obras cargadas en el sistema.</div>';
+  } catch (err) {
+    $('avance').innerHTML = `<div class="aviso mal">No se pudo leer la lista de obras: ${esc(err.message)}</div>`;
+  }
+})();
 </script>
+</body>
+</html>

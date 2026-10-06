@@ -50,7 +50,8 @@ CREATE TYPE origen_precio AS ENUM (
   'cotizacion_proveedor',   -- exige proveedor + enlace + fecha de consulta
   'experiencia_obra',       -- criterio del residente / ingeniero de costos (mano de obra, rendimientos)
   'historico_sotica',       -- presupuesto u obra anterior de SOTICA
-  'referencial_civ'         -- Guia CIV-DataLaing u otra base referencial, con fecha
+  'referencial_civ',        -- Guia CIV-DataLaing u otra base referencial, con fecha
+  'consulta_internet'       -- precio aproximado hallado en la web por el sistema; exige enlace + fecha
 );
 
 CREATE TYPE estado_reporte AS ENUM ('pendiente','procesado','rechazado','anulado');
@@ -280,7 +281,9 @@ CREATE TABLE apu_renglones (
   CHECK (origen <> 'cotizacion_proveedor'
          OR etiqueta = 'pendiente_confirmacion'
          OR (proveedor IS NOT NULL AND enlace IS NOT NULL AND fecha_fuente IS NOT NULL)),
-  CHECK (origen <> 'referencial_civ' OR fecha_fuente IS NOT NULL)
+  CHECK (origen <> 'referencial_civ' OR fecha_fuente IS NOT NULL),
+  -- Un precio de internet sin la pagina de donde salio no se guarda, ni como pendiente.
+  CHECK (origen <> 'consulta_internet' OR (enlace IS NOT NULL AND fecha_fuente IS NOT NULL))
 );
 CREATE INDEX ON apu_renglones (partida_id);
 

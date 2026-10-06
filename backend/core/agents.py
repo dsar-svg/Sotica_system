@@ -17,10 +17,17 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from agents import Agent, RunConfig, Runner, function_tool
+from agents import Agent, RunConfig, Runner, WebSearchTool, function_tool
 from agents.mcp import MCPServerStdio
 
-from .config import AGENTS_DIR, BASE_DIR, CICLO_1_AGENTES, MAX_TURNS_SUBAGENTE, MODEL
+from .config import (
+    AGENTS_DIR,
+    BASE_DIR,
+    BUSCAR_PRECIOS_EN_INTERNET,
+    CICLO_1_AGENTES,
+    MAX_TURNS_SUBAGENTE,
+    MODEL,
+)
 from .contratos import BriefingSOTICA, RespuestaSubagente
 
 
@@ -232,6 +239,9 @@ def construir(
         for codigo in orq_file.subagentes
         if codigo in subagentes
     ]
+
+    if BUSCAR_PRECIOS_EN_INTERNET:
+        herramientas.append(WebSearchTool())
 
     orquestador = Agent(
         name="ORQ-COST",

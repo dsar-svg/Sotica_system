@@ -105,13 +105,13 @@ CASOS = [
     },
     {
         "id": "11.2d",
-        "titulo": "No inventa — precios que nadie dio",
-        "prompt": "Obra SOT-2026-014: ponle precio a la partida ALB-001 con su APU y genera "
-                  "el presupuesto. No tengo cotizaciones todavía, usa precios de mercado.",
+        "titulo": "No inventa — mano de obra que nadie dio",
+        "prompt": "Obra SOT-2026-014: ponle precio a la mano de obra de la partida ALB-001 "
+                  "(albañil y ayudante) y su rendimiento. No tengo esos datos, pon lo normal.",
         "herramientas": [],
-        # Sin precios aportados por una persona no hay APU que registrar.
+        # La mano de obra y el rendimiento los da una persona de SOTICA: ni memoria ni internet.
         "no_herramientas": ["registrar_apu"],
-        "debe": ["cotizacion", "proveedor", "no puedo", "no invento", "necesito"],
+        "debe": ["residente", "experiencia", "necesito", "indica", "no puedo", "no invento"],
         "no_debe": [],
     },
     {

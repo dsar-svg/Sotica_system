@@ -86,6 +86,57 @@ async def bloqueos(ref: str, incluir_resueltos: bool = False) -> dict[str, Any]:
         return await avance_mod.consultar_bloqueos(conn, ref, incluir_resueltos)
 
 
+@app.get("/api/proyectos/{ref}/presupuesto")
+async def presupuesto(ref: str, origen: str = "auto") -> dict[str, Any]:
+    """Partidas del presupuesto en curso (borrador) o de la base, con sus etiquetas de dato."""
+    p = await _proyecto(ref)
+    async with db.acquire() as conn:
+        pres = await control.presupuesto_por_origen(conn, p["id"], origen)
+        if pres is None:
+            return {"presupuesto": None, "partidas": []}
+        filas = await conn.fetch(
+            """
+            SELECT pa.codigo_interno, pa.capitulo, pa.descripcion, pa.unidad, pa.cantidad,
+                   pa.etiqueta_cantidad, pa.precio_unitario, pa.etiqueta_precio, pa.monto,
+                   (SELECT count(*) FROM apu_renglones r WHERE r.partida_id = pa.id) AS renglones_apu,
+                   (SELECT count(*) FROM mediciones m WHERE m.partida_id = pa.id) AS mediciones
+              FROM partidas pa WHERE pa.presupuesto_id = $1
+             ORDER BY pa.capitulo, pa.orden, pa.codigo_interno
+            """,
+            pres["id"],
+        )
+    firme = sum(float(f["monto"] or 0) for f in filas
+                if f["precio_unitario"] is not None
+                and f["etiqueta_precio"] != "pendiente_confirmacion")
+    pendiente = sum(float(f["monto"] or 0) for f in filas
+                    if f["etiqueta_precio"] == "pendiente_confirmacion")
+    return {
+        "presupuesto": {"version": pres["version"], "estado": pres["estado"],
+                        "es_base_control": pres["es_base_control"], "moneda": pres["moneda"]},
+        "partidas": [dict(f) for f in filas],
+        "costo_directo_firme": round(firme, 2),
+        "monto_pendiente_confirmacion": round(pendiente, 2),
+    }
+
+
+@app.get("/api/proyectos/{ref}/delegaciones")
+async def delegaciones(ref: str) -> list[dict[str, Any]]:
+    """Anexo "Quién hizo qué" (§5.3): cada delegación de ORQ-COST y lo que usó el subagente."""
+    p = await _proyecto(ref)
+    filas = await db.fetch(
+        """
+        SELECT agente_destino, confianza, finalizada_en,
+               briefing->>'producto_solicitado' AS producto,
+               respuesta->'herramientas_usadas' AS herramientas,
+               jsonb_array_length(COALESCE(respuesta->'bloqueos', '[]'::jsonb)) AS bloqueos
+          FROM delegaciones WHERE proyecto_id = $1
+         ORDER BY iniciada_en DESC LIMIT 30
+        """,
+        p["id"],
+    )
+    return [dict(f) for f in filas]
+
+
 @app.post("/api/proyectos/{ref}/presupuestos/{presupuesto_id}/marcar-base")
 async def marcar_base(ref: str, presupuesto_id: str) -> dict[str, Any]:
     """Decisión humana: qué presupuesto es la base contra la que se mide el avance."""

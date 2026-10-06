@@ -357,8 +357,9 @@ async def registrar_computo(args: dict[str, Any]) -> dict[str, Any]:
     "evidencia. Calcula el costo directo unitario y lo fija como precio de la partida. La "
     "etiqueta de dato NO la eliges tú: la asigna la herramienta según la evidencia. Una "
     "cotización de proveedor sin proveedor, enlace y fecha queda PENDIENTE DE CONFIRMACIÓN y "
-    "no suma al total firme. Reemplaza el APU anterior de la partida. Solo ORQ-COST, y solo "
-    "con precios que el usuario haya dado: nunca con precios supuestos.",
+    "no suma al total firme. Un precio hallado en internet entra como `consulta_internet` y "
+    "exige el enlace de la página y la fecha: queda REFERENCIAL (aproximado). Reemplaza el "
+    "APU anterior de la partida. Solo ORQ-COST, y nunca con precios supuestos o de memoria.",
     {
         "type": "object",
         "properties": {
@@ -385,8 +386,11 @@ async def registrar_computo(args: dict[str, Any]) -> dict[str, Any]:
                         "unidad": {"type": "string",
                                    "description": "unidad del insumo (und, saco, m3, día…)"},
                         "cantidad": {"type": "number",
-                                     "description": "material: consumo por unidad de partida. "
-                                                    "equipo / mano de obra: número de recursos."},
+                                     "description": "material: consumo por unidad de partida "
+                                                    "(12.5 bloques por m2). equipo / mano de "
+                                                    "obra: NÚMERO de recursos (1 albañil = 1), "
+                                                    "nunca 1/rendimiento: la herramienta ya "
+                                                    "divide entre el rendimiento."},
                         "precio_unitario": {"type": "number",
                                             "description": "material: precio por unidad del "
                                                            "insumo. equipo / mano de obra: "
@@ -394,10 +398,12 @@ async def registrar_computo(args: dict[str, Any]) -> dict[str, Any]:
                         "desperdicio_pct": {"type": "number"},
                         "origen": {"type": "string",
                                    "enum": ["cotizacion_proveedor", "experiencia_obra",
-                                            "historico_sotica", "referencial_civ"]},
+                                            "historico_sotica", "referencial_civ",
+                                            "consulta_internet"]},
                         "proveedor": {"type": "string"},
                         "enlace": {"type": "string",
-                                   "description": "URL de la consulta al proveedor"},
+                                   "description": "URL de la consulta al proveedor o de la "
+                                                  "página web donde se halló el precio"},
                         "fecha_consulta": {"type": "string", "description": "YYYY-MM-DD"},
                         "fuente": {"type": "string",
                                    "description": "obra de referencia (histórico) o nombre de "

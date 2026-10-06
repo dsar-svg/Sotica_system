@@ -46,6 +46,14 @@ def clasificar(r: dict[str, Any], registrado_por: str) -> tuple[str, str, list[s
                 "(la fecha de la base de precios)."
             )
         return "referencial", f"{r.get('fuente') or 'Guía referencial CIV-DataLaing'} ({fecha})", []
+    if origen == "consulta_internet":
+        if not r.get("enlace") or not fecha:
+            raise ValueError(
+                f"'{r['descripcion']}': un precio de internet solo se registra con el enlace "
+                "de la página donde se encontró y la fecha de consulta. Sin enlace no hay precio."
+            )
+        sitio = r.get("proveedor") or r["enlace"].split("/")[2]
+        return "referencial", f"Precio aproximado de internet — {sitio} ({fecha})", []
     raise ValueError(f"origen de precio desconocido: {origen!r}")
 
 
@@ -87,6 +95,15 @@ async def registrar_apu(
                 raise ValueError(
                     f"'{r['descripcion']}' es {tipo}: su costo por unidad depende del "
                     "rendimiento de la partida (unidades por día). Falta `rendimiento`."
+                )
+            if cantidad < 0.2:
+                # Error típico: mandar 1/rendimiento como cantidad. El rendimiento ya divide;
+                # aceptarlo dividiría dos veces y dejaría la mano de obra casi en cero.
+                raise ValueError(
+                    f"'{r['descripcion']}': en {tipo} la `cantidad` es el NÚMERO de recursos "
+                    f"(1 albañil, 2 ayudantes, 0.5 si es medio tiempo), no la fracción por "
+                    f"unidad de partida. Llegó {cantidad}. El costo por unidad lo calcula la "
+                    "herramienta: cantidad × costo por día ÷ rendimiento."
                 )
             subtotal = cantidad * precio / float(rendimiento)
         else:
@@ -132,6 +149,12 @@ async def registrar_apu(
     )
 
     avisos = []
+    de_internet = [f[1] for f in filas if f[11] == "consulta_internet"]
+    if de_internet:
+        avisos.append(
+            "Precios APROXIMADOS tomados de internet (referenciales, no son cotización): "
+            + ", ".join(de_internet) + ". Conviene confirmarlos con cotización de proveedor."
+        )
     if pendientes:
         avisos.append(
             "Hay precios sin evidencia completa: la partida queda con precio PENDIENTE DE "
@@ -148,6 +171,10 @@ async def registrar_apu(
         "unidad": partida["unidad"],
         "costo_directo_unitario": costo,
         "desglose": {"renglones": round(directo, 4), "recargo_fcas": round(recargo_fcas, 4)},
+        "aporte_por_renglon": [
+            {"tipo": f[0], "insumo": f[1], "aporte_al_precio_unitario": f[7], "etiqueta": f[8]}
+            for f in filas
+        ],
         "etiqueta_precio": etiqueta_partida,
         "monto_partida": round(costo * float(partida["cantidad"]), 2),
         "evidencia_pendiente": pendientes,

@@ -550,6 +550,13 @@ async def generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
                 notas.append(["Precios pendientes de confirmación", ", ".join(pendientes)
                               + ". Falta evidencia (proveedor, enlace o fecha) en algún insumo; "
                                 "su monto va en columna aparte y no entra al total firme."])
+            de_internet = sorted({r["codigo_interno"] for r in renglones
+                                  if r["origen"] == "consulta_internet"})
+            if de_internet:
+                notas.append(["Precios aproximados de internet", ", ".join(de_internet)
+                              + ". Tienen insumos con precio hallado en la web (hoja APU, con "
+                                "enlace y fecha). Son referenciales: suman al total, pero deben "
+                                "confirmarse con cotización de proveedor antes de ofertar."])
             if sin_fcas:
                 notas.append(["FCAS no definido", ", ".join(sin_fcas)
                               + ". La mano de obra va sin recargo hasta que SOTICA indique el FCAS."])
@@ -586,6 +593,7 @@ async def generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
                 "monto_pendiente_confirmacion": round(pendiente, 2),
                 "partidas_sin_precio": sin_precio,
                 "partidas_con_precio_pendiente": pendientes,
+                "partidas_con_precios_de_internet": de_internet,
                 "advertencias": [n[0] + ": " + n[1] for n in notas[:6]],
             })
     except Exception as exc:  # noqa: BLE001

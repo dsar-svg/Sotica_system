@@ -146,4 +146,6 @@ class SesionObra:
 
 def _nombre_herramienta(item) -> str:
     crudo = getattr(item, "raw_item", None)
+    if getattr(crudo, "type", None) == "web_search_call":
+        return "busqueda_web"
     return getattr(crudo, "name", None) or getattr(item, "name", None) or "herramienta"
