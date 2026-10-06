@@ -5,14 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SOTICA-COSTOS</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3.5' fill='%23CB0C0C'/%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='%23fff' stroke-width='1.2'/%3E%3Cpath d='M10.6 5.6c-.5-.6-1.4-1-2.5-1-1.5 0-2.4.8-2.4 1.8 0 2.4 5.1 1.4 5.1 3.6 0 1-1 1.9-2.6 1.9-1.2 0-2.2-.5-2.7-1.2' fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
   // Tema por visitante: claro por defecto (oficina de día, proyector). Solo comodidad local.
   try { if (localStorage.getItem('sotica-tema') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
 </script>
 <style>
+  /* Barlow y Barlow Semi Condensed servidas desde el proyecto (OFL, frontend/fonts/OFL.txt): sin internet se ven igual. */
+  @font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Barlow-400.woff2") format("woff2")}
+  @font-face{font-family:"Barlow";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Barlow-500.woff2") format("woff2")}
+  @font-face{font-family:"Barlow";font-style:normal;font-weight:600;font-display:swap;src:url("/fonts/Barlow-600.woff2") format("woff2")}
+  @font-face{font-family:"Barlow Semi Condensed";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/BarlowSemiCondensed-500.woff2") format("woff2")}
+  @font-face{font-family:"Barlow Semi Condensed";font-style:normal;font-weight:600;font-display:swap;src:url("/fonts/BarlowSemiCondensed-600.woff2") format("woff2")}
+  @font-face{font-family:"Barlow Semi Condensed";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/BarlowSemiCondensed-700.woff2") format("woff2")}
   /* Señalética vial: rojo reglamentario detiene, azul informativo orienta, amarillo preventivo
      advierte. Placas de esquina redondeada con filete interior; cifras tabulares en toda cantidad. */
   :root{
@@ -314,7 +318,14 @@
   dialog::backdrop{background:rgba(18,23,28,.5)}
   .dlg-cab{background:var(--rojo);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:10px}
   .dlg-cab h2{margin:0;font:600 20px/1 var(--f-rotulo)}
-  .dlg-cuerpo{padding:6px 20px 20px}
+  dialog{max-height:calc(100dvh - 32px)}
+  .dlg-cuerpo{padding:6px 20px 20px;overflow-y:auto;max-height:calc(100dvh - 32px - 56px)}
+  .grupo{border:0;padding:0;margin:16px 0 0}
+  .grupo legend{font:600 13px/1 var(--f-rotulo);letter-spacing:.08em;text-transform:uppercase;color:var(--rojo-tinta);
+                padding:0 0 4px;border-bottom:2px solid var(--rojo);margin-bottom:2px}
+  .rejilla .ancho{grid-column:1 / -1}
+  .ficha{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--azul-suave);font-size:13.5px;color:var(--tinta-2)}
+  .ficha b{color:var(--tinta);font-weight:600}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
   .velo{display:none}
 
@@ -516,40 +527,82 @@
   <div class="dlg-cab"><svg class="ico"><use href="#i-obra"/></svg><h2 id="dlg-obra-tit">Nueva obra</h2></div>
   <form class="dlg-cuerpo" id="fobra" method="dialog">
     <p class="nota" style="margin-top:12px">Memoria del proyecto: estos datos no se vuelven a preguntar en cada conversación.</p>
-    <div class="rejilla">
-      <div><label class="campo" for="o-codigo">Código</label>
-        <input class="ctl" id="o-codigo" required placeholder="SOT-2026-015"></div>
-      <div><label class="campo" for="o-fecha">Fecha base de precios</label>
-        <input class="ctl" id="o-fecha" type="date" required></div>
-    </div>
-    <label class="campo" for="o-nombre">Nombre de la obra</label>
-    <input class="ctl" id="o-nombre" required>
-    <div class="rejilla">
-      <div><label class="campo" for="o-cliente">Cliente / ente</label>
-        <input class="ctl" id="o-cliente" placeholder="Gobernación, CVC, PDVSA…"></div>
-      <div><label class="campo" for="o-ente">Tipo de ente</label>
-        <select class="ctl" id="o-ente"><option value="">—</option>
+
+    <fieldset class="grupo">
+      <legend>Cliente</legend>
+      <label class="campo" for="o-cliente-sel">Cliente</label>
+      <select class="ctl" id="o-cliente-sel" required></select>
+      <div class="ficha" id="o-cliente-ficha" hidden></div>
+      <div id="o-cliente-nuevo" hidden>
+        <p class="nota" style="margin-top:10px">El cliente queda guardado para las próximas obras.</p>
+        <div class="rejilla">
+          <div class="ancho"><label class="campo" for="c-nombre">Razón social o nombre del ente</label>
+            <input class="ctl" id="c-nombre" placeholder="Gobernación del estado Lara"></div>
+          <div><label class="campo" for="c-rif">RIF</label>
+            <input class="ctl" id="c-rif" placeholder="J-12345678-9" pattern="[JGVEPCjgvepc]-?[0-9]{8}-?[0-9]"></div>
+          <div><label class="campo" for="c-ente">Tipo de ente</label>
+            <select class="ctl" id="c-ente"><option value="">—</option>
           <option value="publico_nacional">Público nacional</option>
           <option value="publico_estadal">Público estadal</option>
           <option value="publico_municipal">Público municipal</option>
           <option value="privado">Privado</option><option value="multilateral">Multilateral</option>
-        </select></div>
-      <div><label class="campo" for="o-tipo">Tipo de obra</label>
-        <select class="ctl" id="o-tipo"><option value="edificacion">Edificación</option>
-          <option value="vialidad">Vialidad</option><option value="hidraulica">Hidráulica</option>
-          <option value="electrificacion">Electrificación</option>
-          <option value="industrial">Industrial / petrolera</option></select></div>
-      <div><label class="campo" for="o-moneda">Moneda base</label>
-        <select class="ctl" id="o-moneda"><option>USD</option><option>VES</option></select></div>
-      <div><label class="campo" for="o-ubicacion">Ubicación</label>
-        <input class="ctl" id="o-ubicacion"></div>
-      <div><label class="campo" for="o-norma">Norma o pliego rector</label>
-        <input class="ctl" id="o-norma" placeholder="COVENIN 2000-II"></div>
-      <div><label class="campo" for="o-inicio">Inicio contractual</label>
-        <input class="ctl" id="o-inicio" type="date"></div>
-      <div><label class="campo" for="o-fin">Fin contractual</label>
-        <input class="ctl" id="o-fin" type="date"></div>
-    </div>
+            </select></div>
+          <div><label class="campo" for="c-contacto">Persona de contacto</label>
+            <input class="ctl" id="c-contacto" autocomplete="off"></div>
+          <div><label class="campo" for="c-cargo">Cargo</label>
+            <input class="ctl" id="c-cargo"></div>
+          <div><label class="campo" for="c-telefono">Teléfono</label>
+            <input class="ctl" id="c-telefono" type="tel" placeholder="+58 251 000 0000"></div>
+          <div><label class="campo" for="c-correo">Correo</label>
+            <input class="ctl" id="c-correo" type="email"></div>
+          <div class="ancho"><label class="campo" for="c-direccion">Dirección fiscal</label>
+            <input class="ctl" id="c-direccion"></div>
+          <div><label class="campo" for="c-ubicacion">Ciudad y estado habitual</label>
+            <input class="ctl" id="c-ubicacion" placeholder="Barquisimeto, Lara"></div>
+          <div><label class="campo" for="c-norma">Norma o pliego habitual</label>
+            <input class="ctl" id="c-norma" placeholder="COVENIN 2000-II"></div>
+          <div><label class="campo" for="c-moneda">Moneda preferida</label>
+            <select class="ctl" id="c-moneda"><option value="">—</option><option>USD</option><option>VES</option></select></div>
+          <div class="ancho"><label class="campo" for="c-notas">Notas</label>
+            <input class="ctl" id="c-notas" placeholder="Condiciones de pago, plantilla FCAS, particularidades…"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="grupo">
+      <legend>Obra</legend>
+      <div class="rejilla">
+        <div><label class="campo" for="o-codigo">Código</label>
+          <input class="ctl" id="o-codigo" required placeholder="SOT-2026-015"></div>
+        <div><label class="campo" for="o-fecha">Fecha base de precios</label>
+          <input class="ctl" id="o-fecha" type="date" required></div>
+        <div class="ancho"><label class="campo" for="o-nombre">Nombre de la obra</label>
+          <input class="ctl" id="o-nombre" required></div>
+        <div><label class="campo" for="o-tipo">Tipo de obra</label>
+          <select class="ctl" id="o-tipo"><option value="edificacion">Edificación</option>
+            <option value="vialidad">Vialidad</option><option value="hidraulica">Hidráulica</option>
+            <option value="electrificacion">Electrificación</option>
+            <option value="industrial">Industrial / petrolera</option></select></div>
+        <div><label class="campo" for="o-ente">Tipo de ente</label>
+          <select class="ctl" id="o-ente"><option value="">—</option>
+          <option value="publico_nacional">Público nacional</option>
+          <option value="publico_estadal">Público estadal</option>
+          <option value="publico_municipal">Público municipal</option>
+          <option value="privado">Privado</option><option value="multilateral">Multilateral</option>
+          </select></div>
+        <div><label class="campo" for="o-ubicacion">Ubicación</label>
+          <input class="ctl" id="o-ubicacion"></div>
+        <div><label class="campo" for="o-moneda">Moneda base</label>
+          <select class="ctl" id="o-moneda"><option>USD</option><option>VES</option></select></div>
+        <div class="ancho"><label class="campo" for="o-norma">Norma o pliego rector</label>
+          <input class="ctl" id="o-norma" placeholder="COVENIN 2000-II"></div>
+        <div><label class="campo" for="o-inicio">Inicio contractual</label>
+          <input class="ctl" id="o-inicio" type="date"></div>
+        <div><label class="campo" for="o-fin">Fin contractual</label>
+          <input class="ctl" id="o-fin" type="date"></div>
+      </div>
+      <p class="nota" id="o-autollenado" hidden style="margin-top:10px">Tipo de ente, ubicación, moneda y norma vienen del cliente; puedes cambiarlos para esta obra.</p>
+    </fieldset>
     <div class="acciones" style="justify-content:flex-end">
       <span class="estado-form" id="o-estado" role="status"></span>
       <button class="btn sec" type="button" id="o-cancelar">Cancelar</button>
@@ -560,7 +613,7 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-let obraActual = null, ocupado = false, obras = [], archivosVistos = null;
+let obraActual = null, ocupado = false, obras = [], archivosVistos = null, clientes = [];
 
 /* ---------- utilidades ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -1080,15 +1133,64 @@ async function cargarObras(elegida) {
   }
 }
 
-$('abrir-obra').onclick = () => { $('o-estado').textContent = ''; $('dlg-obra').showModal(); $('o-codigo').focus(); };
+/* ---------- nueva obra con su cliente ---------- */
+const ENTES = {publico_nacional: 'Público nacional', publico_estadal: 'Público estadal',
+               publico_municipal: 'Público municipal', privado: 'Privado', multilateral: 'Multilateral'};
+async function cargarClientes(elegido) {
+  try { clientes = await api('/api/clientes'); } catch (err) { clientes = []; }
+  $('o-cliente-sel').innerHTML = '<option value="">Selecciona un cliente…</option>'
+    + clientes.map((c) => `<option value="${esc(c.id)}">${esc(c.nombre)}${c.rif ? ' · ' + esc(c.rif) : ''}</option>`).join('')
+    + '<option value="__nuevo">+ Nuevo cliente…</option>';
+  $('o-cliente-sel').value = elegido || '';
+  elegirCliente();
+}
+function elegirCliente() {
+  const v = $('o-cliente-sel').value, c = clientes.find((x) => x.id === v), nuevo = v === '__nuevo';
+  $('o-cliente-nuevo').hidden = !nuevo; $('c-nombre').required = nuevo;
+  $('o-cliente-ficha').hidden = !c; $('o-autollenado').hidden = !c;
+  if (nuevo) $('c-nombre').focus();
+  if (!c) return;
+  $('o-cliente-ficha').innerHTML = [
+    c.rif && `<b>RIF</b> ${esc(c.rif)}`, c.tipo_ente && esc(ENTES[c.tipo_ente] || c.tipo_ente),
+    c.contacto_nombre && `<b>Contacto</b> ${esc(c.contacto_nombre)}${c.contacto_cargo ? ', ' + esc(c.contacto_cargo) : ''}`,
+    c.telefono && esc(c.telefono), c.correo && esc(c.correo),
+    c.obras ? `${c.obras} obra(s) registradas` : 'Sin obras todavía'].filter(Boolean).join(' · ');
+  // Autollenado: lo habitual del cliente; queda editable para esta obra.
+  $('o-ente').value = c.tipo_ente || '';
+  $('o-ubicacion').value = c.ubicacion || '';
+  $('o-norma').value = c.norma_rectora || '';
+  if (c.moneda_preferida) $('o-moneda').value = c.moneda_preferida;
+}
+$('o-cliente-sel').onchange = elegirCliente;
+// Mientras se escribe un cliente nuevo, sus datos habituales también rellenan la obra.
+[['c-ente', 'o-ente'], ['c-ubicacion', 'o-ubicacion'], ['c-norma', 'o-norma'], ['c-moneda', 'o-moneda']].forEach(([de, a]) =>
+  $(de).addEventListener('input', () => { if ($(de).value) $(a).value = $(de).value; }));
+
+$('abrir-obra').onclick = async () => {
+  $('o-estado').textContent = ''; $('fobra').reset(); await cargarClientes();
+  $('dlg-obra').showModal(); $('o-cliente-sel').focus();
+};
 $('o-cancelar').onclick = () => $('dlg-obra').close();
 $('fobra').onsubmit = async (ev) => {
   ev.preventDefault();
   const v = (id) => $(id).value.trim();
-  $('o-crear').disabled = true; $('o-estado').textContent = 'Creando…';
+  $('o-crear').disabled = true;
   try {
+    let clienteId = v('o-cliente-sel');
+    if (clienteId === '__nuevo') {
+      $('o-estado').textContent = 'Guardando cliente…';
+      const c = await api('/api/clientes', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nombre: v('c-nombre'), rif: v('c-rif'), tipo_ente: v('c-ente'),
+          contacto_nombre: v('c-contacto'), contacto_cargo: v('c-cargo'), telefono: v('c-telefono'),
+          correo: v('c-correo'), direccion: v('c-direccion'), ubicacion: v('c-ubicacion'),
+          norma_rectora: v('c-norma'), moneda_preferida: v('c-moneda'), notas: v('c-notas')})});
+      clienteId = c.id;
+      // Si la obra falla después, el cliente ya existe: queda seleccionado para no duplicarlo.
+      await cargarClientes(clienteId);
+    }
+    $('o-estado').textContent = 'Creando obra…';
     const r = await api('/api/proyectos', {method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({codigo: v('o-codigo'), nombre_obra: v('o-nombre'), cliente: v('o-cliente'),
+      body: JSON.stringify({codigo: v('o-codigo'), nombre_obra: v('o-nombre'), cliente_id: clienteId,
         tipo_ente: v('o-ente'), tipo_obra: v('o-tipo'), moneda_base: v('o-moneda'), ubicacion: v('o-ubicacion'),
         norma_rectora: v('o-norma'), fecha_base_precios: v('o-fecha'),
         fecha_inicio_contractual: v('o-inicio'), fecha_fin_contractual: v('o-fin')})});

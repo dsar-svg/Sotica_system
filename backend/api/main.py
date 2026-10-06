@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import re
 from typing import Any
 from uuid import UUID
 
@@ -62,12 +63,76 @@ _TIPOS_ENTE = {"publico_nacional", "publico_estadal", "publico_municipal", "priv
                "multilateral"}
 
 
-@app.post("/api/proyectos")
-async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
-    """Alta de obra con su memoria de proyecto (PDF 10.1): moneda, fecha base, ente, norma."""
+def _textos(datos: dict[str, Any]):
     def texto(campo: str) -> str | None:
         valor = str(datos.get(campo) or "").strip()
         return valor or None
+    return texto
+
+
+_CAMPOS_CLIENTE = ("nombre", "rif", "tipo_ente", "contacto_nombre", "contacto_cargo", "telefono",
+                   "correo", "direccion", "ubicacion", "norma_rectora", "moneda_preferida", "notas")
+
+
+@app.get("/api/clientes")
+async def listar_clientes() -> list[dict[str, Any]]:
+    filas = await db.fetch(
+        f"SELECT id, {', '.join(_CAMPOS_CLIENTE)}, "
+        "(SELECT count(*) FROM proyectos p WHERE p.cliente_id = c.id) AS obras "
+        "FROM clientes c ORDER BY nombre"
+    )
+    return [dict(f) | {"id": str(f["id"])} for f in filas]
+
+
+@app.post("/api/clientes")
+async def crear_cliente(datos: dict[str, Any]) -> dict[str, Any]:
+    """Cliente de SOTICA con sus datos habituales; se reutiliza al crear obras."""
+    texto = _textos(datos)
+    valores = {c: texto(c) for c in _CAMPOS_CLIENTE}
+    if not valores["nombre"]:
+        raise HTTPException(400, "La razón social o nombre del cliente es obligatorio.")
+    if valores["rif"]:
+        rif = re.sub(r"[\s.]", "", valores["rif"].upper())
+        m = re.fullmatch(r"([JGVEPC])-?(\d{8})-?(\d)", rif)
+        if not m:
+            raise HTTPException(400, "RIF inválido: usa el formato J-12345678-9.")
+        valores["rif"] = f"{m[1]}-{m[2]}-{m[3]}"
+    if valores["tipo_ente"] and valores["tipo_ente"] not in _TIPOS_ENTE:
+        raise HTTPException(400, f"Tipo de ente inválido: {valores['tipo_ente']}.")
+    if valores["moneda_preferida"] and valores["moneda_preferida"] not in ("USD", "VES"):
+        raise HTTPException(400, "La moneda debe ser USD o VES.")
+    if valores["correo"] and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", valores["correo"]):
+        raise HTTPException(400, "Correo inválido.")
+    try:
+        nuevo = await db.fetchval(
+            f"INSERT INTO clientes ({', '.join(_CAMPOS_CLIENTE)}) "
+            f"VALUES ({', '.join(f'${i}' for i in range(1, len(_CAMPOS_CLIENTE) + 1))}) RETURNING id",
+            *valores.values(),
+        )
+    except asyncpg.UniqueViolationError:
+        raise HTTPException(409, "Ya existe un cliente con ese nombre o RIF.") from None
+    except asyncpg.CheckViolationError as exc:
+        raise HTTPException(400, f"Dato inválido: {exc}") from None
+    return {"id": str(nuevo), "nombre": valores["nombre"]}
+
+
+@app.post("/api/proyectos")
+async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
+    """Alta de obra con su memoria de proyecto (PDF 10.1): moneda, fecha base, ente, norma.
+    Con `cliente_id`, lo que no venga en el formulario se toma de los datos del cliente."""
+    texto = _textos(datos)
+    cliente = None
+    if texto("cliente_id"):
+        try:
+            cliente = await db.fetchrow("SELECT * FROM clientes WHERE id = $1", UUID(texto("cliente_id")))
+        except ValueError:
+            cliente = None
+        if cliente is None:
+            raise HTTPException(400, "El cliente seleccionado no existe.")
+        for campo, del_cliente in (("tipo_ente", "tipo_ente"), ("ubicacion", "ubicacion"),
+                                   ("norma_rectora", "norma_rectora"), ("moneda_base", "moneda_preferida")):
+            if not texto(campo) and cliente[del_cliente]:
+                datos[campo] = cliente[del_cliente]
 
     codigo, nombre = texto("codigo"), texto("nombre_obra")
     if not codigo or not nombre:
@@ -92,13 +157,14 @@ async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
     try:
         nuevo = await db.fetchval(
             """
-            INSERT INTO proyectos (codigo, nombre_obra, cliente, tipo_ente, tipo_obra, ubicacion,
-                                   moneda_base, fecha_base_precios, norma_rectora,
+            INSERT INTO proyectos (codigo, nombre_obra, cliente_id, cliente, tipo_ente, tipo_obra,
+                                   ubicacion, moneda_base, fecha_base_precios, norma_rectora,
                                    fecha_inicio_contractual, fecha_fin_contractual)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id
             """,
-            codigo, nombre, texto("cliente"), tipo_ente, tipo_obra, texto("ubicacion"), moneda,
-            fechas["fecha_base_precios"], texto("norma_rectora"),
+            codigo, nombre, cliente["id"] if cliente else None,
+            cliente["nombre"] if cliente else texto("cliente"), tipo_ente, tipo_obra,
+            texto("ubicacion"), moneda, fechas["fecha_base_precios"], texto("norma_rectora"),
             fechas["fecha_inicio_contractual"], fechas["fecha_fin_contractual"],
         )
     except asyncpg.UniqueViolationError:

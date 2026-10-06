@@ -208,7 +208,7 @@ Tres colores de señal con roles fijos sobre un neutro frío de oficina; cada co
 **Display Font:** Barlow Semi Condensed (con Bahnschrift SemiCondensed, Bahnschrift, Arial Narrow)
 **Body Font:** Barlow (con Bahnschrift, Segoe UI, system-ui)
 
-**Character:** Rotulación tipo DIN de carretera: el semicondensado nombra (títulos, etiquetas, códigos, cifras destacadas) y Barlow lee. Las dos vienen de Google Fonts; Bahnschrift, la DIN de Windows, es el respaldo sin conexión. Pendiente: autoalojar ambas familias (requiere permiso del usuario); hasta entonces se cargan desde Google Fonts.
+**Character:** Rotulación tipo DIN de carretera: el semicondensado nombra (títulos, etiquetas, códigos, cifras destacadas) y Barlow lee. Las dos se sirven desde el proyecto (`frontend/fonts/`, woff2 latino, licencia OFL), así que se ven igual sin conexión; Bahnschrift, la DIN de Windows, queda como último respaldo.
 
 ### Hierarchy
 - **Display** (600, 30px, 1.15; 25px en móvil): solo el título del estado vacío del chat.

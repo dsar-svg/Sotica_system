@@ -1,6 +1,18 @@
 -- Obra de prueba para ejercitar el ciclo 1 end-to-end.
 -- Cantidades y precios ficticios; sirven para probar delegación, no para presupuestar.
 
+-- Clientes ficticios de demostración.
+INSERT INTO clientes (nombre, rif, tipo_ente, contacto_nombre, contacto_cargo, telefono, correo,
+                      direccion, ubicacion, norma_rectora, moneda_preferida, notas)
+VALUES ('Gobernación (demo)', 'G-20000000-1', 'publico_estadal', 'Ing. María Pérez (demo)',
+        'Directora de Infraestructura', '+58 251 000 0000', 'infraestructura@gobernacion-demo.example',
+        'Av. Principal, Barquisimeto (demo)', 'Barquisimeto, Lara', 'COVENIN 2000-II', 'USD',
+        'Datos ficticios para la demostración.'),
+       ('Constructora Privada (demo)', 'J-30000000-2', 'privado', 'Lic. José Rodríguez (demo)',
+        'Gerente de Proyectos', '+58 241 000 0000', 'proyectos@constructora-demo.example',
+        'Zona Industrial, Valencia (demo)', 'Valencia, Carabobo', 'COVENIN 2000-II', 'USD',
+        'Datos ficticios para la demostración.');
+
 INSERT INTO proyectos (codigo, nombre_obra, cliente, tipo_ente, tipo_obra, ubicacion,
                        zona_precios, moneda_base, fecha_base_precios, plantilla_fcas,
                        norma_rectora, formatos_ratificados,
@@ -9,6 +21,8 @@ VALUES ('SOT-2026-014', 'Edificio administrativo — sede regional', 'Gobernaci�
         'publico_estadal', 'edificacion', 'Barquisimeto, Lara', 'Centro-occidente',
         'USD', DATE '2026-08-01', 'edificacion', 'COVENIN 2000-II', false,
         DATE '2026-09-01', DATE '2027-03-31');
+UPDATE proyectos SET cliente_id = (SELECT id FROM clientes WHERE nombre = 'Gobernación (demo)')
+ WHERE codigo = 'SOT-2026-014';
 
 INSERT INTO presupuestos (proyecto_id, version, tipo, estado, es_base_control, moneda,
                           fecha_base, clase_estimado, creado_por)

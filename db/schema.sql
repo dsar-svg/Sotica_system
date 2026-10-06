@@ -95,11 +95,31 @@ CREATE TYPE ambito_config AS ENUM ('global','tipo_obra','proyecto');
 -- 1. Proyectos / obras
 -- ---------------------------------------------------------------------
 
+-- Clientes de SOTICA (memoria comercial): al crear una obra se elige el cliente y sus datos
+-- habituales (ente, ubicación, norma, moneda) rellenan la obra.
+CREATE TABLE clientes (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre              text NOT NULL UNIQUE,              -- razón social o nombre del ente
+  rif                 text UNIQUE CHECK (rif ~ '^[JGVEPC]-[0-9]{8}-[0-9]$'),
+  tipo_ente           text,                              -- publico_nacional | estadal | municipal | privado | multilateral
+  contacto_nombre     text,
+  contacto_cargo      text,
+  telefono            text,
+  correo              text CHECK (correo ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  direccion           text,
+  ubicacion           text,                              -- ciudad / estado habitual de sus obras
+  norma_rectora       text,                              -- COVENIN 2000-II, pliego tipo del ente, FIDIC...
+  moneda_preferida    text CHECK (moneda_preferida IN ('VES','USD')),
+  notas               text,
+  creado_en           timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE proyectos (
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   codigo              text UNIQUE NOT NULL,            -- SOT-2026-014
   nombre_obra         text NOT NULL,
-  cliente             text,                            -- CVC, PDVSA, MPPT, gobernacion, privado...
+  cliente_id          uuid REFERENCES clientes(id),
+  cliente             text,                            -- nombre visible (copia de clientes.nombre)
   tipo_ente           text,                            -- publico_nacional | estadal | municipal | privado | multilateral
   -- Determina que fila de config_control aplica cuando no hay una propia del proyecto.
   tipo_obra           text NOT NULL DEFAULT 'edificacion',  -- edificacion | vialidad | hidraulica | electrificacion | industrial
