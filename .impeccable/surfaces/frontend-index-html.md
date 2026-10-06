@@ -11,4 +11,4 @@ Estructura elegida en la ronda de superficie (seed 699f95ff): «Ruta por capítu
 
 ## Ciclo comercial
 
-Proyectos en dos grupos del sidebar: ofertas en estudio (sin contrato; cómputo, APU, presupuesto de oferta) y obras adjudicadas (control de avance). «Marcar como adjudicada» fija el plazo y puede convertir el presupuesto ofertado en base de control.
+Conversaciones como en ChatGPT: «Nueva conversación» abre una general (sin proyecto) y el historial queda en el sidebar agrupado por fecha. Cada conversación puede enlazarse a un proyecto con el selector de la barra; ORQ-COST abre un presupuesto él mismo cuando hay que registrar algo. Pantallas Presupuestos (ofertas sin contrato, «Convertir en obra») y Obras (adjudicadas, «Ver avance»).

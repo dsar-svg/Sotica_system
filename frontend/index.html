@@ -343,6 +343,40 @@
   .sb details summary::-webkit-details-marker{display:none}
   .sb-sep{border-top:1px solid var(--sb-linea);margin:6px 0 2px}
 
+  /* conversaciones en el sidebar */
+  .conv{display:flex;align-items:center;border-radius:8px}
+  .conv:hover{background:var(--sb-hover)}
+  .conv-abrir{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;border:0;background:none;color:inherit;
+              text-align:left;padding:7px 4px 7px 10px;cursor:pointer;font:inherit;border-radius:8px}
+  .conv-abrir b{font:500 14px/1.3 var(--f-texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .conv-abrir span{font:600 11.5px/1.2 var(--f-rotulo);letter-spacing:.04em;color:var(--sb-tinta-2);
+                   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .conv-abrir:disabled,.conv-borrar:disabled{cursor:not-allowed}
+  .conv-borrar{flex:none;display:grid;place-items:center;width:30px;height:30px;margin-right:3px;border:0;border-radius:6px;
+               background:none;color:inherit;cursor:pointer;opacity:0}
+  .conv-borrar .ico{width:15px;height:15px}
+  .conv-borrar:hover{background:rgba(0,0,0,.14)}
+  .conv:hover .conv-borrar,.conv:focus-within .conv-borrar,.conv:has([aria-current="true"]) .conv-borrar{opacity:1}
+  @media (hover:none){.conv-borrar{opacity:1}}
+  .conv-abrir:focus-visible,.conv-borrar:focus-visible{outline-color:#fff}
+  .conv:has([aria-current="true"]){background:#fff;color:#A30909}
+  .conv:has([aria-current="true"]) span{color:#A30909;opacity:.8}
+  .conv:has([aria-current="true"]) .conv-borrar:hover{background:#FDEDED}
+  :root[data-theme="dark"] .conv:has([aria-current="true"]){color:var(--sb)}
+  :root[data-theme="dark"] .conv:has([aria-current="true"]) span{color:var(--sb)}
+  .conv-grupo{font:600 11.5px/1 var(--f-rotulo);letter-spacing:.06em;text-transform:uppercase;color:var(--sb-tinta-2);margin:12px 10px 4px}
+  .conv-grupo:first-child{margin-top:4px}
+
+  /* barra: proyecto de la conversación */
+  .sel-proyecto{flex:0 1 300px;min-width:0;height:34px;border:1px solid var(--borde-fuerte);border-radius:8px;background:var(--sup);
+                color:var(--tinta);font:600 13.5px var(--f-rotulo);padding:0 8px;cursor:pointer;text-overflow:ellipsis}
+  .sel-proyecto:hover{border-color:var(--tinta-3)}
+
+  /* listas de presupuestos y obras */
+  .acc-fila{display:flex;gap:14px;justify-content:flex-end;flex-wrap:wrap;white-space:nowrap}
+  .fila-archivo td{color:var(--tinta-3)}
+  td .etq{margin-top:4px}
+
   /* ---------- barra: fase del proyecto ---------- */
   .barra .etq{flex:none}
   .fase-oportunidad{background:var(--amarillo);color:#1A1A1A;border-color:#1A1A1A}
@@ -463,6 +497,16 @@
     .compositor{padding:6px 12px 10px}
     .ruta,.herramientas,.prosa,.trabajando,.error{margin-left:0}
     .barra h1 small{display:none}
+    .barra h1.de-chat{display:none}
+    .sel-proyecto{flex:1 1 auto;min-width:120px}
+    #fase-placa{display:none}
+    .tabla-tarjetas thead{display:none}
+    .tabla-tarjetas tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;padding:14px 4px;border-bottom:1px solid var(--borde)}
+    .tabla-tarjetas tr:last-child{border-bottom:0}
+    .tabla-tarjetas td{border:0;padding:0;text-align:left}
+    .tabla-tarjetas td[data-k]::before{content:attr(data-k);display:block;font:600 12px/1.3 var(--f-rotulo);color:var(--tinta-3);margin-bottom:2px}
+    .tabla-tarjetas td:first-child,.tabla-tarjetas td:last-child,.tabla-tarjetas td.vacio{grid-column:1/-1}
+    .tabla-tarjetas .acc-fila{justify-content:flex-start}
     .boton-barra .rot{display:none}
     .rejilla{grid-template-columns:1fr}
     .vacio-chat{padding-top:3vh}
@@ -498,6 +542,7 @@
   <symbol id="i-preventiva" viewBox="0 0 24 24"><path d="M12 3l9 9-9 9-9-9z"/><path d="M12 8.5v4M12 15.5h.01"/></symbol>
   <symbol id="i-info" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 11v5.5M12 7.5h.01"/></symbol>
   <symbol id="i-precio" viewBox="0 0 24 24"><path d="M4 12.5V5a1 1 0 0 1 1-1h7.5L20 11.5 12.5 19z"/><circle cx="8.5" cy="8.5" r="1.4"/></symbol>
+  <symbol id="i-cliente" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M15.5 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.2a5.5 5.5 0 0 1 3 4.8"/></symbol>
   <symbol id="i-obra" viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10M10 20v-5h4v5"/></symbol>
 </svg>
 
@@ -509,23 +554,29 @@
       <button class="icono-btn sb-cerrar" id="sb-cerrar" type="button" aria-label="Cerrar menú"><svg class="ico"><use href="#i-cerrar"/></svg></button>
     </div>
 
-    <button class="sb-btn sb-primario" id="abrir-obra" type="button"><svg class="ico"><use href="#i-mas"/></svg>Nuevo proyecto</button>
+    <button class="sb-btn sb-primario" id="nueva" type="button"><svg class="ico"><use href="#i-mas"/></svg>Nueva conversación</button>
 
-    <div class="sb-scroll" id="lista-proyectos" aria-label="Proyectos"></div>
-
-    <div class="sb-sep"></div>
-    <div class="sb-titulo" id="sb-titulo-proyecto">Este proyecto</div>
-    <nav aria-label="Secciones del proyecto">
-      <button class="sb-btn" type="button" data-seccion="avance"><svg class="ico"><use href="#i-avance"/></svg>Avance de obra<span class="sb-valor" id="v-avance"></span></button>
-      <button class="sb-btn" type="button" data-seccion="presupuesto"><svg class="ico"><use href="#i-presupuesto"/></svg>Presupuesto<span class="sb-valor" id="v-presupuesto"></span></button>
-      <button class="sb-btn" type="button" data-seccion="bloqueos"><svg class="ico"><use href="#i-pare"/></svg>Bloqueos<span class="contador" id="n-bloqueos" hidden></span></button>
-      <button class="sb-btn" type="button" data-seccion="archivos"><svg class="ico"><use href="#i-archivos"/></svg>Archivos<span class="sb-valor" id="v-archivos"></span><span id="p-archivos-nuevo" hidden title="Hay entregables nuevos"><span class="nuevo-punto" style="display:inline-block" aria-hidden="true"></span><span class="sr">(hay entregables nuevos)</span></span></button>
-      <button class="sb-btn" type="button" data-seccion="traza"><svg class="ico"><use href="#i-ruta"/></svg>Quién hizo qué<span class="sb-valor" id="v-traza"></span></button>
-    </nav>
-    <div class="sb-sep"></div>
     <nav aria-label="Oficina">
-      <button class="sb-btn" type="button" data-vista="clientes"><svg class="ico"><use href="#i-obra"/></svg>Clientes<span class="sb-valor" id="v-clientes"></span></button>
+      <button class="sb-btn" type="button" data-vista="presupuestos"><svg class="ico"><use href="#i-presupuesto"/></svg>Presupuestos<span class="sb-valor" id="v-presupuestos"></span></button>
+      <button class="sb-btn" type="button" data-vista="obras"><svg class="ico"><use href="#i-obra"/></svg>Obras<span class="sb-valor" id="v-obras"></span></button>
+      <button class="sb-btn" type="button" data-vista="clientes"><svg class="ico"><use href="#i-cliente"/></svg>Clientes<span class="sb-valor" id="v-clientes"></span></button>
     </nav>
+
+    <div id="bloque-proyecto" hidden>
+      <div class="sb-sep"></div>
+      <div class="sb-titulo" id="sb-titulo-proyecto">Este proyecto</div>
+      <nav aria-label="Secciones del proyecto">
+        <button class="sb-btn" type="button" data-seccion="avance"><svg class="ico"><use href="#i-avance"/></svg>Avance de obra<span class="sb-valor" id="v-avance"></span></button>
+        <button class="sb-btn" type="button" data-seccion="presupuesto"><svg class="ico"><use href="#i-presupuesto"/></svg>Presupuesto<span class="sb-valor" id="v-presupuesto"></span></button>
+        <button class="sb-btn" type="button" data-seccion="bloqueos"><svg class="ico"><use href="#i-pare"/></svg>Bloqueos<span class="contador" id="n-bloqueos" hidden></span></button>
+        <button class="sb-btn" type="button" data-seccion="archivos"><svg class="ico"><use href="#i-archivos"/></svg>Archivos<span class="sb-valor" id="v-archivos"></span><span id="p-archivos-nuevo" hidden title="Hay entregables nuevos"><span class="nuevo-punto" style="display:inline-block" aria-hidden="true"></span><span class="sr">(hay entregables nuevos)</span></span></button>
+        <button class="sb-btn" type="button" data-seccion="traza"><svg class="ico"><use href="#i-ruta"/></svg>Quién hizo qué<span class="sb-valor" id="v-traza"></span></button>
+      </nav>
+    </div>
+
+    <div class="sb-sep"></div>
+    <div class="sb-titulo">Conversaciones</div>
+    <div class="sb-scroll" id="lista-conv" aria-label="Conversaciones"></div>
 
     <div class="sb-pie">
       <button class="sb-btn" id="tema" type="button" aria-label="Cambiar a tema oscuro"><svg class="ico"><use href="#i-luna"/></svg><span id="tema-rot">Tema oscuro</span></button>
@@ -538,10 +589,11 @@
     <header class="barra">
       <button class="boton-barra solo-movil" id="abrir-menu" type="button" aria-label="Abrir menú"><svg class="ico"><use href="#i-menu"/></svg></button>
       <h1 id="titulo-obra">ORQ-COST</h1>
+      <label class="sr" for="sel-proyecto">Proyecto de esta conversación</label>
+      <select class="sel-proyecto" id="sel-proyecto" title="Proyecto de esta conversación"></select>
       <span class="etq" id="fase-placa" hidden></span>
       <div class="barra-acciones">
-        <button class="boton-barra" id="nueva" type="button" title="Borra el historial de esta conversación; los datos del proyecto no se tocan">
-          <svg class="ico"><use href="#i-chat"/></svg><span class="rot">Conversación nueva</span></button>
+        <button class="boton-barra solo-movil" id="nueva-barra" type="button" aria-label="Nueva conversación"><svg class="ico"><use href="#i-mas"/></svg></button>
         <button class="boton-barra" id="boton-fase" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-fase">
           <svg class="ico"><use href="#i-obra"/></svg><span class="rot">Fase</span></button>
         <div class="menu menu-fase" id="menu-fase" role="menu" hidden></div>
@@ -599,6 +651,30 @@
     </form>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="vista vista-pagina" id="vista-presupuestos" aria-label="Presupuestos" hidden>
+      <div class="pagina">
+        <div class="pag-cab">
+          <div><h2>Presupuestos</h2><p>Ofertas en estudio, sin contrato. Se cotizan sin compromiso; si se gana, se convierten en obra y su presupuesto pasa a ser la base de control.</p></div>
+          <div class="acciones"><button class="btn" id="pre-nuevo" type="button"><svg class="ico"><use href="#i-mas"/></svg>Nuevo presupuesto</button></div>
+        </div>
+        <div class="bloque"><div class="tabla-scroll"><table class="tabla-tarjetas">
+          <thead><tr><th>Presupuesto</th><th>Cliente</th><th class="num">Partidas</th><th class="num">Costo directo</th><th class="num">Precio de oferta</th><th>Última conversación</th><th><span class="sr">Acciones</span></th></tr></thead>
+          <tbody id="pre-tabla"></tbody></table></div></div>
+      </div>
+    </section>
+
+    <section class="vista vista-pagina" id="vista-obras" aria-label="Obras" hidden>
+      <div class="pagina">
+        <div class="pag-cab">
+          <div><h2>Obras</h2><p>Proyectos adjudicados, con contrato y control de avance contra su presupuesto base.</p></div>
+          <div class="acciones"><button class="btn" id="obra-nueva" type="button"><svg class="ico"><use href="#i-mas"/></svg>Nueva obra</button></div>
+        </div>
+        <div class="bloque"><div class="tabla-scroll"><table class="tabla-tarjetas">
+          <thead><tr><th>Obra</th><th>Cliente</th><th>Plazo contractual</th><th class="num">Avance real</th><th class="num">Plan a hoy</th><th class="num">Bloqueos</th><th><span class="sr">Acciones</span></th></tr></thead>
+          <tbody id="obras-tabla"></tbody></table></div></div>
       </div>
     </section>
 
@@ -714,13 +790,13 @@
 <div class="sr" id="anuncio" role="status" aria-live="polite"></div>
 
 <dialog id="dlg-obra" aria-labelledby="dlg-obra-tit">
-  <div class="dlg-cab"><svg class="ico"><use href="#i-obra"/></svg><h2 id="dlg-obra-tit">Nuevo proyecto</h2></div>
+  <div class="dlg-cab"><svg class="ico"><use href="#i-obra"/></svg><h2 id="dlg-obra-tit">Nuevo presupuesto</h2></div>
   <form class="dlg-cuerpo" id="fobra" method="dialog">
     <fieldset class="grupo">
       <legend>Tipo de proyecto</legend>
       <div class="rejilla" role="radiogroup" aria-label="Tipo de proyecto">
         <label class="opcion"><input type="radio" name="o-fase" value="oportunidad" checked>
-          <span><b>Oferta o presupuesto</b><small>Todavía sin contrato: cómputo, APU, presupuesto y propuesta.</small></span></label>
+          <span><b>Presupuesto</b><small>Oferta todavía sin contrato: cómputo, APU, presupuesto y propuesta.</small></span></label>
         <label class="opcion"><input type="radio" name="o-fase" value="adjudicada">
           <span><b>Obra adjudicada</b><small>Con contrato: además lleva control de avance.</small></span></label>
       </div>
@@ -812,6 +888,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let obraActual = null, ocupado = false, obras = [], archivosVistos = null, clientes = [];
+let convActual = null, convTitulo = '', convs = [];
 let vistaActual = 'chat', datosEstado = null, datosSerie = null, datosBloqueos = null, capSel = null;
 
 /* ---------- utilidades ---------- */
@@ -956,7 +1033,7 @@ function marcarNav() {
 document.querySelectorAll('.sb nav [data-seccion]').forEach((b) => b.onclick = () => {
   cerrarMenu();
   if (b.dataset.seccion === 'avance') return mostrarVista('avance');
-  if (vistaActual === 'clientes') mostrarVista('chat');
+  if (!['chat', 'avance'].includes(vistaActual)) mostrarVista('chat');
   const misma = app.classList.contains('con-registro') && seccionActual === b.dataset.seccion;
   registro(!misma, b.dataset.seccion);
 });
@@ -1102,6 +1179,16 @@ const SUGERENCIAS_OFERTA = [
   ['SUB-DOC · Documentos', 'Propuesta comercial', 'SOTICA-COM-01 con alcance, plazo y exclusiones.',
    'Prepara la propuesta comercial en Word para esta oferta. El precio y la validez los defino yo: pregúntamelos.'],
 ];
+const SUGERENCIAS_GENERAL = [
+  ['ORQ-COST · Internet', 'Buscar precios de materiales', 'Precios vigentes con el enlace de cada página.',
+   'Busca en internet el precio actual en Venezuela del saco de cemento gris de 42,5 kg, la cabilla de 1/2" y el bloque de arcilla de 15 cm. Cítame las páginas.'],
+  ['ORQ-COST → SUB-CM', 'Presupuestar sin abrir proyecto', 'ORQ-COST abre el presupuesto y lo enlaza a esta conversación.',
+   'Quiero presupuestar un galpón de estructura metálica de 20 x 30 m en Barquisimeto para Constructora Privada. Abre el presupuesto y empieza por el cómputo de las fundaciones: 12 zapatas aisladas de 1,50 x 1,50 x 0,50 m.'],
+  ['ORQ-COST · Normas', 'Consultar una norma', 'COVENIN y práctica venezolana, con la fuente.',
+   '¿Qué dice la norma COVENIN 2000 sobre cómo se mide el concreto de fundaciones y qué se descuenta?'],
+  ['ORQ-COST · Estimado', 'Orden de magnitud', 'Costo por m² referencial, sin registrar nada.',
+   '¿Cuánto podría costar por m² un galpón industrial sencillo en Lara? Dame un orden de magnitud con sus supuestos, sin registrar nada.'],
+];
 const SUGERENCIAS = [
   ['ORQ-COST · Estado', '¿Cómo va la obra?', 'Avance real contra plan, desviaciones y bloqueos.', '¿Cómo va la obra?'],
   ['SUB-CM → SUB-DOC', 'Computar y generar el libro', 'Paredes de planta baja con descuento de puertas y libro SOTICA-CM-01.',
@@ -1115,34 +1202,55 @@ const SUGERENCIAS = [
    'Genera el cronograma Gantt de la obra y dime si es coherente con los rendimientos. Después prepara el informe de avance en Word y una presentación corta para la junta.'],
 ];
 function hiloVacio() {
-  const o = proyecto(), lista = o && o.fase !== 'adjudicada' ? SUGERENCIAS_OFERTA : SUGERENCIAS;
+  const o = proyecto(), lista = !o ? SUGERENCIAS_GENERAL : o.fase !== 'adjudicada' ? SUGERENCIAS_OFERTA : SUGERENCIAS;
   $('hilo').innerHTML = `<div class="vacio-chat">
-    <h2>${!o ? 'Crea o elige un proyecto' : o.fase === 'oportunidad' ? '¿Qué preparamos para esta oferta?' : `¿Qué necesitas de ${esc(o.codigo)}?`}</h2>
-    <p>${!o ? 'Una oferta solo necesita un nombre: créala con «Nuevo proyecto» y empieza a conversar.'
+    <h2>${!o ? '¿En qué trabajamos hoy?' : o.fase === 'oportunidad' ? '¿Qué preparamos para este presupuesto?' : `¿Qué necesitas de ${esc(o.codigo)}?`}</h2>
+    <p>${!o ? 'Pregunta, busca en internet o arma un presupuesto sin abrir nada antes: si hay que guardar cómputos o documentos, ORQ-COST abre el presupuesto y lo enlaza a esta conversación.'
       : 'ORQ-COST reparte el trabajo entre ocho especialistas y te responde con lo que quedó registrado. Cada número del registro muestra su certeza.'}</p>
-    ${o ? `<ul class="sugerencias" aria-label="Órdenes sugeridas">${lista.map(([r, t, d], n) =>
+    <ul class="sugerencias" aria-label="Órdenes sugeridas">${lista.map(([r, t, d], n) =>
       `<li><button class="sugerencia" type="button" data-n="${n}"><span><b>${t}</b><span class="desc">${esc(d)}</span></span>
-        <span class="placa-ruta">${ico('flecha')}${r.split(' → ').map(esc).join(ico('flecha'))}</span></button></li>`).join('')}</ul>` : ''}
+        <span class="placa-ruta">${ico('flecha')}${r.split(' → ').map(esc).join(ico('flecha'))}</span></button></li>`).join('')}</ul>
   </div>`;
   $('hilo').querySelectorAll('.sugerencia').forEach((b) =>
     b.onclick = () => { $('msg').value = lista[b.dataset.n][3]; ajustar(); $('msg').focus(); });
 }
-// El hilo se conserva al recargar la página (por pestaña del navegador y por obra).
-const claveHilo = () => 'sotica-hilo-v2:' + obraActual;
-function guardarHilo() {
-  try { sessionStorage.setItem(claveHilo(), $('hilo').innerHTML); } catch (e) { /* sin almacenamiento */ }
+// Un turno de ORQ-COST: ruta de delegación, herramientas usadas y la respuesta.
+function turnoORQ(cuando) {
+  const turno = document.createElement('div'); turno.className = 'turno';
+  turno.innerHTML = `<div class="autor"><span class="autor-placa" aria-hidden="true">ORQ</span><b>ORQ-COST</b>${cuando ? `<time>${cuando}</time>` : ''}</div>
+    <div class="ruta" hidden role="group" aria-label="Ruta de delegación"><span class="tramo hecho">ORQ-COST</span></div>
+    <div class="herramientas" hidden></div><div class="prosa"></div>`;
+  $('hilo').appendChild(turno);
+  return turno;
 }
-function restaurarHilo() {
-  let previo = null;
-  try { previo = sessionStorage.getItem(claveHilo()); } catch (e) { /* sin almacenamiento */ }
-  if (previo && !previo.includes('vacio-chat')) {
-    $('hilo').innerHTML = previo;
-    // Cada respuesta guarda su texto original: se vuelve a dar formato con el código vigente.
-    $('hilo').querySelectorAll('.prosa[data-md]').forEach((el) => { el.innerHTML = markdown(el.dataset.md); });
-    $('hilo').querySelectorAll('.prosa a').forEach((a) => { if (a.textContent.includes('/api/archivos/')) a.textContent = 'Descargar archivo'; });
-    abajo();
+function turnoYo(texto) {
+  const mio = document.createElement('div'); mio.className = 'turno yo';
+  const burbuja = document.createElement('div'); burbuja.className = 'burbuja'; burbuja.textContent = texto;
+  mio.appendChild(burbuja); $('hilo').appendChild(mio);
+}
+function marcarHerramienta(turno, nombre, activa) {
+  const ruta = turno.querySelector('.ruta'), herr = turno.querySelector('.herramientas');
+  if (AGENTES[nombre]) {
+    ruta.hidden = false;
+    ruta.insertAdjacentHTML('beforeend', `<svg class="flecha" aria-hidden="true"><use href="#i-flecha"/></svg><span class="tramo ${activa ? 'activo' : 'hecho'}">${activa ? '' : ico('ok')}${esc(AGENTES[nombre])}</span>`);
+  } else {
+    const rot = HERRAMIENTAS[nombre] || nombre;
+    if ([...herr.children].some((x) => x.textContent === rot)) return;
+    herr.hidden = false;
+    herr.insertAdjacentHTML('beforeend', `<span class="herramienta">${esc(rot)}</span>`);
   }
-  else hiloVacio();
+}
+function pintarHilo(mensajes) {
+  if (!mensajes.length) return hiloVacio();
+  $('hilo').innerHTML = '';
+  for (const m of mensajes) {
+    if (m.rol === 'yo') { turnoYo(m.texto); continue; }
+    const turno = turnoORQ('');
+    (m.herramientas || []).forEach((n) => marcarHerramienta(turno, n, false));
+    const prosa = turno.querySelector('.prosa');
+    prosa.innerHTML = markdown(m.texto || ''); prosa.dataset.md = m.texto || '';
+  }
+  abajo();
 }
 function abajo() { const h = $('hilo-scroll'); h.scrollTop = h.scrollHeight; }
 function ajustar() {
@@ -1155,8 +1263,9 @@ const ponerPlaceholder = () => {
 };
 angosta.addEventListener('change', ponerPlaceholder);
 function ponerOcupado(v) {
-  ocupado = v; $('enviar').disabled = v; $('nueva').disabled = v;
-  document.querySelectorAll('.proy').forEach((b) => { b.disabled = v; });
+  ocupado = v; $('enviar').disabled = v;
+  ['nueva', 'nueva-barra', 'sel-proyecto'].forEach((id) => { $(id).disabled = v; });
+  document.querySelectorAll('.conv-abrir, .conv-borrar').forEach((b) => { b.disabled = v; });
   $('enviar').setAttribute('aria-label', v ? 'ORQ-COST está trabajando' : 'Enviar');
 }
 const AGENTES = {
@@ -1165,7 +1274,7 @@ const AGENTES = {
   delegar_sub_est: 'SUB-EST · Estructuras', delegar_sub_via: 'SUB-VIA · Vialidad', delegar_sub_sue: 'SUB-SUE · Suelos',
 };
 const HERRAMIENTAS = {
-  busqueda_web: 'Buscó precios en internet', consultar_presupuesto: 'Leyó el presupuesto',
+  busqueda_web: 'Buscó en internet', crear_presupuesto: 'Abrió un presupuesto nuevo', consultar_presupuesto: 'Leyó el presupuesto',
   consultar_estado_obra: 'Leyó el estado de obra', consultar_bloqueos: 'Revisó bloqueos',
   resolver_bloqueo: 'Resolvió un bloqueo', registrar_apu: 'Registró el APU',
   registrar_indirectos: 'Registró indirectos y utilidad',
@@ -1174,19 +1283,12 @@ const anunciar = (t) => { $('anuncio').textContent = ''; setTimeout(() => { $('a
 const hora = () => new Date().toLocaleTimeString('es-VE', {hour: '2-digit', minute: '2-digit'});
 
 async function enviar(texto) {
-  if (ocupado || !texto || !obraActual) return;
+  if (ocupado || !texto) return;
   if ($('hilo').querySelector('.vacio-chat')) $('hilo').innerHTML = '';
-  const mio = document.createElement('div'); mio.className = 'turno yo';
-  const burbuja = document.createElement('div'); burbuja.className = 'burbuja'; burbuja.textContent = texto;
-  mio.appendChild(burbuja);
-  $('hilo').appendChild(mio); guardarHilo();  // si recargan a mitad de respuesta, la pregunta queda
-
-  const turno = document.createElement('div'); turno.className = 'turno';
-  turno.innerHTML = `<div class="autor"><span class="autor-placa" aria-hidden="true">ORQ</span><b>ORQ-COST</b><time>${hora()}</time></div>
-    <div class="ruta" hidden role="group" aria-label="Ruta de delegación"><span class="tramo hecho">ORQ-COST</span></div>
-    <div class="herramientas" hidden></div>
-    <div class="prosa"></div><div class="trabajando"><i></i><span class="reloj">Trabajando · 0 s</span></div>`;
-  $('hilo').appendChild(turno); abajo();
+  turnoYo(texto);
+  const turno = turnoORQ(hora());
+  turno.insertAdjacentHTML('beforeend', '<div class="trabajando"><i></i><span class="reloj">Trabajando · 0 s</span></div>');
+  abajo();
   const ruta = turno.querySelector('.ruta'), herr = turno.querySelector('.herramientas'),
         prosa = turno.querySelector('.prosa'), espera = turno.querySelector('.trabajando');
   const inicio = Date.now();
@@ -1202,9 +1304,12 @@ async function enviar(texto) {
   try {
     const resp = await fetch('/api/chat', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({proyecto: obraActual, mensaje: texto}),
+      body: JSON.stringify({conversacion: convActual, proyecto: obraActual, mensaje: texto}),
     });
-    if (!resp.ok) throw new Error(`El servidor respondió ${resp.status}.`);
+    if (!resp.ok) {
+      let detalle = ''; try { detalle = (await resp.json()).detail || ''; } catch (e) { /* sin JSON */ }
+      throw new Error(detalle || `El servidor respondió ${resp.status}.`);
+    }
     const lector = resp.body.getReader(), dec = new TextDecoder();
     let buffer = '';
     for (;;) {
@@ -1216,16 +1321,16 @@ async function enviar(texto) {
         if (!p.startsWith('data: ')) continue;
         const ev = JSON.parse(p.slice(6));
         if (ev.tipo === 'texto') { cerrarTramo(); acumulado += ev.texto; prosa.innerHTML = markdown(acumulado); prosa.dataset.md = acumulado; abajo(); }
-        else if (ev.tipo === 'herramienta') {
-          if (AGENTES[ev.nombre]) {
-            cerrarTramo(); ruta.hidden = false;
-            ruta.insertAdjacentHTML('beforeend', `<svg class="flecha" aria-hidden="true"><use href="#i-flecha"/></svg><span class="tramo activo">${esc(AGENTES[ev.nombre])}</span>`);
-            anunciar(`${AGENTES[ev.nombre]} trabajando`);
-          } else {
-            herr.hidden = false;
-            herr.insertAdjacentHTML('beforeend', `<span class="herramienta">${esc(HERRAMIENTAS[ev.nombre] || ev.nombre)}</span>`);
-          }
-          abajo();
+        else if (ev.tipo === 'conversacion') {
+          if (!convActual) { convActual = ev.id; convTitulo = ev.titulo; guardar('sotica-conv', ev.id); pintarProyecto(); cargarConversaciones(); }
+        } else if (ev.tipo === 'proyecto') {
+          // ORQ-COST abrió un presupuesto desde una conversación general: queda enlazado a ella.
+          await cargarProyectos(); ponerProyecto(ev.codigo);
+          herr.hidden = false; herr.insertAdjacentHTML('beforeend', `<span class="herramienta">Enlazada a ${esc(ev.codigo)}</span>`);
+          anunciar(`Presupuesto ${ev.codigo} abierto y enlazado a esta conversación`);
+        } else if (ev.tipo === 'herramienta') {
+          if (AGENTES[ev.nombre]) { cerrarTramo(); anunciar(`${AGENTES[ev.nombre]} trabajando`); }
+          marcarHerramienta(turno, ev.nombre, true); abajo();
         } else if (ev.tipo === 'error') { throw new Error(ev.texto); }
       }
     }
@@ -1234,7 +1339,7 @@ async function enviar(texto) {
     e.textContent = `No se pudo completar: ${err.message} Puedes reintentar el mensaje.`;
     turno.appendChild(e); anunciar(e.textContent); acumulado = null;
   } finally {
-    clearInterval(reloj); cerrarTramo(); espera.remove(); ponerOcupado(false); abajo(); guardarHilo(); refrescar();
+    clearInterval(reloj); cerrarTramo(); espera.remove(); ponerOcupado(false); abajo(); refrescar(); cargarConversaciones();
     if (acumulado !== null) anunciar('Respuesta de ORQ-COST lista');
   }
 }
@@ -1249,12 +1354,78 @@ $('msg').oninput = ajustar;
 $('msg').onkeydown = (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('fchat').requestSubmit(); }
 };
-$('nueva').onclick = async () => {
-  if (ocupado || !obraActual) return;
-  ponerOcupado(true);
-  try { await api(`/api/chat/${encodeURIComponent(obraActual)}`, {method: 'DELETE'}); hiloVacio(); guardarHilo(); $('msg').focus(); }
-  catch (err) { alert('No se pudo iniciar una conversación nueva: ' + err.message); }
-  finally { ponerOcupado(false); cerrarMenu(); }
+/* ---------- conversaciones: historial como en ChatGPT ---------- */
+function grupoFecha(iso) {
+  const d = new Date(iso), hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const dias = Math.floor((hoy - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+  return dias <= 0 ? 'Hoy' : dias === 1 ? 'Ayer' : dias < 7 ? 'Últimos 7 días' : dias < 31 ? 'Últimos 30 días' : 'Anteriores';
+}
+function pintarConversaciones() {
+  let grupo = '', html = '';
+  for (const c of convs) {
+    const g = grupoFecha(c.actualizado_en);
+    if (g !== grupo) { html += `<div class="conv-grupo">${g}</div>`; grupo = g; }
+    html += `<div class="conv"><button class="conv-abrir" type="button" data-id="${esc(c.id)}" aria-current="${c.id === convActual}"${ocupado ? ' disabled' : ''}>
+        <b>${esc(c.titulo)}</b><span>${c.codigo ? esc(c.codigo) + ' · ' + esc(c.nombre_obra) : 'General'}</span></button>
+      <button class="conv-borrar" type="button" data-id="${esc(c.id)}" aria-label="Eliminar la conversación «${esc(c.titulo)}»"${ocupado ? ' disabled' : ''}>${ico('cerrar')}</button></div>`;
+  }
+  $('lista-conv').innerHTML = html || '<p class="vacio-sb">Tus conversaciones quedan aquí para retomarlas.</p>';
+  $('lista-conv').querySelectorAll('.conv-abrir').forEach((b) => b.onclick = () => {
+    cerrarMenu();
+    if (b.dataset.id !== convActual) abrirConversacion(b.dataset.id).then(() => mostrarVista('chat'));
+    else mostrarVista('chat');
+  });
+  $('lista-conv').querySelectorAll('.conv-borrar').forEach((b) => b.onclick = () => borrarConversacion(b.dataset.id));
+}
+async function cargarConversaciones() {
+  try { convs = await api('/api/conversaciones'); } catch (err) { console.error(err); return; }
+  pintarConversaciones();
+}
+async function abrirConversacion(id) {
+  if (ocupado) return;
+  const c = await api('/api/conversaciones/' + encodeURIComponent(id));
+  convActual = c.id; convTitulo = c.titulo; guardar('sotica-conv', c.id);
+  ponerProyecto(c.proyecto);
+  pintarHilo(c.mensajes); pintarConversaciones();
+}
+function nuevaConversacion(codigo = null) {
+  if (ocupado) return;
+  convActual = null; convTitulo = ''; guardar('sotica-conv', '');
+  ponerProyecto(codigo); hiloVacio(); pintarConversaciones();
+  mostrarVista('chat'); cerrarMenu(); $('msg').focus();
+}
+async function borrarConversacion(id) {
+  const c = convs.find((x) => x.id === id);
+  if (!c || ocupado || !confirm(`¿Eliminar la conversación «${c.titulo}»? Los datos del proyecto no se borran.`)) return;
+  try {
+    await api('/api/conversaciones/' + encodeURIComponent(id), {method: 'DELETE'});
+    if (id === convActual) nuevaConversacion();
+    await cargarConversaciones(); cargarProyectos();
+    anunciar('Conversación eliminada');
+  } catch (err) { alert('No se pudo eliminar: ' + err.message); }
+}
+// Abrir un proyecto es retomar su última conversación (o empezar una dentro de él).
+async function abrirProyecto(codigo) {
+  const o = obras.find((x) => x.codigo === codigo);
+  if (o && o.ultima_conversacion) {
+    try { await abrirConversacion(o.ultima_conversacion); return; } catch (err) { console.error(err); }
+  }
+  nuevaConversacion(codigo);
+}
+$('nueva').onclick = () => nuevaConversacion();
+$('nueva-barra').onclick = () => nuevaConversacion();
+$('sel-proyecto').onchange = async () => {
+  const codigo = $('sel-proyecto').value || null;
+  try {
+    if (convActual) {
+      await api('/api/conversaciones/' + encodeURIComponent(convActual), {method: 'PATCH',
+        headers: {'Content-Type': 'application/json'}, body: JSON.stringify({proyecto: codigo})});
+      cargarConversaciones(); cargarProyectos();
+    }
+    ponerProyecto(codigo);
+    if ($('hilo').querySelector('.vacio-chat')) hiloVacio();
+    anunciar(codigo ? `Conversación enlazada a ${codigo}` : 'Conversación general, sin proyecto');
+  } catch (err) { alert('No se pudo cambiar el proyecto: ' + err.message); pintarSelector(); }
 };
 
 /* ---------- adjuntar: lleva al formulario correcto del registro ---------- */
@@ -1304,80 +1475,124 @@ $('fplano').onsubmit = async (ev) => {
 };
 
 /* ---------- proyectos: ofertas en estudio y obras adjudicadas ---------- */
-const FASES = {oportunidad: 'Oferta en estudio', adjudicada: 'En ejecución', cerrada: 'Cerrada', descartada: 'Descartada'};
+const FASES = {oportunidad: 'Presupuesto en estudio', adjudicada: 'En ejecución', cerrada: 'Cerrada', descartada: 'Descartada'};
 const proyecto = () => obras.find((x) => x.codigo === obraActual);
-function pintarListaProyectos() {
-  const grupo = (titulo, lista, vacio) => `<div class="sb-titulo">${titulo}</div>${lista.length ? lista.map((o) =>
-    `<button class="proy" type="button" data-codigo="${esc(o.codigo)}" aria-current="${o.codigo === obraActual}"${ocupado ? ' disabled' : ''}>
-      <b>${esc(o.nombre_obra)}</b><span>${esc(o.codigo)}${o.cliente ? ' · ' + esc(o.cliente) : ''}</span></button>`).join('')
-    : `<p class="vacio-sb">${vacio}</p>`}`;
+const VISTAS = {presupuestos: 'Presupuestos', obras: 'Obras', clientes: 'Clientes'};
+function pintarSelector() {
+  const op = (o) => `<option value="${esc(o.codigo)}">${esc(o.codigo)} · ${esc(o.nombre_obra)}</option>`;
   const de = (f) => obras.filter((o) => f.includes(o.fase));
-  const archivo = de(['cerrada', 'descartada']);
-  $('lista-proyectos').innerHTML = grupo('Ofertas en estudio', de(['oportunidad']), 'Sin ofertas abiertas.')
-    + grupo('Obras en ejecución', de(['adjudicada']), 'Sin obras adjudicadas.')
-    + (archivo.length ? `<details${archivo.some((o) => o.codigo === obraActual) ? ' open' : ''}><summary class="sb-titulo">Archivo (${archivo.length})</summary>${grupo('', archivo, '').replace('<div class="sb-titulo"></div>', '')}</details>` : '');
-  $('lista-proyectos').querySelectorAll('.proy').forEach((b) => b.onclick = () => {
-    if (ocupado || b.dataset.codigo === obraActual) { cerrarMenu(); return; }
-    elegirProyecto(b.dataset.codigo); cerrarMenu();
-  });
+  const grupo = (t, lista) => lista.length ? `<optgroup label="${t}">${lista.map(op).join('')}</optgroup>` : '';
+  $('sel-proyecto').innerHTML = '<option value="">Sin proyecto · conversación general</option>'
+    + grupo('Presupuestos', de(['oportunidad'])) + grupo('Obras en ejecución', de(['adjudicada']))
+    + grupo('Archivo', de(['cerrada', 'descartada']));
+  $('sel-proyecto').value = obraActual || '';
+  $('v-presupuestos').textContent = de(['oportunidad']).length || '';
+  $('v-obras').textContent = de(['adjudicada']).length || '';
 }
 function pintarProyecto() {
-  const o = proyecto();
-  $('titulo-obra').innerHTML = vistaActual === 'clientes' ? 'Clientes'
-    : o ? `${esc(o.nombre_obra)}<small>${esc(o.codigo)}</small>` : 'SOTICA-COSTOS';
-  $('fase-placa').hidden = !o || vistaActual === 'clientes';
-  $('boton-fase').hidden = !o || vistaActual === 'clientes';
+  const o = proyecto(), oficina = VISTAS[vistaActual];
+  $('titulo-obra').classList.toggle('de-chat', vistaActual === 'chat');
+  $('titulo-obra').innerHTML = oficina ? VISTAS[vistaActual]
+    : vistaActual === 'avance' && o ? `${esc(o.nombre_obra)}<small>${esc(o.codigo)}</small>`
+    : esc(convTitulo || 'Conversación nueva');
+  $('sel-proyecto').hidden = vistaActual !== 'chat';
+  $('sel-proyecto').value = obraActual || '';
+  $('fase-placa').hidden = !o || !!oficina;
+  $('boton-fase').hidden = !o || !!oficina;
+  $('toggle-registro').hidden = !o || !!oficina;
+  if (!o && app.classList.contains('con-registro')) registro(false);
   if (o) { $('fase-placa').className = 'etq fase-' + o.fase; $('fase-placa').textContent = FASES[o.fase] || o.fase; }
   const obra = o && o.fase === 'adjudicada';
   document.querySelector('[data-seccion=avance]').hidden = !obra;
   document.querySelector('[data-seccion=bloqueos]').hidden = !obra;
   $('t-bloqueos').hidden = !obra;
   if (!obra && seccionActual === 'bloqueos') abrirPestaña('presupuesto');
-  document.querySelectorAll('.sb nav[aria-label="Secciones del proyecto"], #sb-titulo-proyecto').forEach((el) => { el.hidden = !o; });
-  [...$('menu-adjuntar').querySelectorAll('[data-ir=avance]')].forEach((b) => { b.hidden = !obra; });
+  $('bloque-proyecto').hidden = !o;
+  if (o) $('sb-titulo-proyecto').textContent = o.codigo;
+  [...$('menu-adjuntar').querySelectorAll('[data-ir]')].forEach((b) => { b.hidden = !o || (b.dataset.ir === 'avance' && !obra); });
+  $('adjuntar').hidden = !o;
   if (vistaActual === 'avance' && !obra) mostrarVista('chat');
-  pintarListaProyectos();
 }
-function elegirProyecto(codigo) {
-  obraActual = codigo; guardar('sotica-proyecto', codigo);
-  archivosVistos = null; datosEstado = datosSerie = datosBloqueos = null; capSel = null;
-  pintarProyecto(); restaurarHilo(); refrescar();
+// Cambia el proyecto de trabajo (registro, avance, memoria de ORQ-COST). No toca el hilo.
+function ponerProyecto(codigo) {
+  const cambio = codigo !== obraActual;
+  obraActual = codigo && obras.some((o) => o.codigo === codigo) ? codigo : null;
+  if (cambio) { archivosVistos = null; datosEstado = datosSerie = datosBloqueos = null; capSel = null; }
+  pintarProyecto(); refrescar();
 }
-async function cargarProyectos(elegido) {
+async function cargarProyectos() {
   try {
     obras = await api('/api/proyectos');
   } catch (err) {
-    $('lista-proyectos').innerHTML = `<p class="vacio-sb">No se pudo leer la lista de proyectos: ${esc(err.message)}</p>`;
-    return;
+    console.error(err); return;
   }
-  const guardado = leer('sotica-proyecto');
-  const abiertos = obras.filter((o) => ['oportunidad', 'adjudicada'].includes(o.fase));
-  const cod = [elegido, obraActual, guardado].find((c) => c && obras.some((o) => o.codigo === c))
-    || (abiertos[0] || obras[0] || {}).codigo || null;
-  if (cod) elegirProyecto(cod); else { obraActual = null; pintarProyecto(); hiloVacio(); }
+  pintarSelector(); pintarProyecto();
+  if (vistaActual === 'presupuestos') pintarPresupuestos();
+  if (vistaActual === 'obras') pintarObras();
 }
+const desdeCuando = (iso) => iso ? `${grupoFecha(iso)}${['Hoy', 'Ayer'].includes(grupoFecha(iso)) ? '' : ' · ' + fecha(iso)}` : 'Ninguna';
+function pintarPresupuestos() {
+  const lista = obras.filter((o) => ['oportunidad', 'descartada'].includes(o.fase))
+    .sort((a, b) => (a.fase === 'descartada') - (b.fase === 'descartada'));
+  $('pre-tabla').innerHTML = lista.map((o) => `<tr${o.fase === 'descartada' ? ' class="fila-archivo"' : ''}>
+      <td><b>${esc(o.nombre_obra)}</b><div class="sub">${esc(o.codigo)}</div>${o.fase === 'descartada' ? '<span class="etq fase-descartada">Descartada</span>' : ''}</td>
+      <td data-k="Cliente">${esc(o.cliente || '—')}</td>
+      <td class="num" data-k="Partidas">${o.partidas || '—'}</td>
+      <td class="num" data-k="Costo directo">${o.costo_directo === null ? '—' : nf(o.costo_directo) + ' ' + esc(o.moneda_base)}</td>
+      <td class="num" data-k="Precio de oferta">${o.precio_oferta === null ? (o.partidas ? '<span class="etq pendiente_confirmacion">Faltan indirectos</span>' : '—') : nf(o.precio_oferta) + ' ' + esc(o.moneda_base)}</td>
+      <td data-k="Última conversación">${desdeCuando(o.ultima_conversacion_en)}</td>
+      <td><div class="acc-fila"><button class="enlace-btn" type="button" data-abrir="${esc(o.codigo)}">Conversar</button>
+        ${o.fase === 'oportunidad' ? `<button class="enlace-btn" type="button" data-convertir="${esc(o.codigo)}">Convertir en obra</button>`
+          : `<button class="enlace-btn" type="button" data-reabrir="${esc(o.codigo)}">Reabrir</button>`}</div></td></tr>`).join('')
+    || '<tr><td colspan="7" class="vacio">Todavía no hay presupuestos. Crea uno o pídeselo a ORQ-COST en una conversación: lo abre él.</td></tr>';
+  enlazarAcciones($('pre-tabla'));
+}
+function pintarObras() {
+  const lista = obras.filter((o) => ['adjudicada', 'cerrada'].includes(o.fase))
+    .sort((a, b) => (a.fase === 'cerrada') - (b.fase === 'cerrada'));
+  $('obras-tabla').innerHTML = lista.map((o) => `<tr${o.fase === 'cerrada' ? ' class="fila-archivo"' : ''}>
+      <td><b>${esc(o.nombre_obra)}</b><div class="sub">${esc(o.codigo)}</div>${o.fase === 'cerrada' ? '<span class="etq fase-cerrada">Cerrada</span>' : ''}</td>
+      <td data-k="Cliente">${esc(o.cliente || '—')}</td>
+      <td data-k="Plazo contractual">${o.fecha_inicio_contractual ? `${fecha(o.fecha_inicio_contractual)} a ${fecha(o.fecha_fin_contractual)}` : '—'}</td>
+      ${o.pct_fisico_real === null ? '<td class="num" colspan="2" data-k="Avance"><span class="sub">Sin avances registrados</span></td>'
+        : `<td class="num" data-k="Avance real">${pct(o.pct_fisico_real)}</td><td class="num" data-k="Plan a hoy">${pct(o.pct_fisico_plan)}</td>`}
+      <td class="num" data-k="Bloqueos">${o.bloqueos_abiertos ? `<span class="etq alerta">${o.bloqueos_abiertos}</span>` : '0'}</td>
+      <td><div class="acc-fila">${o.fase === 'adjudicada' ? `<button class="enlace-btn" type="button" data-avance="${esc(o.codigo)}">Ver avance</button>` : ''}
+        <button class="enlace-btn" type="button" data-abrir="${esc(o.codigo)}">Conversar</button>
+        ${o.fase === 'cerrada' ? `<button class="enlace-btn" type="button" data-reabrir-obra="${esc(o.codigo)}">Reabrir</button>` : ''}</div></td></tr>`).join('')
+    || '<tr><td colspan="7" class="vacio">Todavía no hay obras. Un presupuesto ganado se convierte en obra desde Presupuestos.</td></tr>';
+  enlazarAcciones($('obras-tabla'));
+}
+function enlazarAcciones(raiz) {
+  raiz.querySelectorAll('[data-abrir]').forEach((b) => b.onclick = async () => { await abrirProyecto(b.dataset.abrir); mostrarVista('chat'); });
+  raiz.querySelectorAll('[data-avance]').forEach((b) => b.onclick = async () => { await abrirProyecto(b.dataset.avance); mostrarVista('avance'); });
+  raiz.querySelectorAll('[data-convertir]').forEach((b) => b.onclick = () => accionFase('adjudicar', b.dataset.convertir));
+  raiz.querySelectorAll('[data-reabrir]').forEach((b) => b.onclick = () => cambiarFase({fase: 'oportunidad'}, b.dataset.reabrir).catch((e) => alert(e.message)));
+  raiz.querySelectorAll('[data-reabrir-obra]').forEach((b) => b.onclick = () => cambiarFase({fase: 'adjudicada'}, b.dataset.reabrirObra).catch((e) => alert(e.message)));
+}
+$('pre-nuevo').onclick = () => abrirDialogoProyecto('oportunidad');
+$('obra-nueva').onclick = () => abrirDialogoProyecto('adjudicada');
 
 /* ---------- vistas: conversación, avance de obra, clientes ---------- */
 function mostrarVista(v) {
   if (v === 'avance' && proyecto()?.fase !== 'adjudicada') v = 'chat';
   vistaActual = v;
-  for (const k of ['chat', 'avance', 'clientes']) $('vista-' + k).hidden = k !== v;
-  $('nueva').hidden = v !== 'chat';
-  $('boton-fase').hidden = v === 'clientes' || !proyecto();
-  $('toggle-registro').hidden = v === 'clientes';
-  if (v === 'clientes' && app.classList.contains('con-registro')) registro(false);
+  for (const k of ['chat', 'avance', 'presupuestos', 'obras', 'clientes']) $('vista-' + k).hidden = k !== v;
+  if (VISTAS[v] && app.classList.contains('con-registro')) registro(false);
   pintarProyecto(); marcarNav();
   if (v === 'avance') pintarPaginaAvance();
+  if (v === 'presupuestos') pintarPresupuestos();
+  if (v === 'obras') pintarObras();
   if (v === 'clientes') cargarPaginaClientes();
 }
 
 /* ---------- fase del proyecto ---------- */
 const ACCIONES_FASE = {
-  oportunidad: [['adjudicar', 'Marcar como adjudicada…', 'Fija el plazo y abre el control de avance'],
-                ['descartada', 'Descartar oferta', 'No se ganó o no se presentará']],
+  oportunidad: [['adjudicar', 'Convertir en obra…', 'Se ganó: fija el plazo y abre el control de avance'],
+                ['descartada', 'Descartar presupuesto', 'No se ganó o no se presentará']],
   adjudicada: [['cerrada', 'Cerrar obra', 'Queda en el archivo, solo consulta']],
   cerrada: [['adjudicada', 'Reabrir obra', 'Vuelve a obras en ejecución']],
-  descartada: [['oportunidad', 'Reabrir oferta', 'Vuelve a ofertas en estudio']],
+  descartada: [['oportunidad', 'Reabrir presupuesto', 'Vuelve a presupuestos en estudio']],
 };
 function cerrarMenuFase() { $('menu-fase').hidden = true; $('boton-fase').setAttribute('aria-expanded', 'false'); }
 $('boton-fase').onclick = () => {
@@ -1390,27 +1605,29 @@ $('boton-fase').onclick = () => {
   if (abrir) $('menu-fase').querySelector('button')?.focus();
 };
 document.addEventListener('click', (e) => { if (!e.target.closest('#menu-fase, #boton-fase')) cerrarMenuFase(); });
-async function cambiarFase(datos) {
-  await api(`/api/proyectos/${encodeURIComponent(obraActual)}/fase`, {method: 'POST',
+async function cambiarFase(datos, codigo = obraActual) {
+  await api(`/api/proyectos/${encodeURIComponent(codigo)}/fase`, {method: 'POST',
     headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos)});
-  await cargarProyectos(obraActual);
+  await cargarProyectos();
 }
-let presupuestoOferta = null;
-async function accionFase(accion) {
-  const o = proyecto();
+let presupuestoOferta = null, codigoAdjudicar = null;
+async function accionFase(accion, codigo = obraActual) {
+  const o = obras.find((x) => x.codigo === codigo);
+  if (!o) return;
   if (accion === 'adjudicar') {
+    codigoAdjudicar = codigo;
     $('adj-estado').textContent = ''; $('fadj').reset();
-    try { presupuestoOferta = (await api(`/api/proyectos/${encodeURIComponent(obraActual)}/presupuesto`)).presupuesto; }
+    try { presupuestoOferta = (await api(`/api/proyectos/${encodeURIComponent(codigo)}/presupuesto`)).presupuesto; }
     catch (e) { presupuestoOferta = null; }
     $('adj-base-caja').hidden = !presupuestoOferta; $('adj-sin-base').hidden = !!presupuestoOferta;
     if (presupuestoOferta) $('adj-base-tit').textContent = `Usar el presupuesto v${presupuestoOferta.version} como base de control`;
     $('dlg-adjudicar').showModal(); $('adj-inicio').focus();
     return;
   }
-  const textos = {descartada: `¿Descartar la oferta «${o.nombre_obra}»? Queda en el archivo y se puede reabrir.`,
+  const textos = {descartada: `¿Descartar el presupuesto «${o.nombre_obra}»? Queda en el archivo y se puede reabrir.`,
                   cerrada: `¿Cerrar la obra «${o.nombre_obra}»? Queda en el archivo y se puede reabrir.`};
   if (textos[accion] && !confirm(textos[accion])) return;
-  try { await cambiarFase({fase: accion}); } catch (err) { alert('No se pudo cambiar la fase: ' + err.message); }
+  try { await cambiarFase({fase: accion}, codigo); } catch (err) { alert('No se pudo cambiar la fase: ' + err.message); }
 }
 $('adj-cancelar').onclick = () => $('dlg-adjudicar').close();
 $('fadj').onsubmit = async (ev) => {
@@ -1419,8 +1636,10 @@ $('fadj').onsubmit = async (ev) => {
   try {
     await cambiarFase({fase: 'adjudicada', fecha_inicio_contractual: $('adj-inicio').value,
       fecha_fin_contractual: $('adj-fin').value,
-      presupuesto_id: presupuestoOferta && $('adj-base').checked ? presupuestoOferta.id : null});
-    $('dlg-adjudicar').close(); mostrarVista('avance');
+      presupuesto_id: presupuestoOferta && $('adj-base').checked ? presupuestoOferta.id : null}, codigoAdjudicar);
+    $('dlg-adjudicar').close();
+    if (codigoAdjudicar !== obraActual) await abrirProyecto(codigoAdjudicar);
+    mostrarVista('avance');
   } catch (err) { $('adj-estado').textContent = err.message; }
   finally { $('adj-confirmar').disabled = false; }
 };
@@ -1651,7 +1870,7 @@ async function abrirCliente(id) {
     $('cli-obras').innerHTML = `<h3 style="margin-top:18px">Proyectos (${c.obras.length})</h3>${c.obras.map((o) =>
       `<div class="item"><button class="enlace-btn" type="button" data-codigo="${esc(o.codigo)}">${esc(o.nombre_obra)}</button>
         <div class="sub">${esc(o.codigo)} · ${esc(FASES[o.fase] || o.fase)}</div></div>`).join('') || '<p class="vacio">Sin proyectos todavía.</p>'}`;
-    $('cli-obras').querySelectorAll('[data-codigo]').forEach((b) => b.onclick = () => { elegirProyecto(b.dataset.codigo); mostrarVista('chat'); });
+    $('cli-obras').querySelectorAll('[data-codigo]').forEach((b) => b.onclick = async () => { await abrirProyecto(b.dataset.codigo); mostrarVista('chat'); });
   } catch (err) { $('cli-estado').textContent = err.message; }
 }
 $('cli-buscar').oninput = pintarTablaClientes;
@@ -1665,7 +1884,7 @@ $('fcli').onsubmit = async (ev) => {
       {method: clienteSel ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos)});
     clienteSel = r.id; await contarClientes(); await abrirCliente(r.id);
     $('cli-estado').textContent = 'Guardado.';
-    if (obras.some((o) => o.cliente_id === r.id)) cargarProyectos(obraActual);
+    if (obras.some((o) => o.cliente_id === r.id)) cargarProyectos();
   } catch (err) { $('cli-estado').textContent = err.message; }
   finally { $('cli-guardar').disabled = false; }
 };
@@ -1713,15 +1932,18 @@ $('o-cliente-sel').onchange = elegirCliente;
 const faseNueva = () => document.querySelector('[name=o-fase]:checked').value;
 function pintarFaseNueva() {
   const adj = faseNueva() === 'adjudicada';
+  $('dlg-obra-tit').textContent = adj ? 'Nueva obra' : 'Nuevo presupuesto';
+  $('o-crear').textContent = adj ? 'Crear obra' : 'Crear presupuesto';
   document.querySelectorAll('.solo-adjudicada').forEach((el) => { el.hidden = !adj; });
   $('o-inicio').required = adj; $('o-fin').required = adj;
 }
 document.querySelectorAll('[name=o-fase]').forEach((r) => { r.onchange = pintarFaseNueva; });
-$('abrir-obra').onclick = async () => {
+async function abrirDialogoProyecto(fase) {
   $('o-estado').textContent = ''; $('fobra').reset(); cerrarMenu(); await cargarClientes();
+  document.querySelector(`[name=o-fase][value=${fase}]`).checked = true;
   $('o-fecha').valueAsDate = new Date(); pintarFaseNueva();
   $('dlg-obra').showModal(); $('o-nombre').focus();
-};
+}
 $('o-cancelar').onclick = () => $('dlg-obra').close();
 $('fobra').onsubmit = async (ev) => {
   ev.preventDefault();
@@ -1747,7 +1969,7 @@ $('fobra').onsubmit = async (ev) => {
         norma_rectora: v('o-norma'), fecha_base_precios: v('o-fecha'),
         fecha_inicio_contractual: v('o-inicio'), fecha_fin_contractual: v('o-fin')})});
     $('dlg-obra').close(); $('fobra').reset(); cerrarMenu();
-    await cargarProyectos(r.codigo); mostrarVista('chat'); $('msg').focus();
+    await cargarProyectos(); nuevaConversacion(r.codigo);
   } catch (err) { $('o-estado').textContent = err.message; }
   finally { $('o-crear').disabled = false; }
 };
@@ -1757,7 +1979,13 @@ $('fecha').valueAsDate = new Date();
 pintarTema(); ponerPlaceholder();
 registro(leer('sotica-registro') === '1' && window.innerWidth > 1240, seccionActual);
 hiloVacio();
-cargarProyectos();
+// Retoma la última conversación abierta; si ya no existe, empieza una general.
+cargarProyectos().then(async () => {
+  const ultima = leer('sotica-conv');
+  if (ultima) { try { await abrirConversacion(ultima); } catch (e) { nuevaConversacion(); } }
+  else nuevaConversacion();
+  cargarConversaciones();
+});
 contarClientes();
 </script>
 </body>

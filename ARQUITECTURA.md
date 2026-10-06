@@ -18,7 +18,7 @@ Base: **OpenAI Agents SDK** (orquestador + subagentes como herramientas) + servi
 | Orquestador | ORQ-COST = `Agent` principal del OpenAI Agents SDK. Único interlocutor del usuario. |
 | Subagentes | 8 subagentes (7 del documento + SUB-AVA) expuestos como **herramientas** del orquestador (*agents-as-tools*), cada uno con system prompt propio, herramientas permitidas y contexto aislado. **No handoffs**: un handoff transfiere la conversación y el control no vuelve, lo que rompería §2, §5.2 y §5.3. |
 | Herramientas | Servidores **MCP stdio reales** (`python -m backend.mcp.stdio_server <servidor>`). **MCP es la capa de herramientas, nunca el orquestador.** Al ser MCP de verdad, sirven a cualquier runtime que hable el protocolo. |
-| Persistencia | Postgres (proyecto, presupuesto, partidas, avances, estado consolidado, trazabilidad) **y la memoria de conversación por obra** (`SQLAlchemySession`, session_id `obra:<código>`), persistente entre procesos. |
+| Persistencia | Postgres (proyecto, presupuesto, partidas, avances, estado consolidado, trazabilidad) **y el historial de cada conversación** (`SQLAlchemySession`, session_id `conv:<uuid>`; índice en la tabla `conversaciones`, con proyecto opcional), persistente entre procesos. ORQ-COST y sus servidores MCP se levantan una vez por proceso (`Motor`) y la memoria de proyecto se recalcula en cada pregunta. |
 | Archivos | Bucket (S3/MinIO) para planos, fotos de obra, PDFs y entregables generados. |
 | Frontend | Chat web simple + panel de archivos generados + carga de evidencia de obra. |
 | Pendiente | PDF de entregables, OCR de planos, valuaciones / fórmula polinómica (ver ESTADO_ACTUAL.md §5). |

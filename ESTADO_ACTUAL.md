@@ -59,6 +59,8 @@ SUB-VIA, SUB-SUE). Se apagan con `enabled: false` en su archivo de prompt.
 | **Pantalla de avance** (obras adjudicadas): indicadores, ruta por capítulos, curva S semanal plan vs real reconstruida de `avances_partida` (no se proyecta), partidas con barras, bitácora de reportes y carga de reporte | Funciona (`tests/serie_avance.py`: el real reconstruido = `fn_pct_fisico_obra`) |
 | **Clientes**: pantalla con búsqueda, alta, edición y borrado (bloqueado si tiene proyectos) | Funciona |
 | Alta de proyecto con memoria de proyecto y carga de planos desde el panel | Funciona |
+| **Conversaciones con historial** (como ChatGPT): generales o enlazadas a un proyecto, retomables tras recargar o reiniciar; tabla `conversaciones` + historial del SDK (`conv:<uuid>`) | Funciona (`tests/conversaciones.py`) |
+| **Presupuesto sin crear nada antes**: en una conversación general, ORQ-COST abre el presupuesto con `crear_presupuesto` y la conversación queda enlazada; pantallas Presupuestos («Convertir en obra») y Obras | Funciona; probado con `gpt-5` en el panel |
 
 **Criterios de aceptación §11:** 12 de 12 con `gpt-5` (`python -m tests.aceptacion_11`, ~0,75 USD por
 corrida, medido). En la última corrida 11.8 falló una vez por no escribir "desviación"; con el prompt

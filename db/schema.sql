@@ -567,6 +567,19 @@ CREATE TABLE delegaciones (
 );
 CREATE INDEX ON delegaciones (proyecto_id, iniciada_en DESC);
 
+-- Conversaciones con ORQ-COST. El historial vive en agent_messages (sesion 'conv:<id>');
+-- aqui solo el indice: titulo y a que proyecto pertenece. Sin proyecto = conversacion general
+-- (consultas, busquedas en internet, un presupuesto que todavia no se ha abierto).
+CREATE TABLE conversaciones (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  proyecto_id    uuid REFERENCES proyectos(id) ON DELETE SET NULL,
+  titulo         text NOT NULL,
+  creado_en      timestamptz NOT NULL DEFAULT now(),
+  actualizado_en timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX ON conversaciones (actualizado_en DESC);
+CREATE INDEX ON conversaciones (proyecto_id, actualizado_en DESC);
+
 CREATE TABLE supuestos (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   proyecto_id    uuid NOT NULL REFERENCES proyectos(id) ON DELETE CASCADE,

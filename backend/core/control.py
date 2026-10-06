@@ -35,6 +35,15 @@ async def proyecto_por_ref(conn: asyncpg.Connection, ref: str) -> asyncpg.Record
         return await conn.fetchrow("SELECT * FROM proyectos WHERE codigo = $1", ref)
 
 
+async def codigo_siguiente(conn: asyncpg.Connection) -> str:
+    """SOT-<año>-NNN siguiente al mayor del año: el código no se reutiliza ni se edita."""
+    anio = dt.date.today().year
+    mayor = await conn.fetchval(
+        "SELECT max((regexp_match(codigo, '^SOT-' || $1 || '-(\\d+)$'))[1]::int) FROM proyectos",
+        str(anio))
+    return f"SOT-{anio}-{(mayor or 0) + 1:03d}"
+
+
 async def presupuesto_base(conn: asyncpg.Connection, proyecto_id: UUID) -> asyncpg.Record | None:
     return await conn.fetchrow(
         "SELECT * FROM presupuestos WHERE proyecto_id = $1 AND es_base_control", proyecto_id

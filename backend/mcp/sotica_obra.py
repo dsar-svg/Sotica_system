@@ -498,5 +498,57 @@ async def registrar_indirectos(args: dict[str, Any]) -> dict[str, Any]:
         return _error(str(exc))
 
 
+@registro.herramienta(
+    "crear_presupuesto",
+    "Abre un presupuesto nuevo (proyecto en fase de oferta, sin contrato) cuando la conversación "
+    "no tiene proyecto y hay que guardar cómputos, APU o generar documentos. Devuelve el código "
+    "SOT-AAAA-NNN con el que se trabaja de ahí en adelante. Si el cliente ya está registrado, se "
+    "enlaza por nombre. Solo ORQ-COST.",
+    {
+        "type": "object",
+        "properties": {
+            "nombre_obra": {"type": "string", "description": "nombre corto y descriptivo de la obra"},
+            "cliente": {"type": "string", "description": "nombre del cliente, si se conoce"},
+            "tipo_obra": {"type": "string", "enum": ["edificacion", "vialidad", "hidraulica",
+                                                     "electrificacion", "industrial"]},
+            "ubicacion": {"type": "string"},
+            "moneda_base": {"type": "string", "enum": ["USD", "VES"]},
+        },
+        "required": ["nombre_obra"],
+    },
+)
+async def crear_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
+    nombre = (args.get("nombre_obra") or "").strip()
+    if not nombre:
+        return _error("Falta el nombre de la obra: pregúntaselo al usuario.")
+    try:
+        async with db.transaction() as conn:
+            cliente = None
+            if (args.get("cliente") or "").strip():
+                cliente = await conn.fetchrow(
+                    "SELECT id, nombre, moneda_preferida, ubicacion FROM clientes "
+                    "WHERE nombre ILIKE $1 ORDER BY length(nombre) LIMIT 1",
+                    f"%{args['cliente'].strip()}%")
+            codigo = await control.codigo_siguiente(conn)
+            await conn.execute(
+                """
+                INSERT INTO proyectos (codigo, nombre_obra, cliente_id, cliente, tipo_obra,
+                                       ubicacion, moneda_base, fecha_base_precios, fase)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,current_date,'oportunidad')
+                """,
+                codigo, nombre, cliente["id"] if cliente else None,
+                cliente["nombre"] if cliente else (args.get("cliente") or "").strip() or None,
+                args.get("tipo_obra") or "edificacion",
+                args.get("ubicacion") or (cliente["ubicacion"] if cliente else None),
+                args.get("moneda_base") or (cliente and cliente["moneda_preferida"]) or "USD",
+            )
+        return _ok({"presupuesto_creado": codigo, "nombre_obra": nombre,
+                    "cliente_registrado": bool(cliente),
+                    "nota": f"Usa proyecto = \"{codigo}\" en las herramientas y briefings que siguen. "
+                            "Queda como oferta en estudio; se convierte en obra al adjudicarla."})
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
 # El servidor MCP se construye en stdio_server.py a partir de este registro.
 __all__ = ["registro"]

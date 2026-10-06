@@ -242,7 +242,7 @@ db/seed/demo.sql             obra SOT-2026-014 con 5 partidas y planificación
 backend/agents/*.md          los 9 system prompts. Una sola fuente; el código los carga
 backend/core/agents.py       construcción de Agent + herramientas de delegación
 backend/core/contratos.py    BriefingSOTICA y RespuestaSubagente (§5.1 tipado)
-backend/core/orchestrator.py Runner + sesión persistente por obra
+backend/core/orchestrator.py Runner + historial persistente por conversación
 backend/core/control.py      aritmética de avance y desviaciones
 backend/core/avance.py       registro de avance y flujo de bloqueos
 backend/mcp/registry.py      registro de herramientas, independiente de SDK

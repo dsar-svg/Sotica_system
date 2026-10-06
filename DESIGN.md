@@ -176,7 +176,7 @@ Tres colores de señal con roles fijos sobre un neutro frío de oficina; cada co
 
 ### Primary
 - **Rojo Reglamentario SOTICA** (rojo-reglamentario): sidebar, botón de enviar, botón primario, pestaña activa del registro, cabecera de diálogo, placa de autor de ORQ-COST, hito de plan en la pista de avance, etiqueta de alerta. En oscuro sube a #E5322F para contraste sobre asfalto.
-- **Rojo Fuerte** (rojo-fuerte): hover del rojo y tinta roja sobre placas blancas dentro del sidebar (botón "Conversación nueva", ítem de navegación activo, contador de bloqueos).
+- **Rojo Fuerte** (rojo-fuerte): hover del rojo y tinta roja sobre placas blancas dentro del sidebar (botón "Nueva conversación", ítem de navegación y conversación activos, contador de bloqueos).
 - **Rojo Suave** (rojo-suave): fondo de avisos de error y de bloqueo.
 
 ### Secondary
@@ -245,7 +245,7 @@ Plano por defecto: la profundidad se da por tono (blanco sobre gris lámina en e
 
 ## Shapes
 
-Esquinas redondeadas de señal, nunca vivas ni píldora salvo en el compositor y los controles circulares. Escala: tramo 4px, etiqueta 5px, placa 6px, control 8px, bloque y aviso 10px, menú 12px, diálogo 16px, burbuja de usuario 18px (esquina inferior derecha 4px), compositor 22px; enviar es un círculo. El filete interior blanco (1.5-3.5px por sombra interior) es la firma de forma: marca, placa de autor, placa de ruta, panel de delegación, "Conversación nueva", contador de bloqueos y etiquetas de inferido y alerta.
+Esquinas redondeadas de señal, nunca vivas ni píldora salvo en el compositor y los controles circulares. Escala: tramo 4px, etiqueta 5px, placa 6px, control 8px, bloque y aviso 10px, menú 12px, diálogo 16px, burbuja de usuario 18px (esquina inferior derecha 4px), compositor 22px; enviar es un círculo. El filete interior blanco (1.5-3.5px por sombra interior) es la firma de forma: marca, placa de autor, placa de ruta, panel de delegación, "Nueva conversación", contador de bloqueos y etiquetas de inferido y alerta.
 
 ## Components
 

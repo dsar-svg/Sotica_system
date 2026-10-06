@@ -210,7 +210,13 @@ Administración (sobre costo directo), utilidad e imprevistos (sobre CD + admini
 (sobre el subtotal). Exige `fuente` y `confirmacion_usuario`; la base exige fuente si hay algún
 porcentaje. SOTICA-PRE-01 calcula el precio de oferta en la hoja Indirectos con fórmulas vivas.
 
-## 10. `registrar_computo` — aritmética del sistema
+## 10. `crear_presupuesto` — servidor `sotica_obra` *(ORQ-COST)*
+
+Abre un proyecto en fase de oferta (`oportunidad`) desde una conversación sin proyecto, con solo el nombre;
+el cliente se enlaza por nombre si ya está registrado. Devuelve `presupuesto_creado` (código SOT-AAAA-NNN):
+el backend lo detecta en la salida de la herramienta y enlaza la conversación a ese proyecto.
+
+## 11. `registrar_computo` — aritmética del sistema
 
 `backend/core/computo.py` evalúa cada `expresion` (solo números, + - * / y paréntesis; acepta coma
 decimal y ×) y recalcula subtotales y cantidad. Si el modelo se equivocó, guarda el valor correcto y lo

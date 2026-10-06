@@ -30,16 +30,24 @@ El `.env` debe tener `OPENAI_API_KEY`, `SOTICA_MODEL=gpt-5` y la base en el puer
 
 ## Recorrido
 
-Las órdenes están como sugerencias en la pantalla inicial del chat (cambian según sea oferta u obra).
+Las órdenes están como sugerencias en la pantalla inicial del chat (cambian según sea conversación
+general, presupuesto u obra).
 
-### 0. El ciclo comercial — ofertas y obras
+### 0. Conversación libre y ciclo comercial
 
-El sidebar separa **Ofertas en estudio** (sin contrato: cómputo, APU, presupuesto, propuesta) de **Obras en
-ejecución** (con control de avance). La demo trae una de cada una: la oferta `SOT-2026-021` (galpón) y la obra
-`SOT-2026-014`. Con **Nuevo proyecto** se abre una oferta escribiendo solo el nombre; el código se asigna solo.
-Al ganarla, **Fase → Marcar como adjudicada** fija el plazo y convierte el presupuesto ofertado en base de control.
+El panel abre en una **conversación general**, sin proyecto, como ChatGPT: se puede preguntar, buscar precios
+en internet o pedir un orden de magnitud. Cada conversación queda en el historial del sidebar y se retoma
+con un clic, también después de recargar o reiniciar.
 
-Qué decir: no hace falta "crear una obra" para cotizar algo que todavía no es seguro.
+Orden sugerida: *Presupuestar sin abrir proyecto*. ORQ-COST abre él mismo el presupuesto (`crear_presupuesto`),
+la conversación queda enlazada a él (se ve en el selector de la barra) y sigue computando.
+
+El sidebar tiene **Presupuestos** (ofertas sin contrato; demo: `SOT-2026-021`, galpón) y **Obras** (con
+control de avance; demo: `SOT-2026-014`). En Presupuestos, **Convertir en obra** fija el plazo y convierte el
+presupuesto ofertado en base de control. El selector de la barra mueve una conversación a otro proyecto o la
+deja general.
+
+Qué decir: no hace falta crear nada para cotizar algo que todavía no es seguro.
 
 ### 1. Estado de la obra sin datos — "no inventa"
 
@@ -180,4 +188,4 @@ el cliente y esos datos se rellenan solos. Un cliente con proyectos no se puede 
 
 - **"No se pudo completar"** en el chat: reintentar el mismo mensaje.
 - **El panel no carga**: revisar que `demo_start.ps1` siga corriendo.
-- **ORQ-COST arrastra contexto de una prueba anterior**: botón **Conversación nueva**.
+- **ORQ-COST arrastra contexto de una prueba anterior**: botón **Nueva conversación** (la anterior queda en el historial).

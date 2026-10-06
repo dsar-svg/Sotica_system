@@ -1,6 +1,7 @@
 """API HTTP del ciclo 1: chat con ORQ-COST, carga de evidencia y panel de archivos."""
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import json
 import re
@@ -15,18 +16,29 @@ from fastapi.staticfiles import StaticFiles
 from ..core import avance as avance_mod
 from ..core import apu, control, db, storage
 from ..core.config import BASE_DIR, STORAGE_DIR
-from ..core.orchestrator import SesionObra
+from ..core import orchestrator
 
 app = FastAPI(title="SOTICA-COSTOS", version="ciclo-1")
 
-# Una sesión de chat viva por obra (proceso único; en producción, por usuario).
-_sesiones: dict[str, SesionObra] = {}
+# ORQ-COST con sus servidores MCP: uno por proceso, compartido por todas las conversaciones.
+_motor: orchestrator.Motor | None = None
+_motor_lock = asyncio.Lock()
+
+
+async def _motor_listo() -> orchestrator.Motor:
+    global _motor
+    async with _motor_lock:
+        if _motor is None:
+            motor = orchestrator.Motor()
+            await motor.abrir()
+            _motor = motor
+    return _motor
 
 
 @app.on_event("shutdown")
 async def _cerrar() -> None:
-    for s in _sesiones.values():
-        await s.cerrar()
+    if _motor is not None:
+        await _motor.cerrar()
     await db.close_pool()
 
 
@@ -49,14 +61,34 @@ async def listar_proyectos() -> list[dict[str, Any]]:
         SELECT p.id, p.codigo, p.nombre_obra, p.cliente, p.cliente_id, p.tipo_obra, p.moneda_base,
                p.fase, p.fecha_inicio_contractual, p.fecha_fin_contractual, p.creado_en,
                eo.pct_fisico_real, eo.pct_fisico_plan, eo.ultima_fecha_avance,
-               eo.dias_sin_reporte, eo.bloqueos_abiertos, eo.desviaciones_abiertas
+               eo.dias_sin_reporte, eo.bloqueos_abiertos, eo.desviaciones_abiertas,
+               pr.version AS presupuesto_version, pr.partidas, pr.costo_directo,
+               pr.adm_pct, pr.utilidad_pct, pr.impuesto_pct,
+               (SELECT max(c.actualizado_en) FROM conversaciones c
+                 WHERE c.proyecto_id = p.id) AS ultima_conversacion_en,
+               (SELECT c.id FROM conversaciones c WHERE c.proyecto_id = p.id
+                 ORDER BY c.actualizado_en DESC LIMIT 1) AS ultima_conversacion
           FROM proyectos p
           LEFT JOIN estado_obra eo ON eo.proyecto_id = p.id
+          -- El presupuesto que se ve en la lista: el último (borrador de oferta o base de control).
+          LEFT JOIN LATERAL (
+                SELECT x.version, x.adm_pct, x.utilidad_pct, x.impuesto_pct,
+                       count(pa.id) AS partidas, sum(pa.monto) AS costo_directo
+                  FROM presupuestos x LEFT JOIN partidas pa ON pa.presupuesto_id = x.id
+                 WHERE x.proyecto_id = p.id
+                 GROUP BY x.id ORDER BY x.version DESC LIMIT 1) pr ON true
          WHERE p.estado = 'activo'
          ORDER BY p.fase, p.creado_en DESC
         """
     )
-    return [dict(f) for f in filas]
+    salida = []
+    for f in filas:
+        d = dict(f)
+        d["precio_oferta"] = (apu.precio_oferta(float(d["costo_directo"]), d["adm_pct"],
+                                                d["utilidad_pct"], d["impuesto_pct"])
+                              if d["costo_directo"] is not None else None)
+        salida.append(d)
+    return salida
 
 
 _TIPOS_OBRA = {"edificacion", "vialidad", "hidraulica", "electrificacion", "industrial"}
@@ -170,15 +202,6 @@ async def borrar_cliente(cliente_id: str) -> dict[str, Any]:
     return {"ok": True}
 
 
-async def _codigo_siguiente() -> str:
-    """SOT-<año>-NNN siguiente al mayor del año: el código no se reutiliza ni se edita."""
-    anio = dt.date.today().year
-    mayor = await db.fetchval(
-        "SELECT max((regexp_match(codigo, '^SOT-' || $1 || '-(\\d+)$'))[1]::int) FROM proyectos",
-        str(anio))
-    return f"SOT-{anio}-{(mayor or 0) + 1:03d}"
-
-
 @app.post("/api/proyectos")
 async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
     """Alta de obra con su memoria de proyecto (PDF 10.1): moneda, fecha base, ente, norma.
@@ -200,7 +223,9 @@ async def crear_proyecto(datos: dict[str, Any]) -> dict[str, Any]:
     fase = texto("fase") or "oportunidad"
     if fase not in ("oportunidad", "adjudicada"):
         raise HTTPException(400, "Un proyecto nuevo es una oferta en estudio o una obra adjudicada.")
-    codigo, nombre = texto("codigo") or await _codigo_siguiente(), texto("nombre_obra")
+    async with db.acquire() as conn:
+        codigo = texto("codigo") or await control.codigo_siguiente(conn)
+    nombre = texto("nombre_obra")
     if not nombre:
         raise HTTPException(400, "El nombre del proyecto es obligatorio.")
     if not texto("fecha_base_precios"):
@@ -488,23 +513,100 @@ async def descargar(storage_key: str):
 # Chat con ORQ-COST
 # ---------------------------------------------------------------------------
 
+def _titulo(mensaje: str) -> str:
+    """Título de la conversación: el comienzo del primer mensaje, cortado en una palabra."""
+    texto = " ".join(mensaje.split())
+    if len(texto) <= 60:
+        return texto
+    return texto[:60].rsplit(" ", 1)[0] + "…"
+
+
+async def _conversacion(cid: str):
+    try:
+        fila = await db.fetchrow(
+            "SELECT c.*, p.codigo FROM conversaciones c "
+            "LEFT JOIN proyectos p ON p.id = c.proyecto_id WHERE c.id = $1", UUID(cid))
+    except ValueError:
+        fila = None
+    if fila is None:
+        raise HTTPException(404, "La conversación no existe.")
+    return fila
+
+
+@app.get("/api/conversaciones")
+async def listar_conversaciones() -> list[dict[str, Any]]:
+    filas = await db.fetch(
+        """
+        SELECT c.id, c.titulo, c.actualizado_en, p.codigo, p.nombre_obra, p.fase
+          FROM conversaciones c LEFT JOIN proyectos p ON p.id = c.proyecto_id
+         ORDER BY c.actualizado_en DESC LIMIT 100
+        """
+    )
+    return [dict(f) for f in filas]
+
+
+@app.get("/api/conversaciones/{cid}")
+async def ver_conversacion(cid: str) -> dict[str, Any]:
+    c = await _conversacion(cid)
+    return {"id": str(c["id"]), "titulo": c["titulo"], "proyecto": c["codigo"],
+            "mensajes": await orchestrator.historial(str(c["id"]))}
+
+
+@app.patch("/api/conversaciones/{cid}")
+async def editar_conversacion(cid: str, datos: dict[str, Any]) -> dict[str, Any]:
+    """Mueve la conversación a un proyecto (o la deja general con `proyecto: null`) o la renombra."""
+    c = await _conversacion(cid)
+    proyecto_id, codigo = c["proyecto_id"], c["codigo"]
+    if "proyecto" in datos:
+        if datos["proyecto"]:
+            p = await _proyecto(datos["proyecto"])
+            proyecto_id, codigo = p["id"], p["codigo"]
+        else:
+            proyecto_id, codigo = None, None
+    titulo = " ".join(str(datos.get("titulo") or "").split()) or c["titulo"]
+    await db.execute("UPDATE conversaciones SET proyecto_id = $2, titulo = $3 WHERE id = $1",
+                     c["id"], proyecto_id, titulo[:120])
+    return {"id": str(c["id"]), "titulo": titulo[:120], "proyecto": codigo}
+
+
+@app.delete("/api/conversaciones/{cid}")
+async def borrar_conversacion(cid: str) -> dict[str, Any]:
+    """Borra la conversación y su historial. Los datos del proyecto no se tocan."""
+    c = await _conversacion(cid)
+    await orchestrator.sesion_conversacion(str(c["id"])).clear_session()
+    await db.execute("DELETE FROM conversaciones WHERE id = $1", c["id"])
+    return {"ok": True}
+
+
 @app.post("/api/chat")
 async def chat(payload: dict[str, Any]):
-    proyecto_ref = payload.get("proyecto")
+    """Sin `conversacion`, abre una nueva (con o sin proyecto). El primer evento del stream
+    trae su id para que el panel la siga usando."""
     mensaje = (payload.get("mensaje") or "").strip()
     if not mensaje:
         raise HTTPException(400, "Mensaje vacío.")
-
-    clave = proyecto_ref or "_sin_obra"
-    if clave not in _sesiones:
-        sesion = SesionObra(proyecto_ref)
-        await sesion.abrir()
-        _sesiones[clave] = sesion
-    sesion = _sesiones[clave]
+    if payload.get("conversacion"):
+        c = await _conversacion(payload["conversacion"])
+        cid, titulo, codigo = c["id"], c["titulo"], c["codigo"]
+    else:
+        p = await _proyecto(payload["proyecto"]) if payload.get("proyecto") else None
+        titulo, codigo = _titulo(mensaje), p["codigo"] if p else None
+        cid = await db.fetchval(
+            "INSERT INTO conversaciones (proyecto_id, titulo) VALUES ($1, $2) RETURNING id",
+            p["id"] if p else None, titulo)
+    motor = await _motor_listo()
 
     async def stream():
+        nonlocal codigo
+        inicio = {"tipo": "conversacion", "id": str(cid), "titulo": titulo, "proyecto": codigo}
+        yield f"data: {json.dumps(inicio, ensure_ascii=False)}\n\n"
         try:
-            async for evento in sesion.preguntar(mensaje):
+            async for evento in motor.preguntar(mensaje, str(cid), codigo):
+                if evento["tipo"] == "proyecto" and not codigo:
+                    codigo = evento["codigo"]
+                    await db.execute(
+                        "UPDATE conversaciones SET proyecto_id = (SELECT id FROM proyectos "
+                        "WHERE codigo = $2) WHERE id = $1", cid, codigo)
                 yield f"data: {json.dumps(evento, ensure_ascii=False, default=str)}\n\n"
         except Exception as exc:  # noqa: BLE001
             texto = str(exc)
@@ -513,17 +615,10 @@ async def chat(payload: dict[str, Any]):
                 texto = ("OpenAI rechazó la conexión por la región de salida a internet. Activa la "
                          "VPN (o usa el servidor fuera de Venezuela) y reintenta el mensaje.")
             yield f"data: {json.dumps({'tipo': 'error', 'texto': texto}, ensure_ascii=False)}\n\n"
+        finally:
+            await db.execute("UPDATE conversaciones SET actualizado_en = now() WHERE id = $1", cid)
 
     return StreamingResponse(stream(), media_type="text/event-stream")
-
-
-@app.delete("/api/chat/{ref}")
-async def reiniciar_chat(ref: str) -> dict[str, Any]:
-    """Conversación nueva para la obra: olvida el historial del chat, no los datos."""
-    sesion = _sesiones.pop(ref, None) or SesionObra(ref)
-    await sesion.reiniciar()
-    await sesion.cerrar()
-    return {"ok": True}
 
 
 app.mount("/", StaticFiles(directory=BASE_DIR / "frontend", html=True), name="frontend")

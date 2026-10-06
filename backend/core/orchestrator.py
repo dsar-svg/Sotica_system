@@ -1,8 +1,8 @@
 """Arranque de ORQ-COST sobre OpenAI Agents SDK.
 
-Una sesión **persistente por obra**: el historial vive en el mismo Postgres del
-sistema, no en memoria del proceso. Si el usuario pregunta "¿cómo va tal obra?"
-tres días después y tras un reinicio, el contexto sigue ahí.
+Cada **conversación** persiste su historial en el mismo Postgres del sistema, no en
+memoria del proceso: se puede retomar días después y tras un reinicio. Una conversación
+puede pertenecer a un proyecto (presupuesto u obra) o ser general.
 
 Los subagentes se invocan como herramientas (agents-as-tools) con contexto
 aislado: ven su briefing, no la conversación del usuario.
@@ -10,12 +10,14 @@ aislado: ven su briefing, no la conversación del usuario.
 from __future__ import annotations
 
 import datetime as dt
+import re
 from typing import AsyncIterator
 
 from agents import RunConfig, Runner
 from agents.extensions.memory import SQLAlchemySession
 from agents.mcp import MCPServerStdio
 from openai.types.responses import ResponseTextDeltaEvent
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from . import db
 from .agents import construir, crear_servidores_mcp
@@ -79,35 +81,63 @@ Cuando delegues, el briefing lleva estos datos: no se los preguntes de nuevo al 
 """
 
 
-class SesionObra:
-    """Sesión de chat viva contra ORQ-COST, atada a una obra y persistida."""
+_engine = None
 
-    def __init__(self, proyecto_ref: str | None = None) -> None:
-        self.proyecto_ref = proyecto_ref
+
+def sesion_conversacion(conversacion_id: str) -> SQLAlchemySession:
+    """Historial de una conversación. Leerlo o borrarlo no levanta los servidores MCP."""
+    global _engine
+    if _engine is None:
+        _engine = create_async_engine(session_url(), echo=False)
+    return SQLAlchemySession(f"conv:{conversacion_id}", engine=_engine, create_tables=True)
+
+
+def _texto(contenido) -> str:
+    if isinstance(contenido, str):
+        return contenido
+    return "".join(c.get("text", "") for c in contenido or []
+                   if isinstance(c, dict) and c.get("type") in ("input_text", "output_text"))
+
+
+async def historial(conversacion_id: str) -> list[dict]:
+    """Turnos para volver a pintar el hilo: lo que escribió el usuario, lo que respondió ORQ-COST
+    y las herramientas que usó en cada respuesta."""
+    turnos: list[dict] = []
+    for it in await sesion_conversacion(conversacion_id).get_items():
+        tipo, rol = it.get("type"), it.get("role")
+        if rol == "user":
+            turnos.append({"rol": "yo", "texto": _texto(it.get("content"))})
+            continue
+        if not turnos or turnos[-1]["rol"] != "orq":
+            turnos.append({"rol": "orq", "texto": "", "herramientas": []})
+        t = turnos[-1]
+        if rol == "assistant":
+            t["texto"] = "\n\n".join(x for x in (t["texto"], _texto(it.get("content"))) if x)
+        elif tipo == "function_call":
+            t["herramientas"].append(it.get("name"))
+        elif tipo == "web_search_call":
+            t["herramientas"].append("busqueda_web")
+    return [t for t in turnos if t["rol"] == "yo" or t["texto"] or t["herramientas"]]
+
+
+_CREADO = re.compile(r'"presupuesto_creado":\s*"(SOT-\d{4}-\d{3})"')
+
+
+class Motor:
+    """ORQ-COST con sus servidores MCP: uno por proceso, compartido por todas las conversaciones.
+    Cada pregunta trae su conversación (historial) y su proyecto (memoria de proyecto)."""
+
+    def __init__(self) -> None:
         self._servidores: dict[str, MCPServerStdio] = {}
         self._orquestador = None
-        self._session: SQLAlchemySession | None = None
         self._run_config = RunConfig()
 
     async def abrir(self) -> None:
-        # Los servidores MCP son procesos: se levantan una vez por sesión.
+        # Los servidores MCP son procesos: se levantan una sola vez.
         self._servidores = crear_servidores_mcp()
         for servidor in self._servidores.values():
             await servidor.connect()
-
-        orquestador, _ = construir(self._servidores, self._run_config)
-        # La memoria de proyecto se antepone a las instrucciones del orquestador.
-        orquestador.instructions = (
-            orquestador.instructions + "\n\n---\n\n" + await contexto_obra(self.proyecto_ref)
-        )
-        self._orquestador = orquestador
-
-        self._session = SQLAlchemySession.from_url(
-            session_id=f"obra:{self.proyecto_ref or '_sin_obra'}",
-            url=session_url(),
-            engine_kwargs={"echo": False},
-            create_tables=True,
-        )
+        self._orquestador, _ = construir(self._servidores, self._run_config)
 
     async def cerrar(self) -> None:
         for servidor in self._servidores.values():
@@ -118,22 +148,20 @@ class SesionObra:
         self._servidores = {}
         self._orquestador = None
 
-    async def reiniciar(self) -> None:
-        """Borra el historial de conversación de la obra. Los datos de la obra no se tocan."""
-        if self._session is None:
-            await self.abrir()
-        await self._session.clear_session()
-
-    async def preguntar(self, mensaje: str) -> AsyncIterator[dict]:
-        """Emite eventos {tipo, ...} — mismo contrato SSE que antes, para no tocar
-        el frontend."""
+    async def preguntar(self, mensaje: str, conversacion_id: str,
+                        proyecto_ref: str | None) -> AsyncIterator[dict]:
+        """Emite eventos {tipo, ...} para el SSE del panel. La memoria de proyecto se calcula en
+        cada pregunta: si cambió la fase o llegó un avance, ORQ-COST lo ve sin reiniciar nada."""
         if self._orquestador is None:
             await self.abrir()
+        orquestador = self._orquestador.clone(
+            instructions=self._orquestador.instructions + "\n\n---\n\n"
+            + await contexto_obra(proyecto_ref))
 
         resultado = Runner.run_streamed(
-            self._orquestador,
+            orquestador,
             mensaje,
-            session=self._session,
+            session=sesion_conversacion(conversacion_id),
             max_turns=MAX_TURNS_ORQUESTADOR,
             run_config=self._run_config,
         )
@@ -151,6 +179,11 @@ class SesionObra:
                         "nombre": _nombre_herramienta(item),
                         "entrada": {},
                     }
+                elif item.type == "tool_call_output_item":
+                    # Un presupuesto abierto desde una conversación general queda enlazado a ella.
+                    m = _CREADO.search(str(item.output))
+                    if m:
+                        yield {"tipo": "proyecto", "codigo": m.group(1)}
         yield {"tipo": "fin", "resultado": "completado"}
 
 
