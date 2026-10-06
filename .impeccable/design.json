@@ -1,0 +1,566 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T16:39:17+00:00",
+  "title": "Design System: SOTICA-COSTOS",
+  "extensions": {
+    "colorMeta": {
+      "rojo-reglamentario": {
+        "role": "primary",
+        "displayName": "Rojo Reglamentario SOTICA",
+        "canonical": "#CB0C0C",
+        "tonalRamp": [
+          "oklch(15% 0.200 28.7)",
+          "oklch(25% 0.200 28.7)",
+          "oklch(37% 0.200 28.7)",
+          "oklch(49% 0.200 28.7)",
+          "oklch(61% 0.200 28.7)",
+          "oklch(73% 0.200 28.7)",
+          "oklch(85% 0.200 28.7)",
+          "oklch(95% 0.120 28.7)"
+        ]
+      },
+      "rojo-fuerte": {
+        "role": "primary",
+        "displayName": "Rojo Fuerte",
+        "canonical": "#A30909",
+        "tonalRamp": [
+          "oklch(15% 0.181 28.6)",
+          "oklch(25% 0.181 28.6)",
+          "oklch(37% 0.181 28.6)",
+          "oklch(49% 0.181 28.6)",
+          "oklch(61% 0.181 28.6)",
+          "oklch(73% 0.181 28.6)",
+          "oklch(85% 0.181 28.6)",
+          "oklch(95% 0.109 28.6)"
+        ]
+      },
+      "rojo-suave": {
+        "role": "primary",
+        "displayName": "Rojo Suave",
+        "canonical": "#FCEBEB",
+        "tonalRamp": [
+          "oklch(15% 0.019 17.5)",
+          "oklch(25% 0.019 17.5)",
+          "oklch(37% 0.019 17.5)",
+          "oklch(49% 0.019 17.5)",
+          "oklch(61% 0.019 17.5)",
+          "oklch(73% 0.019 17.5)",
+          "oklch(85% 0.019 17.5)",
+          "oklch(95% 0.011 17.5)"
+        ]
+      },
+      "azul-placa": {
+        "role": "secondary",
+        "displayName": "Azul Placa Informativa",
+        "canonical": "#002E54",
+        "tonalRamp": [
+          "oklch(15% 0.083 249.6)",
+          "oklch(25% 0.083 249.6)",
+          "oklch(37% 0.083 249.6)",
+          "oklch(49% 0.083 249.6)",
+          "oklch(61% 0.083 249.6)",
+          "oklch(73% 0.083 249.6)",
+          "oklch(85% 0.083 249.6)",
+          "oklch(95% 0.050 249.6)"
+        ]
+      },
+      "azul-tinta": {
+        "role": "secondary",
+        "displayName": "Azul Tinta",
+        "canonical": "#0B4677",
+        "tonalRamp": [
+          "oklch(15% 0.101 249.6)",
+          "oklch(25% 0.101 249.6)",
+          "oklch(37% 0.101 249.6)",
+          "oklch(49% 0.101 249.6)",
+          "oklch(61% 0.101 249.6)",
+          "oklch(73% 0.101 249.6)",
+          "oklch(85% 0.101 249.6)",
+          "oklch(95% 0.060 249.6)"
+        ]
+      },
+      "azul-suave": {
+        "role": "secondary",
+        "displayName": "Azul Suave",
+        "canonical": "#E7EEF5",
+        "tonalRamp": [
+          "oklch(15% 0.012 248.0)",
+          "oklch(25% 0.012 248.0)",
+          "oklch(37% 0.012 248.0)",
+          "oklch(49% 0.012 248.0)",
+          "oklch(61% 0.012 248.0)",
+          "oklch(73% 0.012 248.0)",
+          "oklch(85% 0.012 248.0)",
+          "oklch(95% 0.007 248.0)"
+        ]
+      },
+      "amarillo-preventivo": {
+        "role": "tertiary",
+        "displayName": "Amarillo Preventivo",
+        "canonical": "#F2B705",
+        "tonalRamp": [
+          "oklch(15% 0.166 85.0)",
+          "oklch(25% 0.166 85.0)",
+          "oklch(37% 0.166 85.0)",
+          "oklch(49% 0.166 85.0)",
+          "oklch(61% 0.166 85.0)",
+          "oklch(73% 0.166 85.0)",
+          "oklch(85% 0.166 85.0)",
+          "oklch(95% 0.099 85.0)"
+        ]
+      },
+      "amarillo-suave": {
+        "role": "tertiary",
+        "displayName": "Amarillo Suave",
+        "canonical": "#FFF6D6",
+        "tonalRamp": [
+          "oklch(15% 0.043 94.1)",
+          "oklch(25% 0.043 94.1)",
+          "oklch(37% 0.043 94.1)",
+          "oklch(49% 0.043 94.1)",
+          "oklch(61% 0.043 94.1)",
+          "oklch(73% 0.043 94.1)",
+          "oklch(85% 0.043 94.1)",
+          "oklch(95% 0.026 94.1)"
+        ]
+      },
+      "verde": {
+        "role": "status",
+        "displayName": "Verde",
+        "canonical": "#0B6E3A",
+        "tonalRamp": [
+          "oklch(15% 0.118 153.0)",
+          "oklch(25% 0.118 153.0)",
+          "oklch(37% 0.118 153.0)",
+          "oklch(49% 0.118 153.0)",
+          "oklch(61% 0.118 153.0)",
+          "oklch(73% 0.118 153.0)",
+          "oklch(85% 0.118 153.0)",
+          "oklch(95% 0.071 153.0)"
+        ]
+      },
+      "verde-suave": {
+        "role": "status",
+        "displayName": "Verde Suave",
+        "canonical": "#E4F3EA",
+        "tonalRamp": [
+          "oklch(15% 0.020 159.7)",
+          "oklch(25% 0.020 159.7)",
+          "oklch(37% 0.020 159.7)",
+          "oklch(49% 0.020 159.7)",
+          "oklch(61% 0.020 159.7)",
+          "oklch(73% 0.020 159.7)",
+          "oklch(85% 0.020 159.7)",
+          "oklch(95% 0.012 159.7)"
+        ]
+      },
+      "fondo": {
+        "role": "neutral",
+        "displayName": "Blanco de oficina",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(25% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(49% 0.000 89.9)",
+          "oklch(61% 0.000 89.9)",
+          "oklch(73% 0.000 89.9)",
+          "oklch(85% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "sup-2": {
+        "role": "neutral",
+        "displayName": "Gris lámina",
+        "canonical": "#F3F5F7",
+        "tonalRamp": [
+          "oklch(15% 0.003 247.9)",
+          "oklch(25% 0.003 247.9)",
+          "oklch(37% 0.003 247.9)",
+          "oklch(49% 0.003 247.9)",
+          "oklch(61% 0.003 247.9)",
+          "oklch(73% 0.003 247.9)",
+          "oklch(85% 0.003 247.9)",
+          "oklch(95% 0.002 247.9)"
+        ]
+      },
+      "sup-3": {
+        "role": "neutral",
+        "displayName": "Gris lámina profunda",
+        "canonical": "#E9EDF1",
+        "tonalRamp": [
+          "oklch(15% 0.007 247.9)",
+          "oklch(25% 0.007 247.9)",
+          "oklch(37% 0.007 247.9)",
+          "oklch(49% 0.007 247.9)",
+          "oklch(61% 0.007 247.9)",
+          "oklch(73% 0.007 247.9)",
+          "oklch(85% 0.007 247.9)",
+          "oklch(95% 0.004 247.9)"
+        ]
+      },
+      "borde": {
+        "role": "neutral",
+        "displayName": "Borde",
+        "canonical": "#E1E5EA",
+        "tonalRamp": [
+          "oklch(15% 0.008 253.9)",
+          "oklch(25% 0.008 253.9)",
+          "oklch(37% 0.008 253.9)",
+          "oklch(49% 0.008 253.9)",
+          "oklch(61% 0.008 253.9)",
+          "oklch(73% 0.008 253.9)",
+          "oklch(85% 0.008 253.9)",
+          "oklch(95% 0.005 253.9)"
+        ]
+      },
+      "borde-fuerte": {
+        "role": "neutral",
+        "displayName": "Borde fuerte",
+        "canonical": "#C5CDD5",
+        "tonalRamp": [
+          "oklch(15% 0.014 248.0)",
+          "oklch(25% 0.014 248.0)",
+          "oklch(37% 0.014 248.0)",
+          "oklch(49% 0.014 248.0)",
+          "oklch(61% 0.014 248.0)",
+          "oklch(73% 0.014 248.0)",
+          "oklch(85% 0.014 248.0)",
+          "oklch(95% 0.009 248.0)"
+        ]
+      },
+      "tinta": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#12171C",
+        "tonalRamp": [
+          "oklch(15% 0.013 248.5)",
+          "oklch(25% 0.013 248.5)",
+          "oklch(37% 0.013 248.5)",
+          "oklch(49% 0.013 248.5)",
+          "oklch(61% 0.013 248.5)",
+          "oklch(73% 0.013 248.5)",
+          "oklch(85% 0.013 248.5)",
+          "oklch(95% 0.008 248.5)"
+        ]
+      },
+      "tinta-2": {
+        "role": "neutral",
+        "displayName": "Tinta 2",
+        "canonical": "#434D57",
+        "tonalRamp": [
+          "oklch(15% 0.021 248.3)",
+          "oklch(25% 0.021 248.3)",
+          "oklch(37% 0.021 248.3)",
+          "oklch(49% 0.021 248.3)",
+          "oklch(61% 0.021 248.3)",
+          "oklch(73% 0.021 248.3)",
+          "oklch(85% 0.021 248.3)",
+          "oklch(95% 0.013 248.3)"
+        ]
+      },
+      "tinta-3": {
+        "role": "neutral",
+        "displayName": "Tinta 3",
+        "canonical": "#5F6B76",
+        "tonalRamp": [
+          "oklch(15% 0.023 245.9)",
+          "oklch(25% 0.023 245.9)",
+          "oklch(37% 0.023 245.9)",
+          "oklch(49% 0.023 245.9)",
+          "oklch(61% 0.023 245.9)",
+          "oklch(73% 0.023 245.9)",
+          "oklch(85% 0.023 245.9)",
+          "oklch(95% 0.014 245.9)"
+        ]
+      },
+      "asfalto": {
+        "role": "neutral",
+        "displayName": "Asfalto (oscuro)",
+        "canonical": "#15191E",
+        "tonalRamp": [
+          "oklch(15% 0.012 254.1)",
+          "oklch(25% 0.012 254.1)",
+          "oklch(37% 0.012 254.1)",
+          "oklch(49% 0.012 254.1)",
+          "oklch(61% 0.012 254.1)",
+          "oklch(73% 0.012 254.1)",
+          "oklch(85% 0.012 254.1)",
+          "oklch(95% 0.007 254.1)"
+        ]
+      },
+      "asfalto-sup": {
+        "role": "neutral",
+        "displayName": "Asfalto superficie (oscuro)",
+        "canonical": "#1B2026",
+        "tonalRamp": [
+          "oklch(15% 0.014 253.1)",
+          "oklch(25% 0.014 253.1)",
+          "oklch(37% 0.014 253.1)",
+          "oklch(49% 0.014 253.1)",
+          "oklch(61% 0.014 253.1)",
+          "oklch(73% 0.014 253.1)",
+          "oklch(85% 0.014 253.1)",
+          "oklch(95% 0.008 253.1)"
+        ]
+      },
+      "sb-oscuro": {
+        "role": "primary",
+        "displayName": "Rojo nocturno (sidebar oscuro)",
+        "canonical": "#8F0A0A",
+        "tonalRamp": [
+          "oklch(15% 0.163 28.4)",
+          "oklch(25% 0.163 28.4)",
+          "oklch(37% 0.163 28.4)",
+          "oklch(49% 0.163 28.4)",
+          "oklch(61% 0.163 28.4)",
+          "oklch(73% 0.163 28.4)",
+          "oklch(85% 0.163 28.4)",
+          "oklch(95% 0.098 28.4)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Solo el título del estado vacío del chat."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Cabecera de diálogo y cifras destacadas del registro."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Barra, cabeceras de registro y bloque, órdenes sugeridas, h3 de prosa."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Prosa del chat a 68ch, tablas y avisos; cifras tabulares."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Etiquetas de certeza, placas de ruta, encabezados de tabla, rótulos de campo, códigos."
+      },
+      "label-caps": {
+        "displayName": "Label caps",
+        "purpose": "Solo rótulos de grupo dentro del sidebar."
+      }
+    },
+    "darkTheme": {
+      "selector": ":root[data-theme=\"dark\"]",
+      "overrides": {
+        "rojo": "#E5322F",
+        "rojo-fuerte": "#C71F1C",
+        "rojo-suave": "#3A1717",
+        "rojo-tinta": "#FF8F8C",
+        "azul-placa": "#0E4A80",
+        "azul-suave": "#14283B",
+        "azul-tinta": "#8EC1F0",
+        "amarillo-suave": "#3A3012",
+        "verde": "#5CC48A",
+        "verde-suave": "#14301F",
+        "fondo": "#15191E",
+        "sup": "#1B2026",
+        "sup-2": "#20262D",
+        "sup-3": "#2A3139",
+        "borde": "#2C333B",
+        "borde-fuerte": "#3C4550",
+        "tinta": "#E8ECF0",
+        "tinta-2": "#B6BFC8",
+        "tinta-3": "#8F99A3",
+        "sb": "#8F0A0A",
+        "sb-tinta-2": "#F2C4C4",
+        "foco": "#8EC1F0"
+      }
+    },
+    "shadows": [
+      {
+        "name": "sombra-1",
+        "value": "0 1px 2px rgba(18,23,28,.06), 0 2px 8px rgba(18,23,28,.06)",
+        "purpose": "Compositor en reposo."
+      },
+      {
+        "name": "sombra-2",
+        "value": "0 8px 28px rgba(18,23,28,.14), 0 2px 6px rgba(18,23,28,.08)",
+        "purpose": "Menús, diálogo, registro y sidebar superpuestos."
+      },
+      {
+        "name": "filete-placa",
+        "value": "inset 0 0 0 2px <color de placa>, inset 0 0 0 3.5px rgba(255,255,255,.92)",
+        "purpose": "Borde blanco interior de las placas de señal; no eleva."
+      },
+      {
+        "name": "halo-campo",
+        "value": "0 0 0 3px #E7EEF5",
+        "purpose": "Foco de campos y compositor (con borde azul tinta)."
+      }
+    ],
+    "focus": {
+      "value": "outline: 2px solid #0B4677; outline-offset: 2px",
+      "dark": "#8EC1F0",
+      "onSidebar": "#FFFFFF"
+    },
+    "motion": [
+      {
+        "name": "ease-panel",
+        "value": "transform .28s cubic-bezier(.2,.8,.2,1)",
+        "purpose": "Abrir y cerrar registro y sidebar."
+      },
+      {
+        "name": "tramo",
+        "value": "color .3s, background .3s",
+        "purpose": "Encendido del tramo activo en el panel de delegación."
+      },
+      {
+        "name": "hover",
+        "value": "background .15s",
+        "purpose": "Fondos de hover y bordes de foco."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce anula animaciones y transiciones",
+        "purpose": "Accesibilidad."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "registro-superpuesto",
+        "value": "1240px"
+      },
+      {
+        "name": "sidebar-fuera-de-lienzo",
+        "value": "880px"
+      }
+    ],
+    "openItems": [
+      "Autoalojar Barlow y Barlow Semi Condensed (hoy desde Google Fonts, respaldo Bahnschrift); pendiente de permiso del usuario."
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción primaria de formularios del registro; rojo reglamentario.",
+      "html": "<button class=\"ds-btn\">Guardar reporte</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:8px;border:0;cursor:pointer;background:var(--rojo,#CB0C0C);color:#fff;font:600 15px/1 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);letter-spacing:.02em} .ds-btn:hover{background:var(--rojo-fuerte,#A30909)} .ds-btn:focus-visible{outline:2px solid var(--foco,#0B4677);outline-offset:2px} .ds-btn:disabled{background:var(--sup-3,#E9EDF1);color:var(--tinta-3,#5F6B76);cursor:not-allowed}"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción alternativa junto al primario.",
+      "html": "<button class=\"ds-btn-sec\">Cancelar</button>",
+      "css": ".ds-btn-sec{display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:8px;cursor:pointer;background:var(--sup,#fff);color:var(--tinta,#12171C);border:1px solid var(--borde-fuerte,#C5CDD5);font:600 15px/1 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);letter-spacing:.02em} .ds-btn-sec:hover{background:var(--sup-2,#F3F5F7)} .ds-btn-sec:focus-visible{outline:2px solid var(--foco,#0B4677);outline-offset:2px}"
+    },
+    {
+      "name": "Campo",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Campo de formulario con rótulo en semicondensado.",
+      "html": "<label class=\"ds-campo\">Cantidad ejecutada<input class=\"ds-ctl\" placeholder=\"m²\"></label>",
+      "css": ".ds-campo{display:block;font:600 13px/1.2 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);letter-spacing:.02em;color:var(--tinta-2,#434D57)} .ds-ctl{display:block;width:100%;margin-top:5px;padding:8px 10px;border:1px solid var(--borde-fuerte,#C5CDD5);border-radius:8px;background:var(--sup,#fff);color:var(--tinta,#12171C);font:400 15px/1.4 var(--f-texto, Barlow, Bahnschrift, \"Segoe UI\", sans-serif)} .ds-ctl:focus{outline:0;border-color:var(--azul-tinta,#0B4677);box-shadow:0 0 0 3px var(--azul-suave,#E7EEF5)} .ds-ctl::placeholder{color:var(--tinta-3,#5F6B76)}"
+    },
+    {
+      "name": "Navegación del sidebar",
+      "kind": "nav",
+      "refersTo": "sidebar",
+      "description": "Placa roja a toda altura; el ítem activo es una placa blanca con tinta roja.",
+      "html": "<nav class=\"ds-sb\"><button class=\"ds-sb-btn\" aria-current=\"true\">Avance<span class=\"ds-sb-val\">42%</span></button><button class=\"ds-sb-btn\">Bloqueos<span class=\"ds-cont\">3</span></button><button class=\"ds-sb-btn\">Archivos<span class=\"ds-sb-val\">6</span></button></nav>",
+      "css": ".ds-sb{display:flex;flex-direction:column;gap:2px;width:264px;padding:12px;background:var(--sb,#CB0C0C);color:#fff} .ds-sb-btn{display:flex;align-items:center;gap:10px;border:0;border-radius:8px;background:none;color:inherit;padding:9px 10px;font:500 15px/1.2 var(--f-texto, Barlow, Bahnschrift, \"Segoe UI\", sans-serif);cursor:pointer;text-align:left;transition:background .15s} .ds-sb-btn:hover{background:rgba(0,0,0,.14)} .ds-sb-btn:focus-visible{outline:2px solid #fff;outline-offset:2px} .ds-sb-btn[aria-current=true]{background:#fff;color:#A30909;font-weight:600} .ds-sb-val{margin-left:auto;font:600 13px/1 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);color:#FFE6E6;font-variant-numeric:tabular-nums} .ds-sb-btn[aria-current=true] .ds-sb-val{color:inherit} .ds-cont{margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:6px;background:#fff;color:#A30909;font:700 13px/22px var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);text-align:center;box-shadow:inset 0 0 0 1.5px #fff, inset 0 0 0 2.5px #A30909}"
+    },
+    {
+      "name": "Etiquetas de certeza",
+      "kind": "chip",
+      "refersTo": "tag-confirmado",
+      "description": "Certeza del dato, siempre con su palabra.",
+      "html": "<span class=\"ds-etq ds-conf\">confirmado</span> <span class=\"ds-etq ds-inf\">inferido</span> <span class=\"ds-etq ds-ref\">referencial</span> <span class=\"ds-etq ds-pend\">pendiente</span>",
+      "css": ".ds-etq{display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:5px;white-space:nowrap;font:600 12.5px/1 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);letter-spacing:.02em;border:1.5px solid transparent} .ds-conf{background:var(--sup,#fff);color:var(--tinta,#12171C);border-color:var(--tinta,#12171C)} .ds-inf{background:var(--azul-placa,#002E54);color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.85)} .ds-ref{background:var(--sup-3,#E9EDF1);color:var(--tinta-2,#434D57);border-color:var(--borde-fuerte,#C5CDD5)} .ds-pend{background:var(--amarillo,#F2B705);color:#1A1A1A;border-color:#1A1A1A}"
+    },
+    {
+      "name": "Bloque del registro",
+      "kind": "card",
+      "refersTo": "card-bloque",
+      "description": "Contenedor plano con borde sobre el gris lámina del registro.",
+      "html": "<div class=\"ds-reg\"><section class=\"ds-bloque\"><h3>Presupuesto</h3><p>Total de obra <b>Bs 1.284.330,00</b></p></section></div>",
+      "css": ".ds-reg{background:var(--sup-2,#F3F5F7);padding:16px} .ds-bloque{background:var(--sup,#fff);border:1px solid var(--borde,#E1E5EA);border-radius:10px;padding:16px;font:400 14px/1.55 var(--f-texto, Barlow, Bahnschrift, \"Segoe UI\", sans-serif);color:var(--tinta,#12171C);font-variant-numeric:tabular-nums} .ds-bloque h3{margin:0 0 12px;font:600 16px/1.25 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif)} .ds-bloque p{margin:0}"
+    },
+    {
+      "name": "Compositor",
+      "kind": "input",
+      "refersTo": "composer",
+      "description": "Caja de órdenes para ORQ-COST con enviar rojo circular.",
+      "html": "<div class=\"ds-caja\"><textarea rows=\"1\" placeholder=\"Pídele a ORQ-COST un cómputo…\"></textarea><button class=\"ds-enviar\" aria-label=\"Enviar\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 19V5M6 11l6-6 6 6\"/></svg></button></div>",
+      "css": ".ds-caja{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--borde-fuerte,#C5CDD5);border-radius:22px;background:var(--sup,#fff);box-shadow:var(--sombra-1,0 1px 2px rgba(18,23,28,.06),0 2px 8px rgba(18,23,28,.06));padding:12px 12px 10px 16px;transition:border-color .15s, box-shadow .15s} .ds-caja:focus-within{border-color:var(--azul-tinta,#0B4677);box-shadow:0 0 0 3px var(--azul-suave,#E7EEF5)} .ds-caja textarea{flex:1;border:0;outline:0;resize:none;background:none;font:400 15.5px/1.5 var(--f-texto, Barlow, Bahnschrift, \"Segoe UI\", sans-serif);color:var(--tinta,#12171C)} .ds-enviar{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:0;cursor:pointer;background:var(--rojo,#CB0C0C);color:#fff;transition:background .15s, transform .1s} .ds-enviar:hover{background:var(--rojo-fuerte,#A30909)} .ds-enviar:active{transform:scale(.94)} .ds-enviar:focus-visible{outline:2px solid var(--foco,#0B4677);outline-offset:2px}"
+    },
+    {
+      "name": "Panel direccional de delegación",
+      "kind": "custom",
+      "refersTo": "route-panel",
+      "description": "Gesto distintivo: placa azul con filete blanco que ilumina el tramo activo de la delegación.",
+      "html": "<div class=\"ds-ruta\"><span class=\"ds-tramo ds-hecho\">ORQ-COST</span><svg viewBox=\"0 0 24 24\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg><span class=\"ds-tramo ds-activo\">SUB-CM</span><svg viewBox=\"0 0 24 24\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg><span class=\"ds-tramo\">SUB-DOC</span></div>",
+      "css": ".ds-ruta{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 2px;padding:8px 12px;background:var(--azul-placa,#002E54);color:#fff;border-radius:6px;box-shadow:inset 0 0 0 2px var(--azul-placa,#002E54), inset 0 0 0 3.5px rgba(255,255,255,.92);font:600 13.5px/1.2 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);letter-spacing:.02em} .ds-tramo{display:inline-flex;align-items:center;gap:6px;padding:3px 7px;border-radius:4px;color:rgba(255,255,255,.62);transition:color .3s, background .3s} .ds-hecho{color:#fff} .ds-activo{color:var(--azul-placa,#002E54);background:#fff} .ds-activo::before{content:\"\";width:7px;height:7px;border-radius:50%;background:var(--rojo,#CB0C0C)} .ds-ruta svg{width:16px;height:16px;stroke:rgba(255,255,255,.7);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}"
+    },
+    {
+      "name": "Placa de ruta",
+      "kind": "chip",
+      "refersTo": "route-plate",
+      "description": "Versión compacta del panel de delegación en cada orden sugerida.",
+      "html": "<span class=\"ds-placa-ruta\">SUB-CM<svg viewBox=\"0 0 24 24\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>SUB-DOC</span>",
+      "css": ".ds-placa-ruta{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:5px 10px;border-radius:5px;background:var(--azul-placa,#002E54);color:#fff;font:600 13px/1 var(--f-rotulo, \"Barlow Semi Condensed\", \"Bahnschrift SemiCondensed\", Bahnschrift, sans-serif);letter-spacing:.02em;box-shadow:inset 0 0 0 1.5px var(--azul-placa,#002E54), inset 0 0 0 2.6px rgba(255,255,255,.9)} .ds-placa-ruta svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Señalética vial",
+    "overview": "El panel se lee como una vía venezolana bien señalizada: rojo reglamentario para lo que detiene o manda, azul informativo para lo que orienta, amarillo preventivo para lo que está pendiente. El rojo SOTICA (tomado de sotica.com.ve) ocupa el sidebar a toda altura como una placa reglamentaria; el área de trabajo es blanca y sobria, y el azul aparece solo donde algo indica camino o procedencia. El sistema rechaza el chat genérico gris con un acento suelto.\n\nLa materia son placas: superficies de esquina redondeada con un filete interior blanco, como las señales de tránsito, rotuladas en Barlow Semi Condensed (una DIN libre) con cifras tabulares en toda cantidad. La densidad es de herramienta de ingeniería: tablas compactas, medida de lectura fija, nada decorativo que no informe. Claro por defecto (oficina de día, proyector); el tema oscuro es asfalto, con el rojo del sidebar oscurecido para no encandilar.",
+    "keyCharacteristics": [
+      "Sidebar rojo reglamentario a toda altura con texto blanco; trabajo sobre blanco (oscuro: asfalto).",
+      "Placas con filete interior blanco para marca, autor, ruta y etiquetas de certeza.",
+      "Panel direccional azul de delegación (ORQ-COST → SUB-CM → SUB-DOC) como gesto distintivo.",
+      "Rotulación DIN (Barlow / Barlow Semi Condensed) y cifras tabulares en todo el cuerpo.",
+      "La certeza de cada dato se dice siempre con texto, nunca solo con color."
+    ],
+    "rules": [
+      {
+        "name": "The Una Señal, Un Significado Rule",
+        "body": "Rojo detiene o manda, azul orienta o atribuye, amarillo advierte de algo pendiente. No se usa azul para un error ni amarillo como decoración.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rojo Es el Sidebar Rule",
+        "body": "En el área de trabajo el rojo es escaso: enviar, el botón primario de un formulario, la pestaña activa, el hito y las alertas. Nunca fondos rojos amplios fuera del sidebar y la cabecera de diálogo.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cifra Tabular Rule",
+        "body": "Toda cantidad se compone con cifras tabulares (`tabular-nums` en el body) y alineada a la derecha en tablas; las cifras nunca bailan entre filas.",
+        "section": "typography"
+      },
+      {
+        "name": "The Rótulo Nombra, Texto Lee Rule",
+        "body": "Lo que identifica (código, título, etiqueta, encabezado) va en Barlow Semi Condensed; lo que se lee de corrido va en Barlow.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lo Que Flota Se Eleva Rule",
+        "body": "Solo lleva sombra-2 lo que se superpone al trabajo; bloques y tarjetas del registro son planos con borde.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** dar a cada dato su etiqueta de certeza con texto (confirmado, inferido, referencial, pendiente); el color refuerza, nunca reemplaza.",
+      "**Do** usar el azul de placa para todo lo que indique ruta, delegación o procedencia, y el amarillo solo para lo pendiente.",
+      "**Do** componer toda cantidad con cifras tabulares y alinearla a la derecha en tablas.",
+      "**Do** construir las placas con el filete interior blanco por sombra interior, no con bordes externos.",
+      "**Do** mantener la prosa del chat a 68ch y el contenido del chat centrado a 760px.",
+      "**Do** probar cada componente en claro y en oscuro (asfalto); el tema oscuro redefine tokens, no componentes."
+    ],
+    "donts": [
+      "**Don't** convertir el panel en un chat genérico gris con un acento suelto: el rojo vive en el sidebar y las señales tienen roles.",
+      "**Don't** comunicar un estado solo con color, ni un punto sin texto accesible.",
+      "**Don't** usar el rojo como fondo amplio fuera del sidebar y la cabecera de diálogo.",
+      "**Don't** dar sombra elevada a bloques del registro; solo flota lo que se superpone.",
+      "**Don't** usar caracteres o emojis como iconos: los iconos son SVG de trazo."
+    ]
+  }
+}

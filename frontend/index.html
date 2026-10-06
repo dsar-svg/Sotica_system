@@ -1,213 +1,521 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SOTICA-COSTOS</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231B365D'/%3E%3Crect x='3' y='11' width='10' height='2' fill='%23C4A35A'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3.5' fill='%23CB0C0C'/%3E%3Crect x='1.5' y='1.5' width='13' height='13' rx='2.5' fill='none' stroke='%23fff' stroke-width='1.2'/%3E%3Cpath d='M10.6 5.6c-.5-.6-1.4-1-2.5-1-1.5 0-2.4.8-2.4 1.8 0 2.4 5.1 1.4 5.1 3.6 0 1-1 1.9-2.6 1.9-1.2 0-2.2-.5-2.7-1.2' fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script>
+  // Tema por visitante: claro por defecto (oficina de día, proyector). Solo comodidad local.
+  try { if (localStorage.getItem('sotica-tema') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
+</script>
 <style>
+  /* Señalética vial: rojo reglamentario detiene, azul informativo orienta, amarillo preventivo
+     advierte. Placas de esquina redondeada con filete interior; cifras tabulares en toda cantidad. */
   :root{
-    /* Marca SOTICA (§7.2): azul #1B365D, dorado #C4A35A. Neutros teñidos hacia el azul. */
-    --azul:#1B365D; --azul-fuerte:#142947; --azul-suave:#E8EEF6; --dorado:#C4A35A;
-    --fondo:#F3F5F8; --superficie:#FFFFFF; --superficie-2:#F8FAFC;
-    --borde:#D9DFE7; --borde-fuerte:#B9C3D0;
-    --tinta:#16202E; --tinta-2:#3F4C5E; --tinta-3:#5A6779;
-    --ok:#17603A; --ok-fondo:#E5F3EA;
-    --aviso:#7A4E00; --aviso-fondo:#FBF0D9;
-    --info:#1D4E89; --info-fondo:#E6EFFA;
-    --mal:#96201B; --mal-fondo:#FBE9E7;
-    --radio:8px; --salida:cubic-bezier(.22,1,.36,1);
-    --z-fijo:10;
+    --rojo:#CB0C0C; --rojo-fuerte:#A30909; --rojo-suave:#FCEBEB; --rojo-tinta:#A30909;
+    --azul:#002E54; --azul-placa:#002E54; --azul-suave:#E7EEF5; --azul-tinta:#0B4677;
+    --amarillo:#F2B705; --amarillo-suave:#FFF6D6; --verde:#0B6E3A; --verde-suave:#E4F3EA;
+    --fondo:#FFFFFF; --sup:#FFFFFF; --sup-2:#F3F5F7; --sup-3:#E9EDF1;
+    --borde:#E1E5EA; --borde-fuerte:#C5CDD5;
+    --tinta:#12171C; --tinta-2:#434D57; --tinta-3:#5F6B76;
+    --sb:#CB0C0C; --sb-tinta:#FFFFFF; --sb-tinta-2:#FFE6E6; --sb-hover:rgba(0,0,0,.14); --sb-linea:rgba(255,255,255,.22);
+    --sombra-1:0 1px 2px rgba(18,23,28,.06), 0 2px 8px rgba(18,23,28,.06);
+    --sombra-2:0 8px 28px rgba(18,23,28,.14), 0 2px 6px rgba(18,23,28,.08);
+    --foco:#0B4677;
+    --rad:10px; --rad-placa:6px;
+    --f-texto:"Barlow", "Bahnschrift", "Segoe UI", system-ui, sans-serif;
+    --f-rotulo:"Barlow Semi Condensed", "Bahnschrift SemiCondensed", "Bahnschrift", "Arial Narrow", sans-serif;
+    --ancho-sb:264px; --ancho-reg:460px; --col-chat:760px;
+    color-scheme: light;
   }
+  :root[data-theme="dark"]{
+    --rojo:#E5322F; --rojo-fuerte:#C71F1C; --rojo-suave:#3A1717; --rojo-tinta:#FF8F8C;
+    --azul-placa:#0E4A80; --azul-suave:#14283B; --azul-tinta:#8EC1F0;
+    --amarillo:#F2B705; --amarillo-suave:#3A3012; --verde:#5CC48A; --verde-suave:#14301F;
+    --fondo:#15191E; --sup:#1B2026; --sup-2:#20262D; --sup-3:#2A3139;
+    --borde:#2C333B; --borde-fuerte:#3C4550;
+    --tinta:#E8ECF0; --tinta-2:#B6BFC8; --tinta-3:#8F99A3;
+    --sb:#8F0A0A; --sb-tinta:#FFFFFF; --sb-tinta-2:#F2C4C4; --sb-hover:rgba(255,255,255,.08); --sb-linea:rgba(255,255,255,.16);
+    --sombra-1:0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+    --sombra-2:0 10px 32px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3);
+    --foco:#8EC1F0;
+    color-scheme: dark;
+  }
+
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;font:14px/1.5 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
-       color:var(--tinta);background:var(--fondo);display:flex;flex-direction:column;
-       font-variant-numeric:tabular-nums}
-  button,input,textarea,select{font:inherit;color:inherit}
-  :focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:4px}
-  .oculto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  body{margin:0;background:var(--fondo);color:var(--tinta);font:400 15px/1.55 var(--f-texto);
+       -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  ::selection{background:var(--rojo);color:#fff}
+  textarea,input,select{caret-color:var(--rojo);font:inherit;color:inherit}
+  a{color:var(--azul-tinta);text-underline-offset:3px}
+  :focus-visible{outline:2px solid var(--foco);outline-offset:2px;border-radius:4px}
+  *{scrollbar-width:thin;scrollbar-color:var(--borde-fuerte) transparent}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--borde-fuerte);border-radius:10px;border:3px solid var(--fondo)}
+  .ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;
+       stroke-linecap:round;stroke-linejoin:round}
+  .sr{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  [hidden]{display:none !important}
 
-  /* ---------- Barra superior ---------- */
-  header{background:var(--azul);color:#fff;display:flex;align-items:center;gap:20px;
-         padding:0 20px;height:56px;border-bottom:3px solid var(--dorado);flex:none}
-  .marca{font-weight:700;font-size:16px;letter-spacing:.02em;white-space:nowrap}
-  .marca span{font-weight:400;opacity:.8}
-  .obra{display:flex;align-items:center;gap:10px;min-width:0;margin-left:auto}
-  .obra label{font-size:13px;color:#D5DEEA;white-space:nowrap}
-  .obra select{background:var(--azul-fuerte);color:#fff;border:1px solid #4A6388;border-radius:6px;
-               padding:6px 10px;max-width:46vw}
-  .obra select:focus-visible{outline-color:#fff}
+  /* ---------- armazón ---------- */
+  .app{display:grid;grid-template-columns:var(--ancho-sb) minmax(0,1fr) 0;height:100dvh;
+       transition:grid-template-columns .28s cubic-bezier(.2,.8,.2,1)}
+  .app.con-registro{grid-template-columns:var(--ancho-sb) minmax(0,1fr) var(--ancho-reg)}
 
-  /* ---------- Estructura ---------- */
-  main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,460px)}
-  @media (max-width:980px){
-    body{height:auto;min-height:100%}
-    main{grid-template-columns:1fr}
-    .chat{height:78vh}
-    .registro{border-left:0;border-top:1px solid var(--borde)}
-  }
-  @media (max-width:560px){
-    header{height:auto;flex-wrap:wrap;gap:6px 14px;padding:10px 14px}
-    .obra{margin-left:0;flex:1 1 100%}
-    .obra select{max-width:none;flex:1;min-width:0}
-    .chat-cab{flex-wrap:wrap;padding:10px 14px}
-    .chat-cab button{margin-left:0}
-    #hilo{padding:14px}
-    form.entrada{padding:10px 14px}
-    .paneles{padding:10px}
-  }
+  /* ---------- sidebar: placa roja a toda altura ---------- */
+  .sb{background:var(--sb);color:var(--sb-tinta);display:flex;flex-direction:column;min-height:0;
+      padding:16px 12px 12px;gap:4px;position:relative;z-index:30}
+  .marca{display:flex;align-items:center;gap:10px;padding:2px 8px 14px}
+  .marca-placa{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;background:#fff;
+               box-shadow:inset 0 0 0 2px #fff, inset 0 0 0 3.5px var(--sb)}
+  .marca-placa svg{width:22px;height:22px;stroke:var(--sb);stroke-width:2.4;fill:none;stroke-linecap:round}
+  .marca-texto{font:700 21px/1 var(--f-rotulo);letter-spacing:.06em}
+  .marca-texto span{font-weight:500;opacity:.82;letter-spacing:.04em}
+  .marca .sb-cerrar{display:none;margin-left:auto}
 
-  /* ---------- Conversación ---------- */
-  .chat{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--superficie)}
-  .chat-cab{display:flex;align-items:center;gap:12px;padding:12px 20px;
-            border-bottom:1px solid var(--borde);flex:none}
-  .chat-cab h1{margin:0;font-size:15px;font-weight:600}
-  .chat-cab p{margin:0;color:var(--tinta-3);font-size:13px}
-  .chat-cab button{margin-left:auto}
-  #hilo{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;
-        scroll-behavior:smooth}
-  .turno{max-width:min(76ch,100%);min-width:0}
-  .prosa{overflow-wrap:anywhere}
-  .turno.yo{align-self:flex-end;background:var(--azul);color:#fff;padding:9px 13px;
-            border-radius:var(--radio);white-space:pre-wrap;max-width:min(70ch,85%)}
-  .autor{font-size:12px;font-weight:600;color:var(--tinta-3);margin-bottom:4px}
-  .prosa>*:first-child{margin-top:0} .prosa>*:last-child{margin-bottom:0}
-  .prosa p{margin:0 0 9px;text-wrap:pretty}
-  .prosa h3{font-size:14px;font-weight:700;margin:14px 0 5px;color:var(--azul)}
-  .prosa ul,.prosa ol{margin:0 0 9px;padding-left:20px}
-  .prosa li{margin:2px 0}
-  .prosa code{font:12.5px Consolas,"Cascadia Mono",monospace;background:var(--superficie-2);
-              border:1px solid var(--borde);border-radius:4px;padding:0 4px}
-  .prosa a{color:var(--info);font-weight:600;word-break:break-all}
-  .pasos{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
-  .paso{font-size:12px;color:var(--tinta-2);background:var(--superficie-2);
-        border:1px solid var(--borde);border-radius:999px;padding:2px 10px;
-        animation:entra .25s var(--salida)}
-  .paso.agente{background:var(--azul-suave);border-color:#C3D2E6;color:var(--azul);font-weight:600}
-  .trabajando{display:flex;align-items:center;gap:8px;color:var(--tinta-3);font-size:13px}
-  .pulso{width:8px;height:8px;border-radius:50%;background:var(--dorado);
-         animation:pulso 1.2s ease-in-out infinite}
-  .error{background:var(--mal-fondo);color:var(--mal);border:1px solid #EBC2BE;
-         border-radius:var(--radio);padding:9px 12px}
-  @keyframes pulso{50%{opacity:.25}}
-  @keyframes entra{from{opacity:0;transform:translateY(4px)}}
-  @media (prefers-reduced-motion:reduce){
-    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
-  }
+  .sb-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:8px;background:none;
+          color:inherit;padding:9px 10px;font:500 15px/1.2 var(--f-texto);cursor:pointer;text-align:left;
+          text-decoration:none;transition:background .15s}
+  .sb-btn:hover{background:var(--sb-hover)}
+  .sb-btn:focus-visible{outline-color:#fff}
+  .sb-primario{background:#fff;color:#A30909;font-weight:600;box-shadow:inset 0 0 0 1.5px #fff, inset 0 0 0 3px var(--sb);
+               padding:11px 12px;margin-bottom:10px}
+  :root[data-theme="dark"] .sb-primario{color:var(--sb)}
+  .sb-primario:hover{background:#FDEDED}
 
-  .vacio-chat{margin:auto;max-width:56ch;text-align:left}
-  .vacio-chat h2{font-size:17px;margin:0 0 6px;text-wrap:balance}
-  .vacio-chat p{color:var(--tinta-2);margin:0 0 14px}
-  .sugerencias{display:grid;gap:8px}
-  .sugerencia{text-align:left;background:var(--superficie);border:1px solid var(--borde-fuerte);
-              border-radius:var(--radio);padding:9px 12px;cursor:pointer;
-              transition:background .15s,border-color .15s}
-  .sugerencia:hover{background:var(--azul-suave);border-color:var(--azul)}
-  .sugerencia b{display:block;font-weight:600}
-  .sugerencia span{color:var(--tinta-3);font-size:13px}
+  .obra-caja{background:rgba(0,0,0,.14);border-radius:10px;padding:10px;margin-bottom:12px}
+  :root[data-theme="dark"] .obra-caja{background:rgba(0,0,0,.22)}
+  .obra-caja label{display:block;font:600 12px/1 var(--f-rotulo);letter-spacing:.08em;text-transform:uppercase;
+                   color:var(--sb-tinta-2);margin:0 0 7px 2px}
+  .obra-fila{display:flex;gap:6px}
+  .obra-fila select{flex:1;min-width:0;appearance:none;border:1px solid var(--sb-linea);border-radius:7px;
+                    background:rgba(255,255,255,.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 8l4 4 4-4' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 6px center/16px;
+                    color:#fff;padding:7px 26px 7px 9px;font:500 14px/1.2 var(--f-texto);cursor:pointer}
+  .obra-fila select option{color:#12171C}
+  .obra-fila select:focus-visible{outline-color:#fff}
+  .icono-btn{display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:7px;cursor:pointer;
+             border:1px solid var(--sb-linea);background:rgba(255,255,255,.1);color:#fff}
+  .icono-btn:hover{background:rgba(255,255,255,.2)}
+  .icono-btn:focus-visible{outline-color:#fff}
+  .obra-dato{font:500 13px/1.35 var(--f-texto);color:var(--sb-tinta-2);margin:8px 2px 0}
 
-  form.entrada{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--borde);
-               background:var(--superficie-2);flex:none;align-items:flex-end}
-  form.entrada textarea{flex:1;resize:none;min-height:44px;max-height:160px;padding:10px 12px;
-                        border:1px solid var(--borde-fuerte);border-radius:var(--radio);
-                        background:var(--superficie)}
-  ::placeholder{color:var(--tinta-3);opacity:1}
+  .sb-titulo{font:600 12px/1 var(--f-rotulo);letter-spacing:.08em;text-transform:uppercase;
+             color:var(--sb-tinta-2);padding:12px 10px 6px}
+  .sb nav{display:flex;flex-direction:column;gap:2px}
+  .sb nav .sb-btn[aria-current="true"]{background:#fff;color:#A30909;font-weight:600}
+  :root[data-theme="dark"] .sb nav .sb-btn[aria-current="true"]{color:var(--sb)}
+  .sb-valor{margin-left:auto;font:600 13px/1 var(--f-rotulo);color:var(--sb-tinta-2)}
+  .sb nav .sb-btn[aria-current="true"] .sb-valor{color:inherit}
+  .contador{margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:6px;background:#fff;color:#A30909;
+            font:700 13px/22px var(--f-rotulo);text-align:center;box-shadow:inset 0 0 0 1.5px #fff, inset 0 0 0 2.5px #A30909}
+  .sb nav .sb-btn[aria-current="true"] .contador{background:#A30909;color:#fff;box-shadow:none}
+  .nuevo-punto{width:8px;height:8px;border-radius:50%;background:var(--amarillo);margin-left:6px;flex:none}
+  .sb-pie{margin-top:auto;border-top:1px solid var(--sb-linea);padding-top:10px;display:flex;align-items:center;gap:6px}
+  .sb-pie .sb-btn{width:auto;flex:1}
+  .modelo{font:500 12.5px/1.3 var(--f-texto);color:var(--sb-tinta-2);padding:0 10px}
 
-  /* ---------- Controles ---------- */
-  .btn{background:var(--azul);color:#fff;border:1px solid var(--azul);border-radius:6px;
-       padding:9px 16px;font-weight:600;cursor:pointer;transition:background .15s}
-  .btn:hover{background:var(--azul-fuerte)}
-  .btn:disabled{background:#8E9BAD;border-color:#8E9BAD;cursor:not-allowed}
-  .btn.sec{background:var(--superficie);color:var(--azul);border-color:var(--borde-fuerte);
-           padding:6px 12px;font-weight:600}
-  .btn.sec:hover{background:var(--azul-suave);border-color:var(--azul)}
-  .btn.sec:disabled{color:#8E9BAD;background:var(--superficie-2);border-color:var(--borde)}
-  label.campo{display:block;font-size:13px;font-weight:600;margin:10px 0 3px}
-  .ctl{width:100%;padding:7px 9px;border:1px solid var(--borde-fuerte);border-radius:6px;
-       background:var(--superficie)}
+  /* ---------- área de conversación ---------- */
+  .chat{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--fondo)}
+  .barra{display:flex;align-items:center;gap:8px;height:58px;padding:0 16px;border-bottom:1px solid var(--borde);flex:none}
+  .barra h1{margin:0;font:600 17px/1.2 var(--f-rotulo);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .barra h1 small{font:500 14px/1 var(--f-texto);color:var(--tinta-3);margin-left:8px}
+  .barra-acciones{margin-left:auto;display:flex;gap:6px}
+  .boton-barra{display:flex;align-items:center;gap:7px;height:36px;padding:0 12px;border-radius:8px;cursor:pointer;
+               border:1px solid var(--borde);background:var(--sup);color:var(--tinta-2);font:500 14px/1 var(--f-texto)}
+  .boton-barra:hover{background:var(--sup-2);color:var(--tinta)}
+  .boton-barra[aria-pressed="true"]{background:var(--azul-suave);color:var(--azul-tinta);border-color:transparent}
+  .boton-barra:disabled{opacity:.5;cursor:not-allowed}
+  .solo-movil{display:none}
 
-  /* ---------- Registro (panel derecho) ---------- */
-  .registro{display:flex;flex-direction:column;min-height:0;min-width:0;border-left:1px solid var(--borde);
-            background:var(--fondo)}
-  [role=tablist]{display:flex;gap:2px;padding:0 12px;background:var(--superficie);
-                 border-bottom:1px solid var(--borde);overflow-x:auto;flex:none}
-  [role=tab]{background:none;border:0;border-bottom:3px solid transparent;padding:13px 10px 10px;
-             font-weight:600;color:var(--tinta-3);cursor:pointer;white-space:nowrap;
-             transition:color .15s,border-color .15s}
-  [role=tab]:hover{color:var(--tinta)}
-  [role=tab][aria-selected=true]{color:var(--azul);border-bottom-color:var(--dorado)}
-  .cuenta{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:999px;
-          background:var(--mal);color:#fff;font-size:11px;line-height:18px;text-align:center}
-  .cuenta[hidden]{display:none}
-  .paneles{flex:1;min-height:0;overflow-y:auto;padding:16px}
-  [role=tabpanel][hidden]{display:none}
-  .bloque{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
-          padding:14px;margin-bottom:12px}
-  .bloque h2{margin:0 0 10px;font-size:14px;font-weight:700}
-  .nota{font-size:13px;color:var(--tinta-2);margin:0}
-  .aviso{border-radius:6px;padding:9px 11px;font-size:13px;margin-bottom:12px;
-         background:var(--aviso-fondo);color:var(--aviso);border:1px solid #EBD6A6}
-  .aviso.mal{background:var(--mal-fondo);color:var(--mal);border-color:#EBC2BE}
-  .vacio{color:var(--tinta-2);font-size:13px;padding:6px 0}
+  .hilo{flex:1;overflow-y:auto;scroll-behavior:smooth}
+  .hilo-col{max-width:var(--col-chat);margin:0 auto;padding:28px 24px 12px}
 
-  .medida{margin-bottom:12px}
-  .medida .fila{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}
-  .medida .fila b{font-size:15px}
-  .barra{height:8px;border-radius:4px;background:#E3E8EF;overflow:hidden;margin-top:4px}
-  .barra i{display:block;height:100%;border-radius:4px;background:var(--azul);
-           transition:width .5s var(--salida)}
-  .barra.plan i{background:var(--dorado)}
-  dl.datos{display:grid;grid-template-columns:1fr auto;gap:5px 12px;margin:0;font-size:13px}
-  dl.datos dt{color:var(--tinta-2)} dl.datos dd{margin:0;font-weight:600;text-align:right}
+  /* estado vacío */
+  .vacio-chat{padding:7vh 0 24px}
+  .vacio-chat h2{font:600 30px/1.15 var(--f-rotulo);letter-spacing:-.005em;margin:0 0 8px;text-wrap:balance}
+  .vacio-chat > p{margin:0 0 28px;color:var(--tinta-2);max-width:60ch}
+  .sugerencias{list-style:none;margin:0;padding:0;border-top:1px solid var(--borde)}
+  .sugerencia{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 16px;width:100%;
+              text-align:left;padding:14px 10px;cursor:pointer;background:none;border:0;border-bottom:1px solid var(--borde);
+              color:inherit;font:inherit;border-radius:0;transition:background .15s}
+  .sugerencia:hover{background:var(--sup-2)}
+  .sugerencia b{font:600 16px/1.25 var(--f-rotulo);display:block}
+  .sugerencia span.desc{display:block;color:var(--tinta-3);font-size:13.5px;line-height:1.4;margin-top:2px}
+  .placa-ruta{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:5px 10px;border-radius:5px;
+              background:var(--azul-placa);color:#fff;font:600 13px/1 var(--f-rotulo);letter-spacing:.02em;
+              box-shadow:inset 0 0 0 1.5px var(--azul-placa), inset 0 0 0 2.6px rgba(255,255,255,.9)}
+  .placa-ruta .ico{width:14px;height:14px;stroke-width:2.4}
 
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{text-align:left;font-weight:600;color:var(--tinta-2);padding:6px 6px;
-     border-bottom:1px solid var(--borde-fuerte);white-space:nowrap}
-  td{padding:7px 6px;border-bottom:1px solid var(--borde);vertical-align:top}
+  /* turnos */
+  .turno{margin:0 0 28px}
+  .turno.yo{display:flex;justify-content:flex-end}
+  .turno.yo .burbuja{max-width:min(82%,600px);background:var(--sup-3);border-radius:18px 18px 4px 18px;
+                     padding:10px 16px;white-space:pre-wrap;word-break:break-word}
+  .autor{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .autor-placa{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--rojo);color:#fff;
+               font:700 11px/1 var(--f-rotulo);letter-spacing:.03em;box-shadow:inset 0 0 0 1.5px var(--rojo), inset 0 0 0 2.6px #fff}
+  .autor b{font:600 15px/1 var(--f-rotulo);letter-spacing:.02em}
+  .autor time{font-size:13px;color:var(--tinta-3)}
+
+  /* gesto distintivo: panel direccional de la delegación */
+  .ruta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 2px;margin:0 0 10px 38px;padding:8px 12px;width:fit-content;max-width:calc(100% - 38px);
+        background:var(--azul-placa);color:#fff;border-radius:var(--rad-placa);
+        box-shadow:inset 0 0 0 2px var(--azul-placa), inset 0 0 0 3.5px rgba(255,255,255,.92);
+        font:600 13.5px/1.2 var(--f-rotulo);letter-spacing:.02em}
+  .tramo{display:inline-flex;align-items:center;gap:6px;padding:3px 7px;border-radius:4px;color:rgba(255,255,255,.62);
+         transition:color .3s, background .3s}
+  .tramo.hecho{color:#fff}
+  .tramo.hecho .ico{width:14px;height:14px;stroke-width:2.4}
+  .tramo.activo{color:var(--azul-placa);background:#fff}
+  .tramo.activo::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--rojo)}
+  .flecha{width:16px;height:16px;stroke:rgba(255,255,255,.7);stroke-width:2.2;fill:none}
+  .herramientas{margin:0 0 10px 38px;display:flex;flex-wrap:wrap;gap:6px}
+  .herramienta{font:500 12.5px/1 var(--f-texto);color:var(--tinta-3);background:var(--sup-2);border-radius:5px;padding:5px 8px}
+  .prosa{margin-left:38px;max-width:68ch}
+  .prosa > :first-child{margin-top:0}
+  .prosa p{margin:0 0 .75em}
+  .prosa h3{font:600 17px/1.3 var(--f-rotulo);margin:1.3em 0 .45em}
+  .prosa ul,.prosa ol{margin:0 0 .85em;padding-left:1.3em}
+  .prosa li{margin:.22em 0}
+  .prosa li::marker{color:var(--tinta-3)}
+  .prosa code{font:500 .9em/1 ui-monospace,Consolas,monospace;background:var(--sup-2);padding:2px 5px;border-radius:4px}
+  .prosa strong{font-weight:600}
+  .trabajando{display:flex;align-items:center;gap:9px;margin-left:38px;color:var(--tinta-3);font-size:14px}
+  .trabajando i{width:9px;height:9px;border-radius:50%;background:var(--amarillo);box-shadow:0 0 0 3px var(--amarillo-suave)}
+  .error{margin:8px 0 0 38px;padding:10px 12px;border-radius:8px;background:var(--rojo-suave);color:var(--rojo-tinta);font-size:14px}
+
+  /* compositor */
+  .compositor{flex:none;padding:8px 24px 14px}
+  .compositor-col{max-width:var(--col-chat);margin:0 auto}
+  .caja{position:relative;border:1px solid var(--borde-fuerte);border-radius:22px;background:var(--sup);
+        box-shadow:var(--sombra-1);padding:12px 12px 10px 16px;transition:border-color .15s, box-shadow .15s}
+  .caja:focus-within{border-color:var(--azul-tinta);box-shadow:var(--sombra-1), 0 0 0 3px var(--azul-suave)}
+  .caja textarea{display:block;width:100%;border:0;outline:0;resize:none;background:none;min-height:26px;max-height:200px;overflow-y:hidden;
+                 padding:2px 0;font-size:15.5px;line-height:1.5}
+  .caja textarea::placeholder{color:var(--tinta-3);opacity:1}
+  .caja-pie{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .adjuntar{display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:17px;cursor:pointer;
+            border:1px solid var(--borde);background:none;color:var(--tinta-2);font:500 13.5px/1 var(--f-texto)}
+  .adjuntar:hover{background:var(--sup-2)}
+  .enviar{margin-left:auto;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:0;cursor:pointer;
+          background:var(--rojo);color:#fff;transition:background .15s, transform .1s}
+  .enviar:hover{background:var(--rojo-fuerte)}
+  .enviar:active{transform:scale(.94)}
+  .enviar:disabled{background:var(--sup-3);color:var(--tinta-3);cursor:not-allowed}
+  .enviar .ico{stroke-width:2.2}
+  .aviso-pie{margin:8px 0 0;text-align:center;font-size:12.5px;color:var(--tinta-3)}
+  .menu{position:absolute;bottom:52px;left:10px;min-width:250px;background:var(--sup);border:0;
+        border-radius:12px;box-shadow:var(--sombra-2);padding:6px;z-index:20}
+  .menu button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 10px;border-radius:8px;
+               cursor:pointer;color:var(--tinta);text-align:left;font:500 14.5px/1.3 var(--f-texto)}
+  .menu button:hover{background:var(--sup-2)}
+  .menu button small{display:block;color:var(--tinta-3);font-size:12.5px;font-weight:400}
+  .menu .ico{color:var(--rojo)}
+
+  /* ---------- registro (plegable) ---------- */
+  .registro{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--sup-2);
+            border-left:1px solid var(--borde)}
+  .reg-cab{display:flex;align-items:center;gap:8px;min-height:58px;padding:11px 11px 11px 18px;flex:none;
+           background:var(--sup);border-bottom:1px solid var(--borde)}
+  .reg-cab h2{margin:0;font:600 17px/1 var(--f-rotulo)}
+  .reg-cab .boton-barra{margin-left:auto;width:36px;padding:0;justify-content:center}
+  .reg-tabs{display:flex;gap:2px;padding:0 10px;background:var(--sup);border-bottom:1px solid var(--borde);overflow-x:auto;flex:none}
+  .reg-tabs button{border:0;background:none;padding:10px 8px 9px;cursor:pointer;color:var(--tinta-3);white-space:nowrap;
+                   font:600 14px/1 var(--f-rotulo);border-bottom:3px solid transparent}
+  .reg-tabs button:hover{color:var(--tinta)}
+  .reg-tabs button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--rojo)}
+  .reg-cuerpo{flex:1;overflow-y:auto;padding:16px}
+  .bloque{background:var(--sup);border:1px solid var(--borde);border-radius:var(--rad);padding:16px;margin-bottom:12px}
+  .bloque h3{margin:0 0 12px;font:600 16px/1.25 var(--f-rotulo)}
+  .vacio{color:var(--tinta-3);margin:0;font-size:14px}
+  .nota{color:var(--tinta-3);font-size:13px;margin:0}
+
+  /* placas de estado: siempre con texto */
+  .aviso{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border-radius:var(--rad);margin-bottom:12px;font-size:14px;
+         background:var(--amarillo-suave);color:var(--tinta)}
+  .aviso .ico{width:18px;height:18px;margin-top:1px;color:#8A6500}
+  :root[data-theme="dark"] .aviso .ico{color:var(--amarillo)}
+  .aviso.mal{background:var(--rojo-suave)}
+  .aviso.mal .ico{color:var(--rojo-tinta)}
+  .aviso.info{background:var(--azul-suave)}
+  .aviso.info .ico{color:var(--azul-tinta)}
+  .etq{display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:5px;white-space:nowrap;
+       font:600 12.5px/1 var(--f-rotulo);letter-spacing:.02em;border:1.5px solid transparent}
+  .etq.confirmado{background:var(--sup);color:var(--tinta);border-color:var(--tinta)}
+  .etq.inferido{background:var(--azul-placa);color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.85)}
+  .etq.referencial{background:var(--sup-3);color:var(--tinta-2);border-color:var(--borde-fuerte)}
+  .etq.pendiente_confirmacion{background:var(--amarillo);color:#1A1A1A;border-color:#1A1A1A}
+  .etq.neutro{color:var(--tinta-3);border-color:var(--borde)}
+  .etq.ok{background:var(--verde-suave);color:var(--verde)}
+  .etq.alerta{background:var(--rojo);color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9)}
+
+  /* avance: pista con hito de plan */
+  .pista-cab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .pista-cab b{font:600 28px/1 var(--f-rotulo)}
+  .pista-cab span{color:var(--tinta-3);font-size:13.5px}
+  .pista{position:relative;height:12px;border-radius:6px;background:var(--sup-3);margin:0 0 30px}
+  .pista i{position:absolute;inset:0 auto 0 0;border-radius:6px;background:var(--azul-placa)}
+  :root[data-theme="dark"] .pista i{background:var(--azul-tinta)}
+  .hito{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1.5px;background:var(--rojo);border-radius:2px}
+  .hito span{position:absolute;top:22px;transform:translateX(-50%);white-space:nowrap;font:600 12.5px/1 var(--f-rotulo);color:var(--rojo-tinta)}
+  .datos{display:grid;grid-template-columns:1fr auto;gap:8px 16px;margin:0;font-size:14px}
+  .datos dt{color:var(--tinta-2)}
+  .datos dd{margin:0;text-align:right;font-weight:600}
+  .datos .fuerte{font:600 20px/1.1 var(--f-rotulo)}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font:600 12.5px/1.2 var(--f-rotulo);letter-spacing:.03em;color:var(--tinta-3);padding:0 8px 8px;
+     border-bottom:1px solid var(--borde);position:sticky;top:0;background:var(--sup)}
+  td{padding:10px 8px;border-bottom:1px solid var(--borde);vertical-align:top}
   tr:last-child td{border-bottom:0}
   .num{text-align:right;white-space:nowrap}
-  .cod{font-weight:600;white-space:nowrap}
-  .sub{color:var(--tinta-3);font-size:12px}
-  .tabla-scroll{overflow-x:auto}
+  .cod{font:600 13.5px/1.2 var(--f-rotulo);letter-spacing:.02em}
+  .sub{color:var(--tinta-3);font-size:12.5px;margin-top:3px;line-height:1.35}
+  td .etq{margin-top:5px}
+  .tabla-scroll{overflow-x:auto;margin:0 -4px}
+  .item{padding:12px 0;border-bottom:1px solid var(--borde);font-size:14px}
+  .item:last-child{border-bottom:0;padding-bottom:0}
+  .item:first-of-type{padding-top:0}
+  .item .titulo{font:600 15px/1.3 var(--f-rotulo);margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .archivo{display:flex;gap:12px;align-items:flex-start}
+  .archivo-tipo{flex:none;display:grid;place-items:center;width:38px;height:44px;border-radius:5px;font:700 11px/1 var(--f-rotulo);
+                color:#fff;letter-spacing:.04em}
+  .archivo-tipo.xlsx{background:#1E6B3C}.archivo-tipo.docx{background:#1F4E9A}.archivo-tipo.pptx{background:#B7472A}
+  .archivo-tipo.pdf{background:var(--rojo)}
+  .archivo a{font-weight:600;color:var(--tinta);text-decoration:none}
+  .archivo a:hover{text-decoration:underline;color:var(--azul-tinta)}
 
-  .etq{display:inline-block;font-size:11.5px;font-weight:600;line-height:18px;padding:0 7px;
-       border-radius:4px;white-space:nowrap;border:1px solid transparent}
-  .etq.confirmado{background:var(--ok-fondo);color:var(--ok);border-color:#BFDFCB}
-  .etq.inferido{background:var(--aviso-fondo);color:var(--aviso);border-color:#EBD6A6}
-  .etq.referencial{background:var(--info-fondo);color:var(--info);border-color:#C2D6F0}
-  .etq.pendiente_confirmacion{background:var(--mal-fondo);color:var(--mal);border-color:#EBC2BE}
-  .etq.neutro{background:var(--superficie-2);color:var(--tinta-2);border-color:var(--borde)}
+  /* formularios */
+  details.form summary{display:flex;align-items:center;gap:8px;cursor:pointer;font:600 15px/1.2 var(--f-rotulo);list-style:none}
+  details.form summary::-webkit-details-marker{display:none}
+  details.form summary .ico{color:var(--rojo)}
+  details.form[open] summary{margin-bottom:10px}
+  .campo{display:block;font:600 13px/1.2 var(--f-rotulo);letter-spacing:.02em;margin:12px 0 5px;color:var(--tinta-2)}
+  .ctl{width:100%;padding:8px 10px;border:1px solid var(--borde-fuerte);border-radius:8px;background:var(--sup)}
+  .ctl:focus{outline:0;border-color:var(--azul-tinta);box-shadow:0 0 0 3px var(--azul-suave)}
+  .ctl::placeholder{color:var(--tinta-3);opacity:1}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:8px;border:0;cursor:pointer;
+       background:var(--rojo);color:#fff;font:600 15px/1 var(--f-rotulo);letter-spacing:.02em}
+  .btn:hover{background:var(--rojo-fuerte)}
+  .btn:disabled{background:var(--sup-3);color:var(--tinta-3);cursor:not-allowed}
+  .btn.sec{background:var(--sup);color:var(--tinta);border:1px solid var(--borde-fuerte)}
+  .btn.sec:hover{background:var(--sup-2)}
+  .acciones{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .estado-form{font-size:13.5px;color:var(--tinta-2)}
 
-  .item{padding:10px 0;border-bottom:1px solid var(--borde);font-size:13px}
-  .item:first-child{padding-top:0} .item:last-child{border-bottom:0;padding-bottom:0}
-  .item .titulo{font-weight:600}
-  .item a{color:var(--info);font-weight:600;word-break:break-word}
-  dialog.obra-nueva{border:1px solid var(--borde-fuerte);border-radius:var(--radio);padding:20px;
-                    width:min(560px,calc(100vw - 32px));background:var(--superficie);color:var(--tinta)}
-  dialog.obra-nueva::backdrop{background:rgba(20,41,71,.45)}
-  dialog.obra-nueva h2{margin:0 0 4px;font-size:17px}
-  .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-  @media (max-width:520px){.rejilla{grid-template-columns:1fr}}
-  details summary{cursor:pointer;font-weight:700;font-size:14px}
-  details[open] summary{margin-bottom:6px}
+  /* nueva obra */
+  dialog{border:0;border-radius:16px;padding:0;width:min(600px,calc(100vw - 32px));background:var(--sup);color:var(--tinta);
+         box-shadow:var(--sombra-2)}
+  dialog::backdrop{background:rgba(18,23,28,.5)}
+  .dlg-cab{background:var(--rojo);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:10px}
+  .dlg-cab h2{margin:0;font:600 20px/1 var(--f-rotulo)}
+  .dlg-cuerpo{padding:6px 20px 20px}
+  .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  .velo{display:none}
+
+  /* ---------- adaptaciones ---------- */
+  @media (max-width:1240px){
+    .app.con-registro{grid-template-columns:var(--ancho-sb) minmax(0,1fr) 0}
+    .registro{position:fixed;top:0;right:0;bottom:0;width:min(var(--ancho-reg),100vw);z-index:40;box-shadow:var(--sombra-2);
+              transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+    .app.con-registro .registro{transform:none}
+    .app.con-registro .velo.reg{display:block}
+  }
+  @media (max-width:880px){
+    .app,.app.con-registro{grid-template-columns:minmax(0,1fr) 0}
+    .sb{position:fixed;inset:0 auto 0 0;width:min(300px,86vw);transform:translateX(-100%);
+        transition:transform .28s cubic-bezier(.2,.8,.2,1);box-shadow:var(--sombra-2);z-index:50}
+    .app.con-menu .sb{transform:none}
+    .app.con-menu .velo.menu-velo{display:block}
+    .marca .sb-cerrar{display:grid}
+    .solo-movil{display:flex}
+    .sugerencia{grid-template-columns:1fr}
+    .placa-ruta{justify-self:start;margin-top:6px}
+    .hilo-col{padding:20px 16px 8px}
+    .compositor{padding:6px 12px 10px}
+    .ruta,.herramientas,.prosa,.trabajando,.error{margin-left:0}
+    .barra h1 small{display:none}
+    .boton-barra .rot{display:none}
+    .rejilla{grid-template-columns:1fr}
+    .vacio-chat{padding-top:3vh}
+    .vacio-chat h2{font-size:25px}
+  }
+  .velo{position:fixed;inset:0;background:rgba(18,23,28,.45);z-index:35;border:0}
+  .velo.menu-velo{z-index:45}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
+  }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 18.5V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.5z"/></symbol>
+  <symbol id="i-avance" viewBox="0 0 24 24"><path d="M4 19h16M7 16V11M12 16V7M17 16v-3"/></symbol>
+  <symbol id="i-presupuesto" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9.5h16M4 15h16M10 9.5V20"/></symbol>
+  <symbol id="i-pare" viewBox="0 0 24 24"><path d="M8.5 3.5h7l5 5v7l-5 5h-7l-5-5v-7z"/><path d="M12 8v4.5M12 16h.01"/></symbol>
+  <symbol id="i-archivos" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-ruta" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M14.5 4.5v15"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1L13 4.4a3.4 3.4 0 0 1 4.8 4.8l-7.6 7.6a1.7 1.7 0 0 1-2.4-2.4l7-7"/></symbol>
+  <symbol id="i-arriba" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+  <symbol id="i-luna" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-plano" viewBox="0 0 24 24"><path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M14 3.5v5h5M8.5 13h7M8.5 16.5h4"/></symbol>
+  <symbol id="i-reporte" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 3.5h6v2.5H9zM8.5 11h7M8.5 14.5h7M8.5 18h4"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M5 12h13M13 7l5 5-5 5"/></symbol>
+  <symbol id="i-preventiva" viewBox="0 0 24 24"><path d="M12 3l9 9-9 9-9-9z"/><path d="M12 8.5v4M12 15.5h.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 11v5.5M12 7.5h.01"/></symbol>
+  <symbol id="i-precio" viewBox="0 0 24 24"><path d="M4 12.5V5a1 1 0 0 1 1-1h7.5L20 11.5 12.5 19z"/><circle cx="8.5" cy="8.5" r="1.4"/></symbol>
+  <symbol id="i-obra" viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10M10 20v-5h4v5"/></symbol>
+</svg>
 
-<header>
-  <div class="marca">SOTICA<span>-COSTOS</span></div>
-  <div class="obra">
-    <label for="obra">Obra</label>
-    <select id="obra"></select>
-    <button class="btn sec" id="abrir-obra" type="button">Nueva obra</button>
-  </div>
-</header>
+<div class="app" id="app">
+  <aside class="sb" id="sb" aria-label="Navegación">
+    <div class="marca">
+      <span class="marca-placa" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16.2 7.6c-.8-1-2.2-1.6-3.9-1.6-2.3 0-3.8 1.2-3.8 2.8 0 3.8 8 2.2 8 5.7 0 1.6-1.6 3-4.1 3-1.9 0-3.4-.8-4.2-1.9"/></svg></span>
+      <span class="marca-texto">SOTICA<span>·COSTOS</span></span>
+      <button class="icono-btn sb-cerrar" id="sb-cerrar" type="button" aria-label="Cerrar menú"><svg class="ico"><use href="#i-cerrar"/></svg></button>
+    </div>
 
-<dialog class="obra-nueva" id="dlg-obra" aria-labelledby="dlg-obra-tit">
-  <form id="fobra" method="dialog">
-    <h2 id="dlg-obra-tit">Nueva obra</h2>
-    <p class="nota">Memoria del proyecto: estos datos no se vuelven a preguntar en cada conversación.</p>
+    <button class="sb-btn sb-primario" id="nueva" type="button"><svg class="ico"><use href="#i-mas"/></svg>Conversación nueva</button>
+
+    <div class="obra-caja">
+      <label for="obra">Obra</label>
+      <div class="obra-fila">
+        <select id="obra"></select>
+        <button class="icono-btn" id="abrir-obra" type="button" aria-label="Crear obra nueva" title="Crear obra nueva"><svg class="ico"><use href="#i-mas"/></svg></button>
+      </div>
+      <p class="obra-dato" id="obra-dato"></p>
+    </div>
+
+    <div class="sb-titulo">Registro de la obra</div>
+    <nav aria-label="Secciones del registro">
+      <button class="sb-btn" type="button" data-seccion="avance"><svg class="ico"><use href="#i-avance"/></svg>Avance<span class="sb-valor" id="v-avance"></span></button>
+      <button class="sb-btn" type="button" data-seccion="presupuesto"><svg class="ico"><use href="#i-presupuesto"/></svg>Presupuesto<span class="sb-valor" id="v-presupuesto"></span></button>
+      <button class="sb-btn" type="button" data-seccion="bloqueos"><svg class="ico"><use href="#i-pare"/></svg>Bloqueos<span class="contador" id="n-bloqueos" hidden></span></button>
+      <button class="sb-btn" type="button" data-seccion="archivos"><svg class="ico"><use href="#i-archivos"/></svg>Archivos<span class="sb-valor" id="v-archivos"></span><span id="p-archivos-nuevo" hidden title="Hay entregables nuevos"><span class="nuevo-punto" style="display:inline-block" aria-hidden="true"></span><span class="sr">(hay entregables nuevos)</span></span></button>
+      <button class="sb-btn" type="button" data-seccion="traza"><svg class="ico"><use href="#i-ruta"/></svg>Quién hizo qué<span class="sb-valor" id="v-traza"></span></button>
+    </nav>
+
+    <div class="sb-pie">
+      <button class="sb-btn" id="tema" type="button" aria-label="Cambiar a tema oscuro"><svg class="ico"><use href="#i-luna"/></svg><span id="tema-rot">Tema oscuro</span></button>
+    </div>
+    <p class="modelo">ORQ-COST + 8 especialistas · OpenAI gpt-5</p>
+  </aside>
+  <button class="velo menu-velo" id="velo-menu" type="button" aria-label="Cerrar menú" tabindex="-1"></button>
+
+  <main class="chat" aria-label="Conversación con ORQ-COST">
+    <header class="barra">
+      <button class="boton-barra solo-movil" id="abrir-menu" type="button" aria-label="Abrir menú"><svg class="ico"><use href="#i-menu"/></svg></button>
+      <h1 id="titulo-obra">ORQ-COST</h1>
+      <div class="barra-acciones">
+        <button class="boton-barra" id="toggle-registro" type="button" aria-pressed="false" aria-controls="registro">
+          <svg class="ico"><use href="#i-panel"/></svg><span class="rot">Registro</span></button>
+      </div>
+    </header>
+
+    <div class="hilo" id="hilo-scroll">
+      <div class="hilo-col" id="hilo"></div>
+    </div>
+
+    <div class="compositor">
+      <form class="compositor-col" id="fchat">
+        <div class="caja">
+          <label class="sr" for="msg">Orden para ORQ-COST</label>
+          <textarea id="msg" rows="1" placeholder="Pídele a ORQ-COST un cómputo, un presupuesto o el estado de la obra…"></textarea>
+          <div class="caja-pie">
+            <button class="adjuntar" id="adjuntar" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-adjuntar">
+              <svg class="ico"><use href="#i-clip"/></svg>Adjuntar</button>
+            <button class="enviar" id="enviar" type="submit" aria-label="Enviar"><svg class="ico"><use href="#i-arriba"/></svg></button>
+          </div>
+          <div class="menu" id="menu-adjuntar" role="menu" hidden>
+            <button type="button" role="menuitem" data-ir="archivos"><svg class="ico"><use href="#i-plano"/></svg>
+              <span>Subir un plano PDF<small>SUB-CM lo lee y computa por ejes</small></span></button>
+            <button type="button" role="menuitem" data-ir="avance"><svg class="ico"><use href="#i-reporte"/></svg>
+              <span>Cargar reporte de campo<small>Avance, fotos y mediciones del residente</small></span></button>
+          </div>
+        </div>
+        <p class="aviso-pie">Enter envía · Mayús+Enter salta de línea. Verifica cada número en el registro: ahí está lo que de verdad quedó guardado.</p>
+      </form>
+    </div>
+  </main>
+
+  <aside class="registro" id="registro" aria-label="Registro de la obra" inert>
+    <div class="reg-cab">
+      <h2 id="reg-titulo">Registro</h2>
+      <button class="boton-barra" id="cerrar-registro" type="button" aria-label="Cerrar registro"><svg class="ico"><use href="#i-cerrar"/></svg></button>
+    </div>
+    <div class="reg-tabs" role="tablist" aria-label="Secciones del registro">
+      <button role="tab" id="t-avance" aria-controls="p-avance" aria-selected="true">Avance</button>
+      <button role="tab" id="t-presupuesto" aria-controls="p-presupuesto" aria-selected="false" tabindex="-1">Presupuesto</button>
+      <button role="tab" id="t-bloqueos" aria-controls="p-bloqueos" aria-selected="false" tabindex="-1">Bloqueos</button>
+      <button role="tab" id="t-archivos" aria-controls="p-archivos" aria-selected="false" tabindex="-1">Archivos</button>
+      <button role="tab" id="t-traza" aria-controls="p-traza" aria-selected="false" tabindex="-1">Quién hizo qué</button>
+    </div>
+    <div class="reg-cuerpo">
+      <section role="tabpanel" id="p-avance" aria-labelledby="t-avance">
+        <div id="avance"></div>
+        <div class="bloque">
+          <details class="form" id="det-reporte">
+            <summary><svg class="ico"><use href="#i-reporte"/></svg>Cargar reporte de campo</summary>
+            <p class="nota">Queda sin interpretar. Después pídele a ORQ-COST que lo procese.</p>
+            <form id="fev">
+              <label class="campo" for="quien">Reportado por</label>
+              <input class="ctl" type="text" id="quien" placeholder="Ing. residente" required>
+              <label class="campo" for="fecha">Fecha del avance en obra</label>
+              <input class="ctl" type="date" id="fecha" required>
+              <label class="campo" for="texto">Qué se ejecutó</label>
+              <textarea class="ctl" id="texto" rows="4" placeholder="Se vaciaron 4 zapatas del eje 4 de 2,00 × 2,00 × 0,50 m…"></textarea>
+              <label class="campo" for="files">Fotos, valuaciones o mediciones</label>
+              <input class="ctl" type="file" id="files" multiple>
+              <div class="acciones"><button class="btn" id="subir">Subir reporte</button>
+                <span class="estado-form" id="ev-estado" role="status"></span></div>
+            </form>
+          </details>
+        </div>
+      </section>
+      <section role="tabpanel" id="p-presupuesto" aria-labelledby="t-presupuesto" hidden></section>
+      <section role="tabpanel" id="p-bloqueos" aria-labelledby="t-bloqueos" hidden></section>
+      <section role="tabpanel" id="p-archivos" aria-labelledby="t-archivos" hidden>
+        <div class="bloque">
+          <h3>Planos de la obra</h3>
+          <div id="planos"></div>
+          <details class="form" id="det-plano" style="margin-top:14px">
+            <summary><svg class="ico"><use href="#i-plano"/></svg>Subir un plano PDF</summary>
+            <p class="nota">PDF con capa de texto, exportado desde CAD. Un escaneo no se puede leer.</p>
+            <form id="fplano">
+              <label class="campo" for="plano-quien">Subido por</label>
+              <input class="ctl" type="text" id="plano-quien" placeholder="Ing. residente" required>
+              <label class="campo" for="plano-file">Plano en PDF</label>
+              <input class="ctl" type="file" id="plano-file" accept="application/pdf,.pdf" required>
+              <div class="acciones"><button class="btn" id="plano-subir">Subir plano</button>
+                <span class="estado-form" id="plano-estado" role="status"></span></div>
+            </form>
+          </details>
+        </div>
+        <div id="entregables"></div>
+      </section>
+      <section role="tabpanel" id="p-traza" aria-labelledby="t-traza" hidden></section>
+    </div>
+  </aside>
+  <button class="velo reg" id="velo-reg" type="button" aria-label="Cerrar registro" tabindex="-1"></button>
+</div>
+
+<div class="sr" id="anuncio" role="status" aria-live="polite"></div>
+
+<dialog id="dlg-obra" aria-labelledby="dlg-obra-tit">
+  <div class="dlg-cab"><svg class="ico"><use href="#i-obra"/></svg><h2 id="dlg-obra-tit">Nueva obra</h2></div>
+  <form class="dlg-cuerpo" id="fobra" method="dialog">
+    <p class="nota" style="margin-top:12px">Memoria del proyecto: estos datos no se vuelven a preguntar en cada conversación.</p>
     <div class="rejilla">
       <div><label class="campo" for="o-codigo">Código</label>
         <input class="ctl" id="o-codigo" required placeholder="SOT-2026-015"></div>
@@ -242,85 +550,17 @@
       <div><label class="campo" for="o-fin">Fin contractual</label>
         <input class="ctl" id="o-fin" type="date"></div>
     </div>
-    <p style="margin:16px 0 0;display:flex;gap:8px;justify-content:flex-end;align-items:center">
-      <span class="nota" id="o-estado" role="status"></span>
+    <div class="acciones" style="justify-content:flex-end">
+      <span class="estado-form" id="o-estado" role="status"></span>
       <button class="btn sec" type="button" id="o-cancelar">Cancelar</button>
-      <button class="btn" id="o-crear">Crear obra</button></p>
+      <button class="btn" id="o-crear">Crear obra</button>
+    </div>
   </form>
 </dialog>
 
-<main>
-  <section class="chat" aria-label="Conversación con ORQ-COST">
-    <div class="chat-cab">
-      <div>
-        <h1>ORQ-COST</h1>
-        <p>Ingeniero de costos. Delega en 8 especialistas.</p>
-      </div>
-      <button class="btn sec" id="nueva" type="button">Conversación nueva</button>
-    </div>
-    <div id="hilo" aria-live="polite"></div>
-    <form class="entrada" id="fchat">
-      <label class="oculto" for="msg">Mensaje para ORQ-COST</label>
-      <textarea id="msg" rows="1" placeholder="Orden para ORQ-COST…"></textarea>
-      <button class="btn" id="enviar">Enviar</button>
-    </form>
-  </section>
-
-  <section class="registro" aria-label="Registro de la obra">
-    <div role="tablist" aria-label="Secciones del registro">
-      <button role="tab" id="t-avance" aria-controls="p-avance" aria-selected="true">Avance</button>
-      <button role="tab" id="t-presupuesto" aria-controls="p-presupuesto" aria-selected="false" tabindex="-1">Presupuesto</button>
-      <button role="tab" id="t-bloqueos" aria-controls="p-bloqueos" aria-selected="false" tabindex="-1">Bloqueos<span class="cuenta" id="n-bloqueos" hidden></span></button>
-      <button role="tab" id="t-archivos" aria-controls="p-archivos" aria-selected="false" tabindex="-1">Archivos</button>
-      <button role="tab" id="t-traza" aria-controls="p-traza" aria-selected="false" tabindex="-1">Quién hizo qué</button>
-    </div>
-    <div class="paneles">
-      <div role="tabpanel" id="p-avance" aria-labelledby="t-avance">
-        <div id="avance"></div>
-        <div class="bloque">
-          <details id="det-reporte">
-            <summary>Cargar reporte de campo</summary>
-            <p class="nota">El reporte queda sin interpretar. Luego pídele a ORQ-COST que lo procese.</p>
-            <form id="fev">
-              <label class="campo" for="quien">Reportado por</label>
-              <input class="ctl" type="text" id="quien" placeholder="Ing. residente" required>
-              <label class="campo" for="fecha">Fecha del avance en obra</label>
-              <input class="ctl" type="date" id="fecha" required>
-              <label class="campo" for="texto">Qué se ejecutó</label>
-              <textarea class="ctl" id="texto" rows="4" placeholder="Se vaciaron 4 zapatas del eje 4 de 2,00 × 2,00 × 0,50 m…"></textarea>
-              <label class="campo" for="files">Fotos, valuaciones o mediciones</label>
-              <input class="ctl" type="file" id="files" multiple>
-              <p style="margin:12px 0 0"><button class="btn sec" id="subir">Subir reporte</button>
-                <span class="nota" id="ev-estado" role="status"></span></p>
-            </form>
-          </details>
-        </div>
-      </div>
-      <div role="tabpanel" id="p-presupuesto" aria-labelledby="t-presupuesto" hidden></div>
-      <div role="tabpanel" id="p-bloqueos" aria-labelledby="t-bloqueos" hidden></div>
-      <div role="tabpanel" id="p-archivos" aria-labelledby="t-archivos" hidden>
-        <div class="bloque"><h2>Planos de la obra</h2>
-          <div id="planos"></div>
-          <p class="nota">PDF con capa de texto (exportado desde CAD). Un escaneo no se puede leer. Luego pide en el chat que SUB-CM compute a partir del plano.</p>
-          <form id="fplano">
-            <label class="campo" for="plano-quien">Subido por</label>
-            <input class="ctl" type="text" id="plano-quien" placeholder="Ing. residente" required>
-            <label class="campo" for="plano-file">Plano en PDF</label>
-            <input class="ctl" type="file" id="plano-file" accept="application/pdf,.pdf" required>
-            <p style="margin:12px 0 0"><button class="btn sec" id="plano-subir">Subir plano</button>
-              <span class="nota" id="plano-estado" role="status"></span></p>
-          </form>
-        </div>
-        <div id="entregables"></div>
-      </div>
-      <div role="tabpanel" id="p-traza" aria-labelledby="t-traza" hidden></div>
-    </div>
-  </section>
-</main>
-
 <script>
 const $ = (id) => document.getElementById(id);
-let obraActual = null, ocupado = false;
+let obraActual = null, ocupado = false, obras = [], archivosVistos = null;
 
 /* ---------- utilidades ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -330,11 +570,13 @@ const nf = (v, d = 2) => v === null || v === undefined ? '—' :
 const pct = (v) => v === null || v === undefined ? '—' : nf(v) + ' %';
 const fecha = (iso) => iso ? new Date(iso.length > 10 ? iso : iso + 'T12:00:00')
   .toLocaleDateString('es-VE', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '—';
+const ico = (n) => `<svg class="ico" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const ETQ = {confirmado: 'Confirmado', inferido: 'Inferido', referencial: 'Referencial',
              pendiente_confirmacion: 'Pendiente de confirmar'};
 const etq = (e, vacio = '—') => e
   ? `<span class="etq ${esc(e)}">${ETQ[e] || esc(e)}</span>`
   : `<span class="etq neutro">${vacio}</span>`;
+const aviso = (texto, tipo = '') => `<div class="aviso ${tipo}">${ico(tipo === 'mal' ? 'pare' : tipo === 'info' ? 'info' : 'preventiva')}<div>${texto}</div></div>`;
 const api = async (ruta, opciones) => {
   const r = await fetch(ruta, opciones);
   if (!r.ok) {
@@ -346,6 +588,8 @@ const api = async (ruta, opciones) => {
 };
 // Los enlaces a archivos se sirven desde este mismo origen, sea cual sea el puerto.
 const local = (url) => { const i = String(url).indexOf('/api/archivos/'); return i >= 0 ? String(url).slice(i) : url; };
+const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sin almacenamiento */ } };
+const leer = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 
 /* ---------- markdown mínimo y seguro (se escapa antes de dar formato) ---------- */
 function enLinea(t) {
@@ -353,146 +597,240 @@ function enLinea(t) {
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, a, u) => `<a href="${local(u)}" target="_blank" rel="noopener">${a}</a>`)
-    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,;])/g, (_, p, u) => `${p}<a href="${local(u)}" target="_blank" rel="noopener">${u}</a>`);
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,;])/g, (_, p, u) =>
+      `${p}<a href="${local(u)}" target="_blank" rel="noopener">${u.includes('/api/archivos/') ? 'Descargar archivo' : u}</a>`)
+    // La certeza de un dato se ve como placa también en la conversación (PRODUCT.md, principio 1).
+    .replace(/\b(etiqueta(?:[^:.\n<]{0,30}:|:)?\s*)(confirmad[oa]|inferid[oa]|referencial|pendiente(?:[ _]de[ _]confirmaci[oó]n|_confirmacion)?)/gi,
+      (_, pre, v) => {
+        const k = /^conf/i.test(v) ? 'confirmado' : /^inf/i.test(v) ? 'inferido' : /^ref/i.test(v) ? 'referencial' : 'pendiente_confirmacion';
+        return `${pre}<span class="etq ${k}">${ETQ[k]}</span>`;
+      })
+    .replace(/\[(confirmad[oa]|inferid[oa]|referencial|pendiente(?:[ _]de[ _]confirmaci[oó]n)?)([^\]]{0,40})\]/gi, (_, v, resto) => {
+      const k = /^conf/i.test(v) ? 'confirmado' : /^inf/i.test(v) ? 'inferido' : /^ref/i.test(v) ? 'referencial' : 'pendiente_confirmacion';
+      return `<span class="etq ${k}">${ETQ[k]}</span>${resto.trim() ? ' <span class="sub" style="display:inline">' + resto.trim() + '</span>' : ''}`;
+    });
 }
+// Una línea corta sin puntuación final, seguida de una lista o de una línea en blanco, es un
+// título de sección del informe de ORQ-COST ("Resumen ejecutivo", "Cuerpo técnico").
+const ES_LISTA = /^\s*(?:[-*•]|\d+[.)])\s/;
+const esTitulo = (l, siguiente) => l.length <= 60 && !/[.,;:?!)]$/.test(l) && !/:\s/.test(l) && !ES_LISTA.test(l)
+  && siguiente !== undefined && (ES_LISTA.test(siguiente) || siguiente.trim() === '');
 function markdown(texto) {
   const salida = []; let lista = null, parrafo = [];
+  const lineas = texto.split('\n');
   const cerrar = () => {
     if (parrafo.length) { salida.push(`<p>${parrafo.join('<br>')}</p>`); parrafo = []; }
     if (lista) { salida.push(`</${lista}>`); lista = null; }
   };
-  for (const cruda of texto.split('\n')) {
+  lineas.forEach((cruda, n) => {
     const l = cruda.trimEnd();
     let m;
-    if (!l.trim()) { cerrar(); continue; }
-    if ((m = l.match(/^#{1,6}\s+(.*)$/))) { cerrar(); salida.push(`<h3>${enLinea(m[1])}</h3>`); continue; }
+    if (!l.trim()) { cerrar(); return; }
+    if ((m = l.match(/^#{1,6}\s+(.*)$/))) { cerrar(); salida.push(`<h3>${enLinea(m[1])}</h3>`); return; }
+    const tras = n === 0 || !lineas[n - 1].trim();
+    if (!parrafo.length && (esTitulo(l.trim(), lineas[n + 1])
+        || (tras && l.trim().length <= 40 && /^[A-ZÁÉÍÓÚÑ]/.test(l.trim()) && !/[.,;:?!)]$/.test(l.trim())
+            && !/:\s/.test(l) && !ES_LISTA.test(l) && lineas[n + 1] !== undefined && lineas[n + 1].trim()))) { cerrar(); salida.push(`<h3>${enLinea(l.trim())}</h3>`); return; }
     if ((m = l.match(/^\s*(?:[-*•]|(\d+)[.)])\s+(.*)$/))) {
       const tipo = m[1] ? 'ol' : 'ul';
       if (parrafo.length) { salida.push(`<p>${parrafo.join('<br>')}</p>`); parrafo = []; }
       if (lista !== tipo) { if (lista) salida.push(`</${lista}>`); salida.push(`<${tipo}>`); lista = tipo; }
-      salida.push(`<li>${enLinea(m[2])}</li>`); continue;
+      salida.push(`<li>${enLinea(m[2])}</li>`); return;
     }
     if (lista) { salida.push(`</${lista}>`); lista = null; }
     parrafo.push(enLinea(l));
-  }
+  });
   cerrar();
   return salida.join('');
 }
 
-/* ---------- pestañas ---------- */
+/* ---------- tema ---------- */
+function pintarTema() {
+  const oscuro = document.documentElement.dataset.theme === 'dark';
+  $('tema').innerHTML = `${ico(oscuro ? 'sol' : 'luna')}<span>${oscuro ? 'Tema claro' : 'Tema oscuro'}</span>`;
+  $('tema').setAttribute('aria-label', oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+}
+$('tema').onclick = () => {
+  const oscuro = document.documentElement.dataset.theme !== 'dark';
+  document.documentElement.dataset.theme = oscuro ? 'dark' : 'light';
+  guardar('sotica-tema', oscuro ? 'dark' : 'light'); pintarTema();
+};
+
+/* ---------- menú lateral (móvil) ---------- */
+const app = $('app');
+const cerrarMenu = () => app.classList.remove('con-menu');
+$('abrir-menu').onclick = () => { app.classList.add('con-menu'); $('nueva').focus(); };
+$('sb-cerrar').onclick = cerrarMenu;
+$('velo-menu').onclick = cerrarMenu;
+
+/* ---------- registro plegable ---------- */
+const SECCIONES = {avance: 'Avance de obra', presupuesto: 'Presupuesto', bloqueos: 'Bloqueos',
+                   archivos: 'Archivos y planos', traza: 'Quién hizo qué'};
 const pestañas = [...document.querySelectorAll('[role=tab]')];
-function abrirPestaña(tab) {
+let seccionActual = leer('sotica-seccion') || 'avance';
+function abrirPestaña(clave) {
+  seccionActual = SECCIONES[clave] ? clave : 'avance';
   for (const t of pestañas) {
-    const activa = t === tab;
+    const activa = t.id === 't-' + seccionActual;
     t.setAttribute('aria-selected', activa); t.tabIndex = activa ? 0 : -1;
     $(t.getAttribute('aria-controls')).hidden = !activa;
   }
+  $('reg-titulo').textContent = SECCIONES[seccionActual];
+  document.querySelectorAll('.sb nav [data-seccion]').forEach((b) =>
+    b.setAttribute('aria-current', app.classList.contains('con-registro') && b.dataset.seccion === seccionActual));
+  if (seccionActual === 'archivos') { $('p-archivos-nuevo').hidden = true; archivosVistos = $('v-archivos').dataset.n; }
+  guardar('sotica-seccion', seccionActual);
+}
+function registro(abrir, clave) {
+  app.classList.toggle('con-registro', abrir);
+  $('registro').inert = !abrir;
+  $('toggle-registro').setAttribute('aria-pressed', abrir);
+  guardar('sotica-registro', abrir ? '1' : '0');
+  abrirPestaña(clave || seccionActual);
 }
 pestañas.forEach((t, i) => {
-  t.onclick = () => abrirPestaña(t);
+  t.onclick = () => abrirPestaña(t.id.slice(2));
   t.onkeydown = (e) => {
     const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
     if (!d) return;
-    const s = pestañas[(i + d + pestañas.length) % pestañas.length]; s.focus(); abrirPestaña(s);
+    const s = pestañas[(i + d + pestañas.length) % pestañas.length]; s.focus(); abrirPestaña(s.id.slice(2));
   };
+});
+document.querySelectorAll('.sb nav [data-seccion]').forEach((b) => b.onclick = () => {
+  const misma = app.classList.contains('con-registro') && seccionActual === b.dataset.seccion;
+  registro(!misma, b.dataset.seccion); cerrarMenu();
+});
+$('toggle-registro').onclick = () => registro(!app.classList.contains('con-registro'));
+$('cerrar-registro').onclick = () => registro(false);
+$('velo-reg').onclick = () => registro(false);
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!$('menu-adjuntar').hidden) return cerrarAdjuntar();
+  if (app.classList.contains('con-menu')) return cerrarMenu();
+  if (app.classList.contains('con-registro') && window.innerWidth <= 1240) registro(false);
 });
 
 /* ---------- registro de la obra ---------- */
 function pintarAvance(e) {
   const c = e.configuracion || {};
   const desv = e.desviacion_pp;
+  const real = Math.min(100, e.avance_fisico_real_pct || 0), plan = e.avance_fisico_plan_pct;
+  $('v-avance').textContent = e.avance_fisico_real_pct === null || e.avance_fisico_real_pct === undefined ? '' : nf(e.avance_fisico_real_pct, 1) + ' %';
   const filas = (e.partidas || []).map((p) => `
     <tr><td><span class="cod">${esc(p.codigo)}</span><div class="sub">${esc(p.descripcion)}</div></td>
         <td class="num">${nf(p.cantidad_acumulada)} / ${nf(p.cantidad_presupuestada)}<div class="sub">${esc(p.unidad)}</div></td>
-        <td class="num">${pct(p.pct_real)}</td>
-        <td>${etq(p.calidad_dato, 'Sin avance')}</td></tr>`).join('');
+        <td class="num">${pct(p.pct_real)}<div>${etq(p.calidad_dato, 'Sin avance')}</div></td></tr>`).join('');
   const desvs = (e.desviaciones_abiertas || []).map((d) => `
-    <div class="item"><div class="titulo">${esc(d.tipo.replaceAll('_', ' '))} · severidad ${esc(d.severidad)}</div>
+    <div class="item"><div class="titulo">${esc(d.tipo.replaceAll('_', ' '))}
+      <span class="etq ${['alta', 'critica'].includes(d.severidad) ? 'alerta' : 'pendiente_confirmacion'}">Severidad ${esc(d.severidad)}</span></div>
       ${esc(d.descripcion)}</div>`).join('');
   $('avance').innerHTML = `
-    <div class="aviso ${e.ultima_fecha_avance ? '' : 'mal'}">${esc(e.advertencia_datos)}</div>
+    ${aviso(esc(e.advertencia_datos), e.ultima_fecha_avance ? '' : 'mal')}
     <div class="bloque">
-      <h2>Avance físico al ${fecha(e.corte)}</h2>
-      <div class="medida"><div class="fila"><span>Real registrado</span><b>${pct(e.avance_fisico_real_pct)}</b></div>
-        <div class="barra"><i style="width:${Math.min(100, e.avance_fisico_real_pct || 0)}%"></i></div></div>
-      <div class="medida"><div class="fila"><span>Planificado a la fecha</span><b>${pct(e.avance_fisico_plan_pct)}</b></div>
-        <div class="barra plan"><i style="width:${Math.min(100, e.avance_fisico_plan_pct || 0)}%"></i></div></div>
+      <h3>Avance físico al ${fecha(e.corte)}</h3>
+      <div class="pista-cab"><b>${pct(e.avance_fisico_real_pct)}</b><span>real registrado</span></div>
+      <div class="pista" role="img" aria-label="Avance real ${pct(e.avance_fisico_real_pct)} contra plan ${pct(plan)}">
+        <i style="width:${real}%"></i>
+        ${plan === null || plan === undefined ? '' : `<span class="hito" style="left:${Math.min(100, plan)}%"><span>Plan ${pct(plan)}</span></span>`}
+      </div>
       <dl class="datos">
-        <dt>Desviación</dt><dd>${desv === null || desv === undefined ? '—' : (desv > 0 ? '+' : '') + nf(desv) + ' pp'}</dd>
+        <dt>Desviación</dt><dd>${desv === null || desv === undefined ? '—' : `<span class="etq ${desv <= -10 ? 'alerta' : desv < 0 ? 'pendiente_confirmacion' : 'ok'}">${(desv > 0 ? '+' : '') + nf(desv)} pp</span>`}</dd>
         <dt>Avance financiero</dt><dd>${pct(e.avance_financiero_pct)}</dd>
         <dt>Ejecutado / presupuestado</dt><dd>${nf(e.monto_ejecutado)} / ${nf(e.monto_presupuestado)} ${esc(e.proyecto.moneda)}</dd>
         <dt>Último avance</dt><dd>${e.ultima_fecha_avance ? `${fecha(e.ultima_fecha_avance)} · hace ${e.dias_sin_reporte} días` : 'Ninguno'}</dd>
         <dt>Avances retenidos por bloqueo</dt><dd>${e.avances_en_espera}</dd>
       </dl>
     </div>
-    ${c.nota ? `<div class="aviso">Umbrales de desviación ${nf(c.umbrales_pp.media, 0)} / ${nf(c.umbrales_pp.alta, 0)} / ${nf(c.umbrales_pp.critica, 0)} pp y ponderación por ${esc(c.base_ponderacion)}: valores propuestos por el sistema, pendientes de ratificación por SOTICA.</div>` : ''}
-    <div class="bloque"><h2>Partidas del presupuesto base</h2>
-      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th class="num">Ejecutado</th><th class="num">Avance</th><th>Dato</th></tr></thead>
-      <tbody>${filas}</tbody></table></div></div>
-    <div class="bloque"><h2>Desviaciones abiertas</h2>${desvs || '<p class="vacio">Sin desviaciones abiertas.</p>'}</div>`;
+    ${c.nota ? aviso(`Umbrales de desviación ${nf(c.umbrales_pp.media, 0)} / ${nf(c.umbrales_pp.alta, 0)} / ${nf(c.umbrales_pp.critica, 0)} pp y ponderación por ${esc(c.base_ponderacion)}: valores propuestos por el sistema, pendientes de ratificación por SOTICA.`, 'info') : ''}
+    <div class="bloque"><h3>Partidas del presupuesto base</h3>
+      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th class="num">Ejecutado</th><th class="num">Avance</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="3" class="vacio">Sin presupuesto base.</td></tr>'}</tbody></table></div></div>
+    <div class="bloque"><h3>Desviaciones abiertas</h3>${desvs || '<p class="vacio">Sin desviaciones abiertas.</p>'}</div>`;
 }
 
 function pintarPresupuesto(d) {
   const el = $('p-presupuesto');
-  if (!d.presupuesto) { el.innerHTML = '<div class="bloque"><p class="vacio">La obra todavía no tiene presupuesto.</p></div>'; return; }
-  const pr = d.presupuesto;
+  if (!d.presupuesto) {
+    $('v-presupuesto').textContent = '';
+    el.innerHTML = `<div class="bloque"><p class="vacio">La obra todavía no tiene presupuesto. Pídele a ORQ-COST un cómputo para empezar el borrador.</p></div>`;
+    return;
+  }
+  const pr = d.presupuesto, ind = d.indirectos || {};
+  $('v-presupuesto').textContent = 'v' + pr.version;
   const filas = d.partidas.map((p) => `
-    <tr><td><span class="cod">${esc(p.codigo_interno)}</span><div class="sub">${esc(p.descripcion)}</div></td>
+    <tr><td><span class="cod">${esc(p.codigo_interno)}</span><div class="sub">${esc(p.descripcion)}</div>
+          ${p.mediciones ? `<div class="sub">${p.mediciones} línea(s) de medición</div>` : ''}</td>
         <td class="num">${nf(p.cantidad)} ${esc(p.unidad)}<div>${etq(p.etiqueta_cantidad)}</div></td>
         <td class="num">${p.precio_unitario === null ? '—' : nf(p.precio_unitario)}<div>${etq(p.etiqueta_precio, 'Sin precio')}</div>
-          <div class="sub">${p.renglones_apu ? p.renglones_apu + ' insumos en el APU' : ''}</div></td>
+          ${p.renglones_apu ? `<div class="sub">${p.renglones_apu} insumos en el APU</div>` : ''}</td>
         <td class="num">${p.precio_unitario === null ? '—' : nf(p.monto)}</td></tr>`).join('');
+  const pctInd = (v) => v === null || v === undefined ? '<span class="etq neutro">Pendiente</span>' : nf(v, 1) + ' %';
   el.innerHTML = `
     <div class="bloque">
-      <h2>Presupuesto v${pr.version} · ${pr.es_base_control ? 'base de control de obra' : esc(pr.estado) + ', sin aprobar'}</h2>
+      <h3>Presupuesto v${pr.version} · ${pr.es_base_control ? 'base de control de obra' : esc(pr.estado) + ', sin aprobar'}</h3>
       <dl class="datos">
-        <dt>Costo directo con precio sustentado</dt><dd>${nf(d.costo_directo_firme)} ${esc(pr.moneda)}</dd>
+        <dt>Costo directo con precio sustentado</dt><dd class="fuerte">${nf(d.costo_directo_firme)} ${esc(pr.moneda)}</dd>
         <dt>Con precio pendiente de confirmar</dt><dd>${nf(d.monto_pendiente_confirmacion)} ${esc(pr.moneda)}</dd>
+        <dt>Administración y gastos generales</dt><dd>${pctInd(ind.administracion_pct)}</dd>
+        <dt>Utilidad e imprevistos</dt><dd>${pctInd(ind.utilidad_pct)}</dd>
+        <dt>Impuesto</dt><dd>${pctInd(ind.impuesto_pct)}</dd>
+        <dt>Precio de oferta</dt><dd class="fuerte">${d.precio_oferta === null || d.precio_oferta === undefined ? '<span class="etq pendiente_confirmacion">Faltan porcentajes</span>' : nf(d.precio_oferta) + ' ' + esc(pr.moneda)}</dd>
       </dl>
-      <p class="nota" style="margin-top:10px">Es costo directo. Administración, utilidad e impuestos los define SOTICA.</p>
+      ${ind.fuente ? `<p class="nota" style="margin-top:12px">Fuente de los porcentajes: ${esc(ind.fuente)}</p>` :
+        '<p class="nota" style="margin-top:12px">Administración, utilidad e impuestos los define SOTICA o el pliego; el sistema no los supone.</p>'}
     </div>
-    <div class="bloque"><h2>Partidas</h2>
-      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th class="num">Cantidad</th><th class="num">Precio unit.</th><th class="num">Monto</th></tr></thead>
+    <div class="bloque"><h3>Partidas</h3>
+      <div class="tabla-scroll"><table><thead><tr><th>Partida</th><th class="num">Cantidad</th><th class="num">P. unit.</th><th class="num">Monto</th></tr></thead>
       <tbody>${filas || '<tr><td colspan="4" class="vacio">Sin partidas. Pídele a ORQ-COST que compute.</td></tr>'}</tbody></table></div></div>`;
 }
 
 function pintarBloqueos(d) {
   const n = d.abiertos || 0;
   $('n-bloqueos').hidden = !n; $('n-bloqueos').textContent = n;
-  $('p-bloqueos').innerHTML = `<div class="bloque"><h2>Decisiones que esperan a una persona</h2>${
+  $('t-bloqueos').textContent = n ? `Bloqueos (${n})` : 'Bloqueos';
+  $('p-bloqueos').innerHTML = `${n ? aviso(`<b>${n} decisión(es) esperan a una persona.</b> Los avances retenidos no entran al estado de la obra hasta que alguien decida en el chat.`, 'mal') : ''}
+    <div class="bloque"><h3>Decisiones que esperan a una persona</h3>${
     (d.bloqueos || []).map((b) => `<div class="item">
-      <div class="titulo">${esc(String(b.tipo).replaceAll('_', ' '))} · abierto hace ${b.dias_abierto} días</div>
+      <div class="titulo"><span class="etq alerta">Abierto</span>${esc(String(b.tipo).replaceAll('_', ' '))}</div>
       ${esc(b.descripcion)}
-      <div class="sub">Reportado por ${esc(b.reportado_por || '—')} el ${fecha(b.fecha_reporte)} · ${b.avances_retenidos} avance(s) retenido(s)</div>
+      <div class="sub">Reportado por ${esc(b.reportado_por || '—')} el ${fecha(b.fecha_reporte)} · abierto hace ${b.dias_abierto} días · ${b.avances_retenidos} avance(s) retenido(s)</div>
     </div>`).join('') ||
     '<p class="vacio">No hay bloqueos abiertos. Cuando un avance no encaja en el presupuesto base, queda retenido aquí hasta que alguien decida en el chat.</p>'
   }</div>`;
 }
 
+const tipoArchivo = (nombre) => (String(nombre).split('.').pop() || '').toLowerCase();
 function pintarArchivos(lista) {
-  $('entregables').innerHTML = `<div class="bloque"><h2>Entregables generados</h2>${
-    lista.map((a) => `<div class="item">
-      <a href="/api/archivos/${encodeURI(a.storage_key)}">${esc(a.nombre)}</a>
-      <div>${esc(a.titulo)}</div>
-      <div class="sub">${esc(a.codigo_documento)} Rev. ${esc(a.revision)} · ${esc(a.generado_por)} · ${fecha(a.creado_en)} · ${nf(a.bytes / 1024, 0)} KB${a.formato_oficial ? '' : ' · formato SOTICA propuesto, sin ratificar'}</div>
+  const n = lista.length;
+  $('v-archivos').textContent = n || ''; $('v-archivos').dataset.n = n;
+  if (archivosVistos === null) archivosVistos = String(n);
+  else if (String(n) !== archivosVistos && !(app.classList.contains('con-registro') && seccionActual === 'archivos'))
+    $('p-archivos-nuevo').hidden = false;
+  $('entregables').innerHTML = `<div class="bloque"><h3>Entregables generados</h3>${
+    lista.map((a) => `<div class="item archivo">
+      <span class="archivo-tipo ${esc(tipoArchivo(a.nombre))}">${esc(tipoArchivo(a.nombre).toUpperCase())}</span>
+      <div><a href="/api/archivos/${encodeURI(a.storage_key)}">${esc(a.titulo)}</a>
+      <div class="sub">${esc(a.codigo_documento)} Rev. ${esc(a.revision)} · ${esc(a.generado_por)} · ${fecha(a.creado_en)} · ${nf(a.bytes / 1024, 0)} KB${a.formato_oficial ? '' : ' · formato SOTICA propuesto, sin ratificar'}</div></div>
     </div>`).join('') ||
-    '<p class="vacio">Todavía no hay archivos. Pide el libro de cómputos o el presupuesto en Excel.</p>'
+    '<p class="vacio">Todavía no hay archivos. Pide el libro de cómputos, el presupuesto, el cronograma o un informe.</p>'
   }</div>`;
 }
 
 function pintarPlanos(lista) {
-  $('planos').innerHTML = lista.map((a) => `<div class="item">
-      <a href="/api/archivos/${encodeURI(a.storage_key)}">${esc(a.nombre)}</a>
-      <div class="sub">${esc(a.subido_por)} · ${fecha(a.creado_en)} · ${nf(a.bytes / 1024, 0)} KB</div>
+  $('planos').innerHTML = lista.map((a) => `<div class="item archivo">
+      <span class="archivo-tipo pdf">PDF</span>
+      <div><a href="/api/archivos/${encodeURI(a.storage_key)}">${esc(a.nombre)}</a>
+      <div class="sub">${esc(a.subido_por)} · ${fecha(a.creado_en)} · ${nf(a.bytes / 1024, 0)} KB</div></div>
     </div>`).join('') || '<p class="vacio">Todavía no hay planos cargados.</p>';
 }
 
 function pintarTraza(lista) {
-  $('p-traza').innerHTML = `<div class="bloque"><h2>Delegaciones de ORQ-COST</h2>${
+  $('v-traza').textContent = lista.length || '';
+  $('p-traza').innerHTML = `<div class="bloque"><h3>Delegaciones de ORQ-COST</h3>${
     lista.map((d) => `<div class="item">
-      <div class="titulo">${esc(d.agente_destino)} · confianza ${esc(d.confianza || 'sin declarar')}</div>
+      <div class="titulo">${esc(d.agente_destino)}<span class="etq ${d.confianza === 'alto' ? 'confirmado' : d.confianza === 'bajo' ? 'pendiente_confirmacion' : 'referencial'}">Confianza ${esc(d.confianza || 'sin declarar')}</span></div>
       ${esc(d.producto || '')}
-      <div class="sub">${fecha(d.finalizada_en)} · herramientas usadas: ${(d.herramientas || []).map(esc).join(', ') || 'ninguna'}${d.bloqueos ? ` · ${d.bloqueos} bloqueo(s) declarado(s)` : ''}</div>
+      <div class="sub">${fecha(d.finalizada_en)} · herramientas: ${(d.herramientas || []).map(esc).join(', ') || 'ninguna'}${d.bloqueos ? ` · ${d.bloqueos} bloqueo(s) declarado(s)` : ''}</div>
     </div>`).join('') ||
     '<p class="vacio">Aquí queda cada encargo que ORQ-COST le hace a un especialista y las herramientas que este usó de verdad.</p>'
   }</div>`;
@@ -515,68 +853,101 @@ async function refrescar() {
 }
 
 /* ---------- conversación ---------- */
+// [ruta, título, descripción, orden]
 const SUGERENCIAS = [
-  ['Computar y generar el libro', 'Computa las paredes de bloque de la planta baja: 45 m lineales por 2,80 m de altura, descontando 6 puertas de 0,90 x 2,10. Regístralo y genera el libro de cómputos en Excel.'],
-  ['Poner precio con respaldo', 'Ponle precio a la partida de paredes. No tengo cotizaciones: busca precios aproximados de los materiales en internet. Mano de obra por experiencia del Ing. Pérez: 1 albañil a 40 USD/día y 1 ayudante a 25 USD/día, rendimiento 12 m2 por día. Luego genera el presupuesto en Excel.'],
-  ['Computar desde un plano', 'Computa las paredes de bloque de la planta alta a partir del plano A-02 que subí en Archivos. Regístralo en el borrador.'],
-  ['Consultar el avance', '¿Cómo va la obra?'],
-  ['Procesar un reporte de campo', 'Procesa el reporte de avance pendiente del residente.'],
+  ['ORQ-COST · Estado', '¿Cómo va la obra?', 'Avance real contra plan, desviaciones y bloqueos.', '¿Cómo va la obra?'],
+  ['SUB-CM → SUB-DOC', 'Computar y generar el libro', 'Paredes de planta baja con descuento de puertas y libro SOTICA-CM-01.',
+   'Computa las paredes de bloque de la planta baja: 45 m lineales por 2,80 m de altura, descontando 6 puertas de 0,90 x 2,10. Regístralo y genera el libro de cómputos en Excel.'],
+  ['SUB-CM · Cómputos', 'Computar desde un plano', 'Lee la lámina A-02 subida en Archivos y computa por ejes.',
+   'Computa las paredes de bloque de la planta alta a partir del plano A-02 que subí en Archivos. Regístralo en el borrador.'],
+  ['ORQ-COST → SUB-DOC', 'Poner precio con respaldo', 'APU con precios de internet citados y mano de obra declarada.',
+   'Ponle precio a la partida de paredes. No tengo cotizaciones: busca precios aproximados de los materiales en internet. Mano de obra por experiencia del Ing. Pérez: 1 albañil a 40 USD/día y 1 ayudante a 25 USD/día, rendimiento 12 m2 por día. Luego genera el presupuesto en Excel.'],
+  ['SUB-AVA · Avance', 'Procesar un reporte de campo', 'SUB-AVA lo cruza contra el presupuesto base.', 'Procesa el reporte de avance pendiente del residente.'],
+  ['SUB-DOC · Documentos', 'Cronograma e informe', 'Gantt con curva S, informe de avance en Word y presentación.',
+   'Genera el cronograma Gantt de la obra y dime si es coherente con los rendimientos. Después prepara el informe de avance en Word y una presentación corta para la junta.'],
 ];
 function hiloVacio() {
+  const o = obras.find((x) => x.codigo === obraActual);
   $('hilo').innerHTML = `<div class="vacio-chat">
-    <h2>Dale una orden a ORQ-COST</h2>
-    <p>Él delega en los especialistas y te responde con lo que quedó registrado. En el registro ves el estado real de la obra.</p>
-    <div class="sugerencias">${SUGERENCIAS.map(([t, p], i) =>
-      `<button class="sugerencia" type="button" data-i="${i}"><b>${t}</b><span>${esc(p)}</span></button>`).join('')}</div>
+    <h2>${o ? `¿Qué necesitas de ${esc(o.codigo)}?` : 'Dale una orden a ORQ-COST'}</h2>
+    <p>ORQ-COST reparte el trabajo entre ocho especialistas y te responde con lo que quedó registrado. Cada número del registro muestra su certeza.</p>
+    <ul class="sugerencias" aria-label="Órdenes sugeridas">${SUGERENCIAS.map(([r, t, d], n) =>
+      `<li><button class="sugerencia" type="button" data-n="${n}"><span><b>${t}</b><span class="desc">${esc(d)}</span></span>
+        <span class="placa-ruta">${ico('flecha')}${r.split(' → ').map(esc).join(ico('flecha'))}</span></button></li>`).join('')}</ul>
   </div>`;
   $('hilo').querySelectorAll('.sugerencia').forEach((b) =>
-    b.onclick = () => { $('msg').value = SUGERENCIAS[b.dataset.i][1]; ajustar(); $('msg').focus(); });
+    b.onclick = () => { $('msg').value = SUGERENCIAS[b.dataset.n][3]; ajustar(); $('msg').focus(); });
 }
 // El hilo se conserva al recargar la página (por pestaña del navegador y por obra).
-const claveHilo = () => 'sotica-hilo:' + obraActual;
+const claveHilo = () => 'sotica-hilo-v2:' + obraActual;
 function guardarHilo() {
   try { sessionStorage.setItem(claveHilo(), $('hilo').innerHTML); } catch (e) { /* sin almacenamiento */ }
 }
 function restaurarHilo() {
   let previo = null;
   try { previo = sessionStorage.getItem(claveHilo()); } catch (e) { /* sin almacenamiento */ }
-  if (previo && !previo.includes('vacio-chat')) { $('hilo').innerHTML = previo; abajo(); }
+  if (previo && !previo.includes('vacio-chat')) {
+    $('hilo').innerHTML = previo;
+    // Cada respuesta guarda su texto original: se vuelve a dar formato con el código vigente.
+    $('hilo').querySelectorAll('.prosa[data-md]').forEach((el) => { el.innerHTML = markdown(el.dataset.md); });
+    $('hilo').querySelectorAll('.prosa a').forEach((a) => { if (a.textContent.includes('/api/archivos/')) a.textContent = 'Descargar archivo'; });
+    abajo();
+  }
   else hiloVacio();
 }
-function abajo() { $('hilo').scrollTop = $('hilo').scrollHeight; }
-function ajustar() { const t = $('msg'); t.style.height = 'auto'; t.style.height = Math.min(160, t.scrollHeight) + 'px'; }
+function abajo() { const h = $('hilo-scroll'); h.scrollTop = h.scrollHeight; }
+function ajustar() {
+  const t = $('msg'); t.style.height = 'auto'; t.style.height = Math.min(200, t.scrollHeight) + 'px';
+  t.style.overflowY = t.scrollHeight > 200 ? 'auto' : 'hidden';
+}
+const angosta = matchMedia('(max-width: 880px)');
+const ponerPlaceholder = () => {
+  $('msg').placeholder = angosta.matches ? 'Orden para ORQ-COST…' : 'Pídele a ORQ-COST un cómputo, un presupuesto o el estado de la obra…';
+};
+angosta.addEventListener('change', ponerPlaceholder);
 function ponerOcupado(v) {
   ocupado = v; $('enviar').disabled = v; $('nueva').disabled = v; $('obra').disabled = v;
-  $('enviar').textContent = v ? 'Trabajando…' : 'Enviar';
+  $('enviar').setAttribute('aria-label', v ? 'ORQ-COST está trabajando' : 'Enviar');
 }
-const PASOS = {
-  delegar_sub_cm: ['SUB-CM · cómputos', 1], delegar_sub_doc: ['SUB-DOC · documentos', 1],
-  delegar_sub_ava: ['SUB-AVA · avance de obra', 1],
-  delegar_sub_ele: ['SUB-ELE · electricidad', 1], delegar_sub_hid: ['SUB-HID · acueductos y cloacas', 1],
-  delegar_sub_est: ['SUB-EST · estructuras', 1], delegar_sub_via: ['SUB-VIA · vialidad', 1],
-  delegar_sub_sue: ['SUB-SUE · suelos', 1], busqueda_web: ['Buscando precios en internet', 0],
-  consultar_presupuesto: ['Leyó el presupuesto', 0], consultar_estado_obra: ['Leyó el estado de obra', 0],
-  consultar_bloqueos: ['Revisó bloqueos', 0], resolver_bloqueo: ['Resolvió un bloqueo', 0],
-  registrar_apu: ['Registró el APU', 0], registrar_indirectos: ['Registró indirectos y utilidad', 0],
+const AGENTES = {
+  delegar_sub_cm: 'SUB-CM · Cómputos', delegar_sub_doc: 'SUB-DOC · Documentos', delegar_sub_ava: 'SUB-AVA · Avance',
+  delegar_sub_ele: 'SUB-ELE · Electricidad', delegar_sub_hid: 'SUB-HID · Cloacas y acueductos',
+  delegar_sub_est: 'SUB-EST · Estructuras', delegar_sub_via: 'SUB-VIA · Vialidad', delegar_sub_sue: 'SUB-SUE · Suelos',
 };
+const HERRAMIENTAS = {
+  busqueda_web: 'Buscó precios en internet', consultar_presupuesto: 'Leyó el presupuesto',
+  consultar_estado_obra: 'Leyó el estado de obra', consultar_bloqueos: 'Revisó bloqueos',
+  resolver_bloqueo: 'Resolvió un bloqueo', registrar_apu: 'Registró el APU',
+  registrar_indirectos: 'Registró indirectos y utilidad',
+};
+const anunciar = (t) => { $('anuncio').textContent = ''; setTimeout(() => { $('anuncio').textContent = t; }, 50); };
+const hora = () => new Date().toLocaleTimeString('es-VE', {hour: '2-digit', minute: '2-digit'});
 
 async function enviar(texto) {
   if (ocupado || !texto) return;
   if ($('hilo').querySelector('.vacio-chat')) $('hilo').innerHTML = '';
-  const mio = document.createElement('div'); mio.className = 'turno yo'; mio.textContent = texto;
+  const mio = document.createElement('div'); mio.className = 'turno yo';
+  const burbuja = document.createElement('div'); burbuja.className = 'burbuja'; burbuja.textContent = texto;
+  mio.appendChild(burbuja);
   $('hilo').appendChild(mio); guardarHilo();  // si recargan a mitad de respuesta, la pregunta queda
 
   const turno = document.createElement('div'); turno.className = 'turno';
-  turno.innerHTML = `<div class="autor">ORQ-COST</div><ul class="pasos"></ul>
-    <div class="prosa"></div><div class="trabajando"><span class="pulso"></span><span class="reloj">Trabajando… 0 s</span></div>`;
+  turno.innerHTML = `<div class="autor"><span class="autor-placa" aria-hidden="true">ORQ</span><b>ORQ-COST</b><time>${hora()}</time></div>
+    <div class="ruta" hidden role="group" aria-label="Ruta de delegación"><span class="tramo hecho">ORQ-COST</span></div>
+    <div class="herramientas" hidden></div>
+    <div class="prosa"></div><div class="trabajando"><i></i><span class="reloj">Trabajando · 0 s</span></div>`;
   $('hilo').appendChild(turno); abajo();
-  const pasos = turno.querySelector('.pasos'), prosa = turno.querySelector('.prosa'),
-        espera = turno.querySelector('.trabajando');
+  const ruta = turno.querySelector('.ruta'), herr = turno.querySelector('.herramientas'),
+        prosa = turno.querySelector('.prosa'), espera = turno.querySelector('.trabajando');
   const inicio = Date.now();
   const reloj = setInterval(() => {
-    espera.querySelector('.reloj').textContent = `Trabajando… ${Math.round((Date.now() - inicio) / 1000)} s`;
+    espera.querySelector('.reloj').textContent = `Trabajando · ${Math.round((Date.now() - inicio) / 1000)} s`;
   }, 1000);
-  ponerOcupado(true);
+  const cerrarTramo = () => {
+    const activo = ruta.querySelector('.tramo.activo');
+    if (activo) { activo.classList.replace('activo', 'hecho'); activo.insertAdjacentHTML('afterbegin', ico('ok')); }
+  };
+  ponerOcupado(true); anunciar('ORQ-COST trabajando');
   let acumulado = '';
   try {
     const resp = await fetch('/api/chat', {
@@ -594,20 +965,27 @@ async function enviar(texto) {
       for (const p of partes) {
         if (!p.startsWith('data: ')) continue;
         const ev = JSON.parse(p.slice(6));
-        if (ev.tipo === 'texto') { acumulado += ev.texto; prosa.innerHTML = markdown(acumulado); abajo(); }
+        if (ev.tipo === 'texto') { cerrarTramo(); acumulado += ev.texto; prosa.innerHTML = markdown(acumulado); prosa.dataset.md = acumulado; abajo(); }
         else if (ev.tipo === 'herramienta') {
-          const [rotulo, esAgente] = PASOS[ev.nombre] || [ev.nombre, 0];
-          const li = document.createElement('li'); li.className = 'paso' + (esAgente ? ' agente' : '');
-          li.textContent = rotulo; pasos.appendChild(li); abajo();
+          if (AGENTES[ev.nombre]) {
+            cerrarTramo(); ruta.hidden = false;
+            ruta.insertAdjacentHTML('beforeend', `<svg class="flecha" aria-hidden="true"><use href="#i-flecha"/></svg><span class="tramo activo">${esc(AGENTES[ev.nombre])}</span>`);
+            anunciar(`${AGENTES[ev.nombre]} trabajando`);
+          } else {
+            herr.hidden = false;
+            herr.insertAdjacentHTML('beforeend', `<span class="herramienta">${esc(HERRAMIENTAS[ev.nombre] || ev.nombre)}</span>`);
+          }
+          abajo();
         } else if (ev.tipo === 'error') { throw new Error(ev.texto); }
       }
     }
   } catch (err) {
     const e = document.createElement('div'); e.className = 'error';
     e.textContent = `No se pudo completar: ${err.message} Puedes reintentar el mensaje.`;
-    turno.appendChild(e);
+    turno.appendChild(e); anunciar(e.textContent); acumulado = null;
   } finally {
-    clearInterval(reloj); espera.remove(); ponerOcupado(false); abajo(); guardarHilo(); refrescar();
+    clearInterval(reloj); cerrarTramo(); espera.remove(); ponerOcupado(false); abajo(); guardarHilo(); refrescar();
+    if (acumulado !== null) anunciar('Respuesta de ORQ-COST lista');
   }
 }
 
@@ -624,12 +1002,27 @@ $('msg').onkeydown = (e) => {
 $('nueva').onclick = async () => {
   if (ocupado || !obraActual) return;
   ponerOcupado(true);
-  try { await api(`/api/chat/${encodeURIComponent(obraActual)}`, {method: 'DELETE'}); hiloVacio(); guardarHilo(); }
+  try { await api(`/api/chat/${encodeURIComponent(obraActual)}`, {method: 'DELETE'}); hiloVacio(); guardarHilo(); $('msg').focus(); }
   catch (err) { alert('No se pudo iniciar una conversación nueva: ' + err.message); }
-  finally { ponerOcupado(false); }
+  finally { ponerOcupado(false); cerrarMenu(); }
 };
 
-/* ---------- reporte de campo ---------- */
+/* ---------- adjuntar: lleva al formulario correcto del registro ---------- */
+function cerrarAdjuntar() { $('menu-adjuntar').hidden = true; $('adjuntar').setAttribute('aria-expanded', 'false'); }
+$('adjuntar').onclick = () => {
+  const abrir = $('menu-adjuntar').hidden;
+  $('menu-adjuntar').hidden = !abrir; $('adjuntar').setAttribute('aria-expanded', abrir);
+  if (abrir) $('menu-adjuntar').querySelector('button').focus();
+};
+document.addEventListener('click', (e) => { if (!e.target.closest('#menu-adjuntar, #adjuntar')) cerrarAdjuntar(); });
+$('menu-adjuntar').querySelectorAll('[data-ir]').forEach((b) => b.onclick = () => {
+  cerrarAdjuntar(); registro(true, b.dataset.ir);
+  const det = b.dataset.ir === 'archivos' ? $('det-plano') : $('det-reporte');
+  det.open = true; det.scrollIntoView({block: 'start'});
+  (b.dataset.ir === 'archivos' ? $('plano-quien') : $('quien')).focus();
+});
+
+/* ---------- reporte de campo y planos ---------- */
 $('fev').onsubmit = async (ev) => {
   ev.preventDefault();
   const fd = new FormData();
@@ -637,12 +1030,12 @@ $('fev').onsubmit = async (ev) => {
   fd.append('fecha_reporte', $('fecha').value);
   fd.append('texto_libre', $('texto').value);
   for (const f of $('files').files) fd.append('archivos', f);
-  $('subir').disabled = true; $('ev-estado').textContent = ' Subiendo…';
+  $('subir').disabled = true; $('ev-estado').textContent = 'Subiendo…';
   try {
     const r = await api(`/api/proyectos/${encodeURIComponent(obraActual)}/reportes`, {method: 'POST', body: fd});
-    $('ev-estado').textContent = ` Cargado con ${r.adjuntos.length} adjunto(s). Pide en el chat que lo procesen.`;
+    $('ev-estado').textContent = `Cargado con ${r.adjuntos.length} adjunto(s). Pide en el chat que lo procesen.`;
     $('texto').value = ''; $('files').value = '';
-  } catch (err) { $('ev-estado').textContent = ' No se pudo subir: ' + err.message; }
+  } catch (err) { $('ev-estado').textContent = 'No se pudo subir: ' + err.message; }
   finally { $('subir').disabled = false; }
 };
 
@@ -651,33 +1044,42 @@ $('fplano').onsubmit = async (ev) => {
   const fd = new FormData();
   fd.append('subido_por', $('plano-quien').value);
   fd.append('archivo', $('plano-file').files[0]);
-  $('plano-subir').disabled = true; $('plano-estado').textContent = ' Subiendo…';
+  $('plano-subir').disabled = true; $('plano-estado').textContent = 'Subiendo…';
   try {
     const r = await api(`/api/proyectos/${encodeURIComponent(obraActual)}/planos`, {method: 'POST', body: fd});
-    $('plano-estado').textContent = ` ${r.nombre} cargado.`;
+    $('plano-estado').textContent = `${r.nombre} cargado. Pide en el chat que lo computen.`;
     $('plano-file').value = '';
     refrescar();
-  } catch (err) { $('plano-estado').textContent = ' No se pudo subir: ' + err.message; }
+  } catch (err) { $('plano-estado').textContent = 'No se pudo subir: ' + err.message; }
   finally { $('plano-subir').disabled = false; }
 };
 
-/* ---------- arranque ---------- */
-$('obra').onchange = (ev) => { obraActual = ev.target.value; restaurarHilo(); refrescar(); };
+/* ---------- obras ---------- */
+const TIPO_OBRA = {edificacion: 'Edificación', vialidad: 'Vialidad', hidraulica: 'Hidráulica',
+                   electrificacion: 'Electrificación', industrial: 'Industrial'};
+function pintarObra() {
+  const o = obras.find((x) => x.codigo === obraActual);
+  $('titulo-obra').innerHTML = o ? `${esc(o.nombre_obra)}<small>${esc(o.codigo)}</small>` : 'ORQ-COST';
+  $('obra-dato').textContent = o ? [o.cliente, TIPO_OBRA[o.tipo_obra] || o.tipo_obra, o.moneda_base].filter(Boolean).join(' · ') : '';
+}
+$('obra').onchange = (ev) => { obraActual = ev.target.value; archivosVistos = null; pintarObra(); restaurarHilo(); refrescar(); };
 async function cargarObras(elegida) {
   try {
-    const obras = await api('/api/proyectos');
+    obras = await api('/api/proyectos');
     $('obra').innerHTML = obras.map((o) =>
-      `<option value="${esc(o.codigo)}">${esc(o.codigo)} — ${esc(o.nombre_obra)}</option>`).join('');
+      `<option value="${esc(o.codigo)}">${esc(o.codigo)}</option>`).join('');
     if (obras.length) {
       obraActual = obras.some((o) => o.codigo === elegida) ? elegida : obras[0].codigo;
-      $('obra').value = obraActual; restaurarHilo(); refrescar();
-    } else $('avance').innerHTML = '<div class="aviso">No hay obras cargadas. Crea una con «Nueva obra».</div>';
+      $('obra').value = obraActual; pintarObra(); restaurarHilo(); refrescar();
+    } else {
+      hiloVacio();
+      $('avance').innerHTML = aviso('No hay obras cargadas. Crea una con el botón + junto a «Obra».', 'info');
+    }
   } catch (err) {
-    $('avance').innerHTML = `<div class="aviso mal">No se pudo leer la lista de obras: ${esc(err.message)}</div>`;
+    $('avance').innerHTML = aviso(`No se pudo leer la lista de obras: ${esc(err.message)}`, 'mal');
   }
 }
 
-/* ---------- nueva obra ---------- */
 $('abrir-obra').onclick = () => { $('o-estado').textContent = ''; $('dlg-obra').showModal(); $('o-codigo').focus(); };
 $('o-cancelar').onclick = () => $('dlg-obra').close();
 $('fobra').onsubmit = async (ev) => {
@@ -690,13 +1092,16 @@ $('fobra').onsubmit = async (ev) => {
         tipo_ente: v('o-ente'), tipo_obra: v('o-tipo'), moneda_base: v('o-moneda'), ubicacion: v('o-ubicacion'),
         norma_rectora: v('o-norma'), fecha_base_precios: v('o-fecha'),
         fecha_inicio_contractual: v('o-inicio'), fecha_fin_contractual: v('o-fin')})});
-    $('dlg-obra').close(); $('fobra').reset();
+    $('dlg-obra').close(); $('fobra').reset(); cerrarMenu();
     await cargarObras(r.codigo);
   } catch (err) { $('o-estado').textContent = err.message; }
   finally { $('o-crear').disabled = false; }
 };
 
+/* ---------- arranque ---------- */
 $('fecha').valueAsDate = new Date();
+pintarTema(); ponerPlaceholder();
+registro(leer('sotica-registro') === '1' && window.innerWidth > 1240, seccionActual);
 hiloVacio();
 cargarObras();
 </script>

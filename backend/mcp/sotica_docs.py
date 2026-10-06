@@ -16,7 +16,7 @@ from openpyxl.chart import LineChart, Reference
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from ..core import control, db, oficina, storage
+from ..core import apu, control, db, oficina, storage
 from .registry import Registro, error as _error, ok as _ok
 
 registro = Registro("sotica_docs")
@@ -452,13 +452,6 @@ def _hoja_resumen_montos(wb, capitulos: list[str], fila_total_detalle: int) -> N
             c.value, c.font, c.number_format = f"=SUM({col}2:{col}{fila-1})", _NEG, "#,##0.00"
 
 
-def _oferta(directo: float, pcts: dict[str, Any]) -> float:
-    """Mismo cálculo que la hoja Indirectos, para informarlo en la respuesta."""
-    sub = directo * (1 + float(pcts["adm"]) / 100)
-    sub *= 1 + float(pcts["uti"]) / 100
-    return sub * (1 + float(pcts["imp"]) / 100)
-
-
 @registro.herramienta(
     "generar_excel_presupuesto",
     "Genera el presupuesto de obra en formato SOTICA-PRE-01 (.xlsx): portada, resumen por "
@@ -639,7 +632,8 @@ async def generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
                 "partidas_sin_precio": sin_precio,
                 "partidas_con_precio_pendiente": pendientes,
                 "partidas_con_precios_de_internet": de_internet,
-                "precio_de_oferta": (round(_oferta(firme, pcts), 2) if not faltan else
+                "precio_de_oferta": (apu.precio_oferta(firme, pcts["adm"], pcts["uti"], pcts["imp"])
+                                     if not faltan else
                                      f"no calculable: falta {', '.join(faltan)}"),
                 "advertencias": [n[0] + ": " + n[1] for n in notas[:6]],
             })

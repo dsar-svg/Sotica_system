@@ -182,3 +182,12 @@ async def registrar_apu(
         "nota": "Costo directo. Administración, utilidad e impuestos se aplican a nivel de "
                 "presupuesto y los define SOTICA.",
     }
+
+
+def precio_oferta(directo: float, adm_pct, utilidad_pct, impuesto_pct) -> float | None:
+    """Costo directo + administración (sobre CD) + utilidad (sobre CD + adm) + impuesto (sobre el
+    subtotal). None si falta algún porcentaje: el precio de oferta no se supone."""
+    if None in (adm_pct, utilidad_pct, impuesto_pct):
+        return None
+    sub = directo * (1 + float(adm_pct) / 100) * (1 + float(utilidad_pct) / 100)
+    return round(sub * (1 + float(impuesto_pct) / 100), 2)

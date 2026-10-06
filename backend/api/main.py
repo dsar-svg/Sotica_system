@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from ..core import avance as avance_mod
-from ..core import control, db, storage
+from ..core import apu, control, db, storage
 from ..core.config import BASE_DIR, STORAGE_DIR
 from ..core.orchestrator import SesionObra
 
@@ -168,6 +168,10 @@ async def presupuesto(ref: str, origen: str = "auto") -> dict[str, Any]:
         "partidas": [dict(f) for f in filas],
         "costo_directo_firme": round(firme, 2),
         "monto_pendiente_confirmacion": round(pendiente, 2),
+        "indirectos": {"administracion_pct": pres["adm_pct"], "utilidad_pct": pres["utilidad_pct"],
+                       "impuesto_pct": pres["impuesto_pct"], "fuente": pres["fuente_indirectos"]},
+        "precio_oferta": apu.precio_oferta(firme, pres["adm_pct"], pres["utilidad_pct"],
+                                           pres["impuesto_pct"]),
     }
 
 
