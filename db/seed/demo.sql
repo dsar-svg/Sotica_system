@@ -21,7 +21,7 @@ INSERT INTO partidas (presupuesto_id, proyecto_id, codigo_covenin, codigo_intern
                       agente_responsable, orden)
 SELECT pr.id, pr.proyecto_id, v.covenin, v.codigo, v.capitulo, v.descripcion, v.unidad,
        v.cantidad, v.precio, v.especialidad, 'confirmado', v.fuente,
-       'referencial', 'CIV-DataLaing ago-2026 (demo)', 'SUB-CM', v.orden
+       'referencial', 'PRECIO FICTICIO DE DEMOSTRACIÓN — no proviene de ninguna base de precios', 'SUB-CM', v.orden
   FROM presupuestos pr
   JOIN proyectos p ON p.id = pr.proyecto_id AND p.codigo = 'SOT-2026-014'
   CROSS JOIN (VALUES

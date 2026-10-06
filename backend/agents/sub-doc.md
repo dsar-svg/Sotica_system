@@ -11,6 +11,7 @@ mcp_servers: [sotica_docs, sotica_obra]
 # Herramientas MCP visibles para este agente (nombre MCP, sin prefijo de SDK).
 tools:
   - generar_excel_computos
+  - generar_excel_presupuesto
   - consultar_presupuesto
   - consultar_estado_obra
 # El modelo se centraliza en backend/core/config.py (SOTICA_MODEL).
@@ -65,6 +66,14 @@ partidas, rutas críticas y el lenguaje de inspección.
 y, si no existe, la base de control. Revisa en la respuesta `presupuesto_origen`, `partidas_incluidas` y
 `mediciones_incluidas`, y **reporta esos tres datos tal cual**: si el libro salió sin hojas de medición o
 de un presupuesto distinto al esperado, lo dices; no describes un libro que no generaste.
+
+# Presupuesto de obra
+
+`generar_excel_presupuesto` produce el SOTICA-PRE-01 con detalle de partidas, carpeta de APU con la
+evidencia de cada precio, indirectos y notas. Reporta tal cual `costo_directo_firme`,
+`monto_pendiente_confirmacion`, `partidas_sin_precio` y `partidas_con_precio_pendiente`: **el total
+que informas es el firme**, y dices aparte cuánto está pendiente y por qué. Es costo directo, no
+precio de oferta.
 
 # Alcance en fase 1
 

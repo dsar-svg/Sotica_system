@@ -209,6 +209,35 @@ async def _generar_excel(args: dict[str, Any]) -> dict[str, Any]:
                "advertencias": ["Formato SOTICA propuesto — pendiente de ratificación."]})
 
 
+async def _registrar_apu(args: dict[str, Any]) -> dict[str, Any]:
+    pendientes = [
+        {"renglon": r.get("descripcion"),
+         "falta": [c for c in ("proveedor", "enlace", "fecha_consulta") if not r.get(c)]}
+        for r in args.get("renglones", [])
+        if r.get("origen") == "cotizacion_proveedor"
+        and not all(r.get(c) for c in ("proveedor", "enlace", "fecha_consulta"))
+    ]
+    return ok({"presupuesto": {"version": 2, "estado": "borrador"},
+               "partida": args.get("codigo_partida"),
+               "costo_directo_unitario": 31.4,
+               "etiqueta_precio": "pendiente_confirmacion" if pendientes else "confirmado",
+               "evidencia_pendiente": pendientes,
+               "avisos": (["Hay precios sin evidencia completa: la partida queda con precio "
+                           "PENDIENTE DE CONFIRMACIÓN y no suma al total firme."]
+                          if pendientes else [])})
+
+
+async def _generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
+    return ok({"archivo_id": "55555555-5555-5555-5555-555555555555",
+               "codigo_documento": "SOTICA-PRE-01", "revision": "A",
+               "url_descarga": "http://localhost:8000/api/archivos/demo-presupuesto.xlsx",
+               "hojas": ["Portada", "Resumen por capítulo", "Detalle de partidas", "APU",
+                         "Indirectos", "Notas"],
+               "partidas_incluidas": len(PARTIDAS), "costo_directo_firme": 60880.0,
+               "monto_pendiente_confirmacion": 0.0, "partidas_sin_precio": [],
+               "advertencias": ["Alcance: costo directo, no precio de oferta."]})
+
+
 for _nombre, _handler in [
     ("consultar_presupuesto", _consultar_presupuesto),
     ("consultar_estado_obra", _consultar_estado_obra),
@@ -218,6 +247,8 @@ for _nombre, _handler in [
     ("consultar_bloqueos", _consultar_bloqueos),
     ("resolver_bloqueo", _resolver_bloqueo),
     ("generar_excel_computos", _generar_excel),
+    ("registrar_apu", _registrar_apu),
+    ("generar_excel_presupuesto", _generar_excel_presupuesto),
 ]:
     _copiar(_nombre, _handler)
 

@@ -45,6 +45,14 @@ CREATE TYPE tipo_archivo AS ENUM (
 
 CREATE TYPE tipo_insumo AS ENUM ('material','equipo','mano_obra','subcontrato','transporte','herramienta');
 
+-- De donde sale un precio. No se mezclan: PDF 8.3 y propuesta 4.3.
+CREATE TYPE origen_precio AS ENUM (
+  'cotizacion_proveedor',   -- exige proveedor + enlace + fecha de consulta
+  'experiencia_obra',       -- criterio del residente / ingeniero de costos (mano de obra, rendimientos)
+  'historico_sotica',       -- presupuesto u obra anterior de SOTICA
+  'referencial_civ'         -- Guia CIV-DataLaing u otra base referencial, con fecha
+);
+
 CREATE TYPE estado_reporte AS ENUM ('pendiente','procesado','rechazado','anulado');
 
 CREATE TYPE tipo_desviacion AS ENUM (
@@ -238,6 +246,9 @@ CREATE TABLE partidas (
   fuente_precio     text,
   agente_responsable codigo_agente NOT NULL,
   orden            int NOT NULL DEFAULT 0,
+  -- Parametros del APU de la partida (SOTICA-APU-01).
+  apu_rendimiento  numeric(18,6) CHECK (apu_rendimiento > 0),   -- unidades de partida por dia
+  apu_fcas_pct     numeric(8,3)  CHECK (apu_fcas_pct >= 0),      -- NULL = FCAS no definido por SOTICA
   creado_en        timestamptz NOT NULL DEFAULT now(),
   UNIQUE (presupuesto_id, codigo_interno),
   CHECK ( (precio_unitario IS NULL) OR (etiqueta_precio IS NOT NULL AND fuente_precio IS NOT NULL) )
@@ -253,11 +264,25 @@ CREATE TABLE apu_renglones (
   cantidad       numeric(18,6) NOT NULL,
   rendimiento    numeric(18,6),
   desperdicio_pct numeric(6,3) DEFAULT 0,
-  precio_unitario numeric(18,4) NOT NULL,
+  precio_unitario numeric(18,4) NOT NULL CHECK (precio_unitario >= 0),
+  subtotal       numeric(18,4) NOT NULL,               -- aporte al costo unitario de la partida
   etiqueta       etiqueta_dato NOT NULL,
   fuente         text NOT NULL,
-  fecha_fuente   date
+  fecha_fuente   date,
+  origen         origen_precio NOT NULL,
+  proveedor      text,
+  enlace         text,
+  registrado_por text NOT NULL,                        -- quien cargo el numero
+  creado_en      timestamptz NOT NULL DEFAULT now(),
+  -- La regla de la propuesta 4.3, en el motor y no en el prompt: una cotizacion sin
+  -- proveedor, enlace y fecha NO puede guardarse como dato firme. O trae la
+  -- evidencia completa, o queda marcada pendiente de confirmacion.
+  CHECK (origen <> 'cotizacion_proveedor'
+         OR etiqueta = 'pendiente_confirmacion'
+         OR (proveedor IS NOT NULL AND enlace IS NOT NULL AND fecha_fuente IS NOT NULL)),
+  CHECK (origen <> 'referencial_civ' OR fecha_fuente IS NOT NULL)
 );
+CREATE INDEX ON apu_renglones (partida_id);
 
 CREATE TABLE mediciones (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),

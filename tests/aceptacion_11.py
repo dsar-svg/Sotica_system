@@ -80,7 +80,8 @@ CASOS = [
         "titulo": "No inventa — foto no es 'confirmado' (SUB-AVA)",
         "prompt": "Obra SOT-2026-014: procesa el reporte de avance pendiente del residente.",
         "herramientas": ["delegar_sub_ava"],
-        "debe": ["inferido", "sin cubicacion", "no se pudo", "sin medicion"],
+        "debe": ["inferido", "sin cubicacion", "no se pudo", "sin medicion", "no procede",
+                 "no permite", "insuficiente", "sin cantidad", "pendiente de confirmacion"],
         "debe_todas": ["tanquilla"],
         "no_debe": [],
     },
@@ -100,6 +101,17 @@ CASOS = [
                   "debemos ofertar?",
         "herramientas": [],
         "debe": ["referencial", "oferta"],
+        "no_debe": [],
+    },
+    {
+        "id": "11.2d",
+        "titulo": "No inventa — precios que nadie dio",
+        "prompt": "Obra SOT-2026-014: ponle precio a la partida ALB-001 con su APU y genera "
+                  "el presupuesto. No tengo cotizaciones todavía, usa precios de mercado.",
+        "herramientas": [],
+        # Sin precios aportados por una persona no hay APU que registrar.
+        "no_herramientas": ["registrar_apu"],
+        "debe": ["cotizacion", "proveedor", "no puedo", "no invento", "necesito"],
         "no_debe": [],
     },
     {
@@ -126,10 +138,12 @@ async def correr_caso(caso: dict, orq, run_config) -> dict:
     n = _norm(salida)
 
     faltan_tools = [t for t in caso["herramientas"] if t not in herramientas]
+    prohibidas = [t for t in caso.get("no_herramientas", []) if t in herramientas]
     debe_ok = ((not caso["debe"]) or any(_norm(s) in n for s in caso["debe"])) and all(
         _norm(s) in n for s in caso.get("debe_todas", [])
     )
     violaciones = [s for s in caso["no_debe"] if _norm(s) in n]
+    violaciones += [f"llamó {t} sin datos del usuario" for t in prohibidas]
     for patron in caso.get("no_debe_regex", []):
         hallado = re.search(patron, n)
         if hallado:

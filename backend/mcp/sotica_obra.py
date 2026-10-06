@@ -13,7 +13,7 @@ import datetime as dt
 from typing import Any
 
 from ..core import avance as avance_mod
-from ..core import computo, control, db
+from ..core import apu, computo, control, db
 from .registry import Registro, error as _error, ok as _ok
 
 registro = Registro("sotica_obra")
@@ -345,6 +345,78 @@ async def registrar_computo(args: dict[str, Any]) -> dict[str, Any]:
             return _ok(await computo.registrar_computo(
                 conn, args["proyecto"], args.get("partidas") or [],
                 args.get("no_computables") or [],
+            ))
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+@registro.herramienta(
+    "registrar_apu",
+    "Carga el análisis de precio unitario (SOTICA-APU-01) de una partida del presupuesto "
+    "borrador: materiales, equipo, mano de obra y demás insumos, cada uno con su origen y su "
+    "evidencia. Calcula el costo directo unitario y lo fija como precio de la partida. La "
+    "etiqueta de dato NO la eliges tú: la asigna la herramienta según la evidencia. Una "
+    "cotización de proveedor sin proveedor, enlace y fecha queda PENDIENTE DE CONFIRMACIÓN y "
+    "no suma al total firme. Reemplaza el APU anterior de la partida. Solo ORQ-COST, y solo "
+    "con precios que el usuario haya dado: nunca con precios supuestos.",
+    {
+        "type": "object",
+        "properties": {
+            "proyecto": {"type": "string"},
+            "codigo_partida": {"type": "string",
+                               "description": "partida ya computada en el borrador"},
+            "registrado_por": {"type": "string",
+                               "description": "nombre de la persona que aportó los precios"},
+            "rendimiento": {"type": "number",
+                            "description": "unidades de la partida ejecutadas por día; "
+                                           "obligatorio si hay equipo o mano de obra"},
+            "fcas_pct": {"type": "number",
+                         "description": "FCAS en % sobre la mano de obra. Omitir si SOTICA "
+                                        "no lo ha indicado: no se supone."},
+            "renglones": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "tipo": {"type": "string",
+                                 "enum": ["material", "equipo", "mano_obra", "subcontrato",
+                                          "transporte", "herramienta"]},
+                        "descripcion": {"type": "string"},
+                        "unidad": {"type": "string",
+                                   "description": "unidad del insumo (und, saco, m3, día…)"},
+                        "cantidad": {"type": "number",
+                                     "description": "material: consumo por unidad de partida. "
+                                                    "equipo / mano de obra: número de recursos."},
+                        "precio_unitario": {"type": "number",
+                                            "description": "material: precio por unidad del "
+                                                           "insumo. equipo / mano de obra: "
+                                                           "costo por día."},
+                        "desperdicio_pct": {"type": "number"},
+                        "origen": {"type": "string",
+                                   "enum": ["cotizacion_proveedor", "experiencia_obra",
+                                            "historico_sotica", "referencial_civ"]},
+                        "proveedor": {"type": "string"},
+                        "enlace": {"type": "string",
+                                   "description": "URL de la consulta al proveedor"},
+                        "fecha_consulta": {"type": "string", "description": "YYYY-MM-DD"},
+                        "fuente": {"type": "string",
+                                   "description": "obra de referencia (histórico) o nombre de "
+                                                  "la base referencial"},
+                    },
+                    "required": ["tipo", "descripcion", "unidad", "cantidad",
+                                 "precio_unitario", "origen"],
+                },
+            },
+        },
+        "required": ["proyecto", "codigo_partida", "registrado_por", "renglones"],
+    },
+)
+async def registrar_apu(args: dict[str, Any]) -> dict[str, Any]:
+    try:
+        async with db.transaction() as conn:
+            return _ok(await apu.registrar_apu(
+                conn, args["proyecto"], args["codigo_partida"], args.get("registrado_por", ""),
+                args.get("renglones") or [], args.get("rendimiento"), args.get("fcas_pct"),
             ))
     except Exception as exc:  # noqa: BLE001
         return _error(str(exc))

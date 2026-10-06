@@ -53,12 +53,14 @@ def _pie(ws, codigo_doc: str, revision: str) -> None:
     ws.oddFooter.right.text = "Página &P de &N"
 
 
-def _hoja_portada(wb, proyecto, base, codigo_doc, revision, formatos_oficiales) -> None:
+def _hoja_portada(wb, proyecto, base, codigo_doc, revision, formatos_oficiales,
+                  titulo: str = "Libro de cómputos métricos",
+                  tipo_documento: str = "Cómputos métricos") -> None:
     ws = wb.create_sheet("Portada")
     _anchos(ws, [28, 60])
     ws["A1"] = "SOTICA"
     ws["A1"].font = _H1
-    ws["A2"] = "Libro de cómputos métricos"
+    ws["A2"] = titulo
     ws["A2"].font = Font(name=FUENTE, size=13, bold=True, color=AZUL)
     ws["A3"].fill = _FILL_ACENTO
     ws["B3"].fill = _FILL_ACENTO
@@ -68,7 +70,7 @@ def _hoja_portada(wb, proyecto, base, codigo_doc, revision, formatos_oficiales) 
         ("Código de proyecto", proyecto["codigo"]),
         ("Cliente / ente contratante", proyecto["cliente"] or "—"),
         ("Ubicación", proyecto["ubicacion"] or "—"),
-        ("Tipo de documento", "Cómputos métricos"),
+        ("Tipo de documento", tipo_documento),
         ("Código de documento", codigo_doc),
         ("Revisión", revision),
         ("Fecha", dt.date.today().strftime("%d/%m/%Y")),
@@ -338,6 +340,253 @@ async def generar_excel_computos(args: dict[str, Any]) -> dict[str, Any]:
                 "mediciones_incluidas": len(mediciones),
                 "inconsistencias_listadas": len(faltantes),
                 "advertencias": advertencias,
+            })
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+_DET = "'Detalle de partidas'"
+
+
+async def _guardar_entregable(conn, proyecto, wb, codigo_doc: str, revision: str,
+                              titulo: str) -> tuple[Any, str]:
+    for ws in wb.worksheets:
+        _pie(ws, codigo_doc, revision)
+    buffer = BytesIO()
+    wb.save(buffer)
+    nombre = f"{codigo_doc}_Rev-{revision}_{proyecto['codigo']}.xlsx"
+    storage_key, sha256, tam = storage.put_bytes(proyecto["codigo"], nombre, buffer.getvalue())
+    archivo_id = await conn.fetchval(
+        """
+        INSERT INTO archivos (proyecto_id, tipo, nombre, storage_key, mime, bytes, sha256,
+                              subido_por)
+        VALUES ($1,'entregable',$2,$3,$4,$5,$6,'SUB-DOC') RETURNING id
+        """,
+        proyecto["id"], nombre, storage_key, _XLSX, tam, sha256,
+    )
+    await conn.execute(
+        """
+        INSERT INTO entregables (proyecto_id, archivo_id, codigo_documento, revision, titulo,
+                                 formato, generado_por, formato_oficial)
+        VALUES ($1,$2,$3,$4,$5,'xlsx','SUB-DOC',$6)
+        ON CONFLICT (proyecto_id, codigo_documento, revision)
+        DO UPDATE SET archivo_id = EXCLUDED.archivo_id, titulo = EXCLUDED.titulo,
+                      creado_en = now()
+        """,
+        proyecto["id"], archivo_id, codigo_doc, revision, titulo,
+        proyecto["formatos_ratificados"],
+    )
+    return archivo_id, storage.url_for(storage_key)
+
+
+def _celdas(ws, fila: int, valores: list[Any], formatos: dict[int, str] | None = None) -> None:
+    for col, valor in enumerate(valores, start=1):
+        c = ws.cell(row=fila, column=col, value=valor)
+        c.font = _NORM
+        c.border = _BORDE
+        c.alignment = Alignment(wrap_text=True, vertical="top")
+        if formatos and col in formatos:
+            c.number_format = formatos[col]
+
+
+def _hoja_detalle(wb, partidas) -> int:
+    """Detalle de partidas. El monto se separa en firme y pendiente con fórmulas vivas:
+    un precio pendiente de confirmación está en el libro, pero no en el total firme."""
+    ws = wb.create_sheet("Detalle de partidas")
+    _encabezado(ws, ["Capítulo", "Código", "COVENIN", "Descripción", "Unidad", "Cantidad",
+                     "Etiqueta cantidad", "Precio unitario", "Etiqueta precio",
+                     "Fuente del precio", "Monto firme", "Monto pendiente de confirmación"])
+    _anchos(ws, [18, 12, 10, 44, 8, 13, 18, 14, 22, 44, 16, 18])
+    fila = 2
+    for p in partidas:
+        precio = float(p["precio_unitario"]) if p["precio_unitario"] is not None else None
+        _celdas(ws, fila, [
+            p["capitulo"], p["codigo_interno"], p["codigo_covenin"] or "", p["descripcion"],
+            p["unidad"], float(p["cantidad"]), p["etiqueta_cantidad"], precio,
+            p["etiqueta_precio"] or "SIN PRECIO",
+            p["fuente_precio"] or "Sin precio cargado: la partida no suma al presupuesto.",
+            f'=IF(OR(I{fila}="SIN PRECIO",I{fila}="pendiente_confirmacion"),0,F{fila}*H{fila})',
+            f'=IF(I{fila}="pendiente_confirmacion",F{fila}*H{fila},0)',
+        ], {6: "#,##0.00", 8: "#,##0.00", 11: "#,##0.00", 12: "#,##0.00"})
+        fila += 1
+    if fila == 2:
+        ws.cell(row=2, column=1, value="El presupuesto no tiene partidas.").font = _NORM
+        return fila
+    ws.cell(row=fila, column=10, value="TOTAL COSTO DIRECTO").font = _NEG
+    for col in ("K", "L"):
+        c = ws[f"{col}{fila}"]
+        c.value, c.font, c.number_format = f"=SUM({col}2:{col}{fila-1})", _NEG, "#,##0.00"
+    return fila
+
+
+def _hoja_resumen_montos(wb, capitulos: list[str], fila_total_detalle: int) -> None:
+    ws = wb.create_sheet("Resumen por capítulo")
+    _encabezado(ws, ["Capítulo", "Monto firme", "Monto pendiente de confirmación"])
+    _anchos(ws, [34, 20, 30])
+    fila = 2
+    for cap in capitulos:
+        _celdas(ws, fila, [
+            cap,
+            f"=SUMIF({_DET}!A:A,A{fila},{_DET}!K:K)",
+            f"=SUMIF({_DET}!A:A,A{fila},{_DET}!L:L)",
+        ], {2: "#,##0.00", 3: "#,##0.00"})
+        fila += 1
+    if fila > 2:
+        ws.cell(row=fila, column=1, value="TOTAL COSTO DIRECTO").font = _NEG
+        for col in ("B", "C"):
+            c = ws[f"{col}{fila}"]
+            c.value, c.font, c.number_format = f"=SUM({col}2:{col}{fila-1})", _NEG, "#,##0.00"
+
+
+@registro.herramienta(
+    "generar_excel_presupuesto",
+    "Genera el presupuesto de obra en formato SOTICA-PRE-01 (.xlsx): portada, resumen por "
+    "capítulo, detalle de partidas, carpeta de APU con la evidencia de cada precio, indirectos "
+    "y notas. Los montos son fórmulas vivas y separan lo firme de lo pendiente de "
+    "confirmación; una partida sin precio aparece pero no suma. Lo sube al bucket y lo "
+    "registra como entregable. Solo SUB-DOC.",
+    {
+        "type": "object",
+        "properties": {
+            "proyecto": {"type": "string"},
+            "origen": {
+                "type": "string", "enum": ["auto", "borrador", "base"],
+                "description": "auto (por defecto): el borrador en curso si existe; si no, "
+                               "la base de control.",
+            },
+            "revision": {"type": "string", "description": "por defecto 'A'"},
+            "titulo": {"type": "string"},
+        },
+        "required": ["proyecto"],
+    },
+)
+async def generar_excel_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
+    revision = args.get("revision") or "A"
+    codigo_doc = "SOTICA-PRE-01"
+    try:
+        async with db.transaction() as conn:
+            proyecto = await control.proyecto_por_ref(conn, args["proyecto"])
+            if proyecto is None:
+                return _error(f"No existe la obra '{args['proyecto']}'.")
+            base = await control.presupuesto_por_origen(
+                conn, proyecto["id"], args.get("origen") or "auto"
+            )
+            if base is None:
+                return _error("La obra no tiene presupuesto del que tomar partidas.")
+
+            partidas = await conn.fetch(
+                "SELECT * FROM partidas WHERE presupuesto_id = $1 "
+                "ORDER BY capitulo, orden, codigo_interno",
+                base["id"],
+            )
+            renglones = await conn.fetch(
+                """
+                SELECT p.codigo_interno, r.* FROM apu_renglones r
+                  JOIN partidas p ON p.id = r.partida_id
+                 WHERE p.presupuesto_id = $1
+                 ORDER BY p.capitulo, p.orden, p.codigo_interno, r.tipo, r.descripcion
+                """,
+                base["id"],
+            )
+            faltantes = await conn.fetch(
+                "SELECT ambito, descripcion, impacto_estimado, como_obtenerlo FROM faltantes "
+                "WHERE proyecto_id = $1 AND estado = 'abierto' ORDER BY creado_en",
+                proyecto["id"],
+            )
+
+            wb = Workbook()
+            wb.remove(wb.active)
+            _hoja_portada(wb, proyecto, base, codigo_doc, revision,
+                          proyecto["formatos_ratificados"],
+                          titulo="Presupuesto de obra", tipo_documento="Presupuesto")
+            capitulos = list(dict.fromkeys(p["capitulo"] for p in partidas))
+            ws_resumen_pos = len(wb.worksheets)
+            fila_total = _hoja_detalle(wb, partidas)
+            _hoja_resumen_montos(wb, capitulos, fila_total)
+            wb.move_sheet("Resumen por capítulo", ws_resumen_pos - len(wb.worksheets) + 1)
+
+            _hoja_simple(
+                wb, "APU",
+                ["Partida", "Tipo", "Insumo", "Unidad", "Cantidad", "Rendimiento (und/día)",
+                 "Desperdicio %", "Precio", "Aporte al precio unitario", "Origen", "Proveedor",
+                 "Enlace", "Fecha de consulta", "Etiqueta de dato", "Registrado por"],
+                [[r["codigo_interno"], r["tipo"], r["descripcion"], r["unidad"],
+                  float(r["cantidad"]),
+                  float(r["rendimiento"]) if r["rendimiento"] is not None else "",
+                  float(r["desperdicio_pct"] or 0), float(r["precio_unitario"]),
+                  float(r["subtotal"]), r["origen"], r["proveedor"] or "—", r["enlace"] or "—",
+                  r["fecha_fuente"].strftime("%d/%m/%Y") if r["fecha_fuente"] else "—",
+                  r["etiqueta"], r["registrado_por"]] for r in renglones],
+                "Ninguna partida tiene APU cargado.",
+            )
+
+            sin_precio = [p["codigo_interno"] for p in partidas if p["precio_unitario"] is None]
+            pendientes = [p["codigo_interno"] for p in partidas
+                          if p["etiqueta_precio"] == "pendiente_confirmacion"]
+            sin_fcas = sorted({r["codigo_interno"] for r in renglones if r["tipo"] == "mano_obra"}
+                              & {p["codigo_interno"] for p in partidas
+                                 if p["apu_fcas_pct"] is None})
+            _hoja_simple(
+                wb, "Indirectos", ["Concepto", "Valor", "Estado"],
+                [["Costo directo firme", f"={_DET}!K{fila_total}" if partidas else 0,
+                  "Suma de partidas con precio sustentado."],
+                 ["Administración y gastos generales", "—",
+                  "PENDIENTE: lo define SOTICA o el pliego. No se aplica ningún porcentaje."],
+                 ["Utilidad", "—",
+                  "PENDIENTE: decisión comercial de SOTICA. No se aplica ningún porcentaje."],
+                 ["Impuestos", "—", "PENDIENTE: según pliego y régimen aplicable."]],
+                "",
+            )
+            notas = [["Alcance", "Este libro presenta COSTO DIRECTO. No es precio de oferta: "
+                                 "faltan indirectos, utilidad e impuestos (hoja Indirectos)."]]
+            if not base["es_base_control"]:
+                notas.append(["Estado", f"Presupuesto v{base['version']} en {base['estado']}: "
+                                        "no está aprobado ni es base de control de obra."])
+            if sin_precio:
+                notas.append(["Partidas sin precio", ", ".join(sin_precio)
+                              + ". Aparecen en el detalle pero no suman."])
+            if pendientes:
+                notas.append(["Precios pendientes de confirmación", ", ".join(pendientes)
+                              + ". Falta evidencia (proveedor, enlace o fecha) en algún insumo; "
+                                "su monto va en columna aparte y no entra al total firme."])
+            if sin_fcas:
+                notas.append(["FCAS no definido", ", ".join(sin_fcas)
+                              + ". La mano de obra va sin recargo hasta que SOTICA indique el FCAS."])
+            notas += [[f"Faltante — {f['ambito']}",
+                       f"{f['descripcion']} Impacto: {f['impacto_estimado'] or 'no estimado'}. "
+                       f"Cómo obtenerlo: {f['como_obtenerlo']}"] for f in faltantes]
+            _hoja_simple(wb, "Notas", ["Tema", "Nota"], notas, "")
+            wb["Notas"].column_dimensions["B"].width = 110
+            wb["Indirectos"].column_dimensions["A"].width = 36
+            wb["Indirectos"].column_dimensions["C"].width = 70
+
+            firme = sum(float(p["monto"] or 0) for p in partidas
+                        if p["precio_unitario"] is not None
+                        and p["etiqueta_precio"] != "pendiente_confirmacion")
+            pendiente = sum(float(p["monto"] or 0) for p in partidas
+                            if p["etiqueta_precio"] == "pendiente_confirmacion")
+
+            archivo_id, url = await _guardar_entregable(
+                conn, proyecto, wb, codigo_doc, revision,
+                args.get("titulo") or f"Presupuesto de obra — {proyecto['nombre_obra']}",
+            )
+            return _ok({
+                "archivo_id": str(archivo_id),
+                "codigo_documento": codigo_doc,
+                "revision": revision,
+                "presupuesto_origen": {"version": base["version"], "estado": base["estado"],
+                                       "es_base_control": base["es_base_control"]},
+                "url_descarga": url,
+                "hojas": [ws.title for ws in wb.worksheets],
+                "moneda": base["moneda"],
+                "partidas_incluidas": len(partidas),
+                "renglones_apu": len(renglones),
+                "costo_directo_firme": round(firme, 2),
+                "monto_pendiente_confirmacion": round(pendiente, 2),
+                "partidas_sin_precio": sin_precio,
+                "partidas_con_precio_pendiente": pendientes,
+                "advertencias": [n[0] + ": " + n[1] for n in notas[:6]],
             })
     except Exception as exc:  # noqa: BLE001
         return _error(str(exc))
