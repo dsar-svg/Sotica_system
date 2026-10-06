@@ -41,6 +41,24 @@ async def presupuesto_base(conn: asyncpg.Connection, proyecto_id: UUID) -> async
     )
 
 
+async def presupuesto_por_origen(
+    conn: asyncpg.Connection, proyecto_id: UUID, origen: str = "base"
+) -> asyncpg.Record | None:
+    """`base`: el de control de obra. `borrador`: el último borrador, donde SUB-CM
+    escribe los cómputos. `auto`: el borrador si existe; si no, la base."""
+    if origen not in ("base", "borrador", "auto"):
+        raise ValueError(f"origen inválido: {origen!r} (base | borrador | auto)")
+    if origen in ("borrador", "auto"):
+        row = await conn.fetchrow(
+            "SELECT * FROM presupuestos WHERE proyecto_id = $1 AND estado = 'borrador' "
+            "ORDER BY version DESC LIMIT 1",
+            proyecto_id,
+        )
+        if row is not None or origen == "borrador":
+            return row
+    return await presupuesto_base(conn, proyecto_id)
+
+
 async def config_vigente(conn: asyncpg.Connection, proyecto_id: UUID) -> dict[str, Any]:
     row = await conn.fetchrow("SELECT (fn_config_control($1)).*", proyecto_id)
     return dict(row) if row else {}

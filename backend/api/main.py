@@ -195,4 +195,13 @@ async def chat(payload: dict[str, Any]):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+@app.delete("/api/chat/{ref}")
+async def reiniciar_chat(ref: str) -> dict[str, Any]:
+    """Conversación nueva para la obra: olvida el historial del chat, no los datos."""
+    sesion = _sesiones.pop(ref, None) or SesionObra(ref)
+    await sesion.reiniciar()
+    await sesion.cerrar()
+    return {"ok": True}
+
+
 app.mount("/", StaticFiles(directory=BASE_DIR / "frontend", html=True), name="frontend")

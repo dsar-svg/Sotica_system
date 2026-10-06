@@ -31,6 +31,11 @@ registro = Registro("sotica_obra")
         "properties": {
             "proyecto": {"type": "string", "description": "uuid o código de obra (SOT-2026-014)"},
             "capitulo": {"type": "string", "description": "filtro opcional por capítulo"},
+            "origen": {
+                "type": "string", "enum": ["base", "borrador"],
+                "description": "base (por defecto): presupuesto de control de obra. "
+                               "borrador: cómputos en curso aún no aprobados.",
+            },
         },
         "required": ["proyecto"],
     },
@@ -40,9 +45,12 @@ async def consultar_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
         proyecto = await control.proyecto_por_ref(conn, args["proyecto"])
         if proyecto is None:
             return _error(f"No existe la obra '{args['proyecto']}'.")
-        base = await control.presupuesto_base(conn, proyecto["id"])
+        origen = args.get("origen") or "base"
+        base = await control.presupuesto_por_origen(conn, proyecto["id"], origen)
         if base is None:
             return _error(
+                "La obra no tiene presupuesto en borrador: todavía no se ha registrado "
+                "ningún cómputo." if origen == "borrador" else
                 "La obra no tiene presupuesto marcado como base de control (es_base_control)."
             )
         partidas = await conn.fetch(
@@ -69,6 +77,7 @@ async def consultar_presupuesto(args: dict[str, Any]) -> dict[str, Any]:
             },
             "presupuesto": {
                 "version": base["version"], "tipo": base["tipo"], "estado": base["estado"],
+                "es_base_control": base["es_base_control"],
                 "moneda": base["moneda"], "fecha_base": base["fecha_base"],
                 "clase_estimado": base["clase_estimado"],
             },

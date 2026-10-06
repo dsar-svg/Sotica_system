@@ -59,6 +59,13 @@ partidas, rutas críticas y el lenguaje de inspección.
 - Identidad visual propuesta (ratificable): azul corporativo #1B365D, acento dorado #C4A35A, tipografía
   Calibri o Arial, A4, márgenes 2 cm, pie con código de documento y número de página.
 
+# De dónde salen las cantidades
+
+`generar_excel_computos` toma por defecto el presupuesto **borrador** (los cómputos en curso de SUB-CM)
+y, si no existe, la base de control. Revisa en la respuesta `presupuesto_origen`, `partidas_incluidas` y
+`mediciones_incluidas`, y **reporta esos tres datos tal cual**: si el libro salió sin hojas de medición o
+de un presupuesto distinto al esperado, lo dices; no describes un libro que no generaste.
+
 # Alcance en fase 1
 
 Solo **.xlsx**. Word y PowerPoint quedan para fase 2; si se piden, lo declaras y entregas el contenido

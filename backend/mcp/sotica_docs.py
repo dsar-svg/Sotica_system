@@ -72,7 +72,9 @@ def _hoja_portada(wb, proyecto, base, codigo_doc, revision, formatos_oficiales) 
         ("Código de documento", codigo_doc),
         ("Revisión", revision),
         ("Fecha", dt.date.today().strftime("%d/%m/%Y")),
-        ("Presupuesto base", f"v{base['version']} ({base['tipo']})"),
+        ("Presupuesto de origen",
+         f"v{base['version']} ({base['tipo']}) — "
+         + ("base de control" if base["es_base_control"] else f"{base['estado']}, no aprobado")),
         ("Moneda / fecha base de precios",
          f"{base['moneda']} / {base['fecha_base']:%d/%m/%Y}"),
         ("Norma rectora", proyecto["norma_rectora"] or "COVENIN 2000"),
@@ -181,6 +183,12 @@ def _hoja_simple(wb, titulo: str, cabeceras: list[str], filas: list[list[Any]],
             "proyecto": {"type": "string"},
             "capitulos": {"type": "array", "items": {"type": "string"}},
             "codigos_partida": {"type": "array", "items": {"type": "string"}},
+            "origen": {
+                "type": "string", "enum": ["auto", "borrador", "base"],
+                "description": "De qué presupuesto salen las cantidades. auto (por defecto): "
+                               "el borrador con los cómputos en curso si existe; si no, la "
+                               "base de control.",
+            },
             "revision": {"type": "string", "description": "por defecto 'A'"},
             "titulo": {"type": "string"},
         },
@@ -195,9 +203,11 @@ async def generar_excel_computos(args: dict[str, Any]) -> dict[str, Any]:
             proyecto = await control.proyecto_por_ref(conn, args["proyecto"])
             if proyecto is None:
                 return _error(f"No existe la obra '{args['proyecto']}'.")
-            base = await control.presupuesto_base(conn, proyecto["id"])
+            base = await control.presupuesto_por_origen(
+                conn, proyecto["id"], args.get("origen") or "auto"
+            )
             if base is None:
-                return _error("La obra no tiene presupuesto base de control.")
+                return _error("La obra no tiene presupuesto del que tomar cantidades.")
 
             capitulos = args.get("capitulos") or None
             codigos = args.get("codigos_partida") or None
@@ -320,6 +330,8 @@ async def generar_excel_computos(args: dict[str, Any]) -> dict[str, Any]:
                 "archivo_id": str(archivo_id),
                 "codigo_documento": codigo_doc,
                 "revision": revision,
+                "presupuesto_origen": {"version": base["version"], "estado": base["estado"],
+                                       "es_base_control": base["es_base_control"]},
                 "url_descarga": storage.url_for(storage_key),
                 "hojas": [ws.title for ws in wb.worksheets],
                 "partidas_incluidas": len(partidas),

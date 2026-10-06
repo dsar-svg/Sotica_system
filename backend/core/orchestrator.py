@@ -108,6 +108,12 @@ class SesionObra:
         self._servidores = {}
         self._orquestador = None
 
+    async def reiniciar(self) -> None:
+        """Borra el historial de conversación de la obra. Los datos de la obra no se tocan."""
+        if self._session is None:
+            await self.abrir()
+        await self._session.clear_session()
+
     async def preguntar(self, mensaje: str) -> AsyncIterator[dict]:
         """Emite eventos {tipo, ...} — mismo contrato SSE que antes, para no tocar
         el frontend."""

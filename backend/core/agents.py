@@ -128,6 +128,33 @@ def crear_servidores_mcp() -> dict[str, MCPServerStdio]:
 # Construcción de agentes
 # ---------------------------------------------------------------------------
 
+async def _registrar_delegacion(
+    destino: str, briefing: BriefingSOTICA, salida: Any, herramientas: list[str]
+) -> None:
+    """Deja constancia de la delegación (§5.3 y §10.1 "registro de delegaciones").
+    Es bitácora: si la base no está disponible, la delegación no se cae por esto."""
+    from . import db  # import diferido: los criterios §11 corren sin Postgres
+
+    respuesta = salida.model_dump() if isinstance(salida, RespuestaSubagente) else None
+    if respuesta is not None:
+        # Qué herramientas llamó de verdad el subagente: es lo que distingue "lo hizo"
+        # de "dijo que lo hizo".
+        respuesta["herramientas_usadas"] = herramientas
+    try:
+        await db.execute(
+            """
+            INSERT INTO delegaciones (proyecto_id, agente_origen, agente_destino, briefing,
+                                      respuesta, confianza, finalizada_en)
+            VALUES ((SELECT id FROM proyectos WHERE codigo = $1), 'ORQ-COST',
+                    $2::codigo_agente, $3, $4, $5::nivel_confianza, now())
+            """,
+            briefing.codigo_proyecto, destino, briefing.model_dump(), respuesta,
+            respuesta["nivel_confianza"] if respuesta else None,
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _herramienta_de_delegacion(subagente: Agent, af: AgentFile, run_config: RunConfig | None):
     """Convierte un subagente en herramienta de ORQ-COST.
 
@@ -154,6 +181,11 @@ def _herramienta_de_delegacion(subagente: Agent, af: AgentFile, run_config: RunC
             run_config=run_config,
         )
         salida = resultado.final_output
+        usadas = [
+            getattr(item.raw_item, "name", "?")
+            for item in resultado.new_items if item.type == "tool_call_item"
+        ]
+        await _registrar_delegacion(af.codigo, briefing, salida, usadas)
         if isinstance(salida, RespuestaSubagente):
             return salida.model_dump_json(indent=2)
         return str(salida)

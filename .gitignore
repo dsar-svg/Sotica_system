@@ -5,3 +5,5 @@ __pycache__/
 storage/
 .venv/
 .pgdata/
+.pgdata.log
+_e2e.sh

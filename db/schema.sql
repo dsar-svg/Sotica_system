@@ -583,23 +583,28 @@ BEGIN
   IF cfg.base_ponderacion = 'monto' THEN
     -- Default: ponderado por monto de partida (estandar de valuacion venezolana).
     -- PENDIENTE DE RATIFICACION POR SOTICA.
+    -- El denominador es TODO el presupuesto base: una partida sin avance pesa con 0 %.
+    -- Promediar solo las partidas que ya reportaron sobrestima el avance de la obra.
     SELECT CASE WHEN COALESCE(sum(pa.monto), 0) = 0 THEN 0
-                ELSE round(sum(eop.pct_fisico_real * pa.monto) / sum(pa.monto), 2) END
+                ELSE round(sum(COALESCE(eop.pct_fisico_real, 0) * pa.monto) / sum(pa.monto), 2) END
       INTO resultado
-      FROM estado_obra_partida eop
-      JOIN partidas pa ON pa.id = eop.partida_id
-     WHERE eop.proyecto_id = p_proyecto;
+      FROM partidas pa
+      JOIN presupuestos pr ON pr.id = pa.presupuesto_id AND pr.es_base_control
+      LEFT JOIN estado_obra_partida eop ON eop.partida_id = pa.id
+     WHERE pa.proyecto_id = p_proyecto;
 
   ELSIF cfg.base_ponderacion = 'cantidad' THEN
     -- Alternativa: proporcion de cantidad ejecutada sobre cantidad presupuestada.
     -- Solo es defendible si las partidas comparten unidad; se ofrece porque el
     -- cliente puede pedirla, no porque la recomendemos.
-    SELECT CASE WHEN COALESCE(sum(eop.cantidad_presupuestada), 0) = 0 THEN 0
-                ELSE round(100.0 * sum(eop.cantidad_acumulada)
-                                 / sum(eop.cantidad_presupuestada), 2) END
+    SELECT CASE WHEN COALESCE(sum(pa.cantidad), 0) = 0 THEN 0
+                ELSE round(100.0 * sum(COALESCE(eop.cantidad_acumulada, 0))
+                                 / sum(pa.cantidad), 2) END
       INTO resultado
-      FROM estado_obra_partida eop
-     WHERE eop.proyecto_id = p_proyecto;
+      FROM partidas pa
+      JOIN presupuestos pr ON pr.id = pa.presupuesto_id AND pr.es_base_control
+      LEFT JOIN estado_obra_partida eop ON eop.partida_id = pa.id
+     WHERE pa.proyecto_id = p_proyecto;
 
   ELSE
     RAISE EXCEPTION

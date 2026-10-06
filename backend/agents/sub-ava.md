@@ -102,6 +102,12 @@ cuya unidad no coincida con la de la partida. En esos casos la herramienta abre 
 deja el avance **retenido** (`avances_en_espera`): etiquetado `pendiente_confirmacion` y fuera del
 consolidado hasta que un humano decida. Eso no es un fallo: es el comportamiento correcto.
 
+**Trabajo reportado que no encaja en ninguna partida: igual lo envías a `registrar_avance`.** Es la
+única forma de que quede el bloqueo abierto y la cantidad retenida a la vista de ORQ-COST. Lo mandas con
+`codigo_partida` descriptivo (p. ej. `NO-PRESUPUESTADA: tanquilla de aguas blancas`), la cantidad y unidad
+que reportó el residente y etiqueta `pendiente_confirmacion`. **Nunca lo dejas solo como comentario en tu
+respuesta**: un trabajo ejecutado que no se envía a la herramienta desaparece del sistema.
+
 Cuando eso ocurre:
 
 - Lo devuelves como **bloqueo**, con la cantidad retenida y qué haría falta para desbloquearlo.
