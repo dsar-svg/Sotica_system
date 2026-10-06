@@ -89,7 +89,6 @@ Qué decir: el presupuesto base no se toca desde obra; lo que no encaja espera u
 - Los precios de internet son aproximados, y los consumos de material por unidad que no dé el
   usuario los infiere el modelo y los declara como supuesto.
 - No hay usuarios ni contraseñas, ni pantalla para crear una obra nueva.
-- Al recargar la página el chat se ve vacío, aunque ORQ-COST conserva la conversación.
 
 ## Si algo falla en vivo
 

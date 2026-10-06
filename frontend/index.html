@@ -46,9 +46,19 @@
     .chat{height:78vh}
     .registro{border-left:0;border-top:1px solid var(--borde)}
   }
+  @media (max-width:560px){
+    header{height:auto;flex-wrap:wrap;gap:6px 14px;padding:10px 14px}
+    .obra{margin-left:0;flex:1 1 100%}
+    .obra select{max-width:none;flex:1;min-width:0}
+    .chat-cab{flex-wrap:wrap;padding:10px 14px}
+    .chat-cab button{margin-left:0}
+    #hilo{padding:14px}
+    form.entrada{padding:10px 14px}
+    .paneles{padding:10px}
+  }
 
   /* ---------- Conversación ---------- */
-  .chat{display:flex;flex-direction:column;min-height:0;background:var(--superficie)}
+  .chat{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--superficie)}
   .chat-cab{display:flex;align-items:center;gap:12px;padding:12px 20px;
             border-bottom:1px solid var(--borde);flex:none}
   .chat-cab h1{margin:0;font-size:15px;font-weight:600}
@@ -56,7 +66,8 @@
   .chat-cab button{margin-left:auto}
   #hilo{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;
         scroll-behavior:smooth}
-  .turno{max-width:76ch}
+  .turno{max-width:min(76ch,100%);min-width:0}
+  .prosa{overflow-wrap:anywhere}
   .turno.yo{align-self:flex-end;background:var(--azul);color:#fff;padding:9px 13px;
             border-radius:var(--radio);white-space:pre-wrap;max-width:min(70ch,85%)}
   .autor{font-size:12px;font-weight:600;color:var(--tinta-3);margin-bottom:4px}
@@ -116,7 +127,7 @@
        background:var(--superficie)}
 
   /* ---------- Registro (panel derecho) ---------- */
-  .registro{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--borde);
+  .registro{display:flex;flex-direction:column;min-height:0;min-width:0;border-left:1px solid var(--borde);
             background:var(--fondo)}
   [role=tablist]{display:flex;gap:2px;padding:0 12px;background:var(--superficie);
                  border-bottom:1px solid var(--borde);overflow-x:auto;flex:none}
@@ -197,7 +208,7 @@
     <div id="hilo" aria-live="polite"></div>
     <form class="entrada" id="fchat">
       <label class="oculto" for="msg">Mensaje para ORQ-COST</label>
-      <textarea id="msg" rows="1" placeholder="Escribe la orden para ORQ-COST…"></textarea>
+      <textarea id="msg" rows="1" placeholder="Orden para ORQ-COST…"></textarea>
       <button class="btn" id="enviar">Enviar</button>
     </form>
   </section>
@@ -434,12 +445,23 @@ const SUGERENCIAS = [
 function hiloVacio() {
   $('hilo').innerHTML = `<div class="vacio-chat">
     <h2>Dale una orden a ORQ-COST</h2>
-    <p>Él delega en los especialistas y te responde con lo que quedó registrado. A la derecha ves el estado real de la obra.</p>
+    <p>Él delega en los especialistas y te responde con lo que quedó registrado. En el registro ves el estado real de la obra.</p>
     <div class="sugerencias">${SUGERENCIAS.map(([t, p], i) =>
       `<button class="sugerencia" type="button" data-i="${i}"><b>${t}</b><span>${esc(p)}</span></button>`).join('')}</div>
   </div>`;
   $('hilo').querySelectorAll('.sugerencia').forEach((b) =>
     b.onclick = () => { $('msg').value = SUGERENCIAS[b.dataset.i][1]; ajustar(); $('msg').focus(); });
+}
+// El hilo se conserva al recargar la página (por pestaña del navegador y por obra).
+const claveHilo = () => 'sotica-hilo:' + obraActual;
+function guardarHilo() {
+  try { sessionStorage.setItem(claveHilo(), $('hilo').innerHTML); } catch (e) { /* sin almacenamiento */ }
+}
+function restaurarHilo() {
+  let previo = null;
+  try { previo = sessionStorage.getItem(claveHilo()); } catch (e) { /* sin almacenamiento */ }
+  if (previo && !previo.includes('vacio-chat')) { $('hilo').innerHTML = previo; abajo(); }
+  else hiloVacio();
 }
 function abajo() { $('hilo').scrollTop = $('hilo').scrollHeight; }
 function ajustar() { const t = $('msg'); t.style.height = 'auto'; t.style.height = Math.min(160, t.scrollHeight) + 'px'; }
@@ -502,7 +524,7 @@ async function enviar(texto) {
     e.textContent = `No se pudo completar: ${err.message} Puedes reintentar el mensaje.`;
     turno.appendChild(e);
   } finally {
-    clearInterval(reloj); espera.remove(); ponerOcupado(false); abajo(); refrescar();
+    clearInterval(reloj); espera.remove(); ponerOcupado(false); abajo(); guardarHilo(); refrescar();
   }
 }
 
@@ -519,7 +541,7 @@ $('msg').onkeydown = (e) => {
 $('nueva').onclick = async () => {
   if (ocupado || !obraActual) return;
   ponerOcupado(true);
-  try { await api(`/api/chat/${encodeURIComponent(obraActual)}`, {method: 'DELETE'}); hiloVacio(); }
+  try { await api(`/api/chat/${encodeURIComponent(obraActual)}`, {method: 'DELETE'}); hiloVacio(); guardarHilo(); }
   catch (err) { alert('No se pudo iniciar una conversación nueva: ' + err.message); }
   finally { ponerOcupado(false); }
 };
@@ -542,7 +564,7 @@ $('fev').onsubmit = async (ev) => {
 };
 
 /* ---------- arranque ---------- */
-$('obra').onchange = (ev) => { obraActual = ev.target.value; hiloVacio(); refrescar(); };
+$('obra').onchange = (ev) => { obraActual = ev.target.value; restaurarHilo(); refrescar(); };
 (async () => {
   $('fecha').valueAsDate = new Date();
   hiloVacio();
@@ -550,7 +572,7 @@ $('obra').onchange = (ev) => { obraActual = ev.target.value; hiloVacio(); refres
     const obras = await api('/api/proyectos');
     $('obra').innerHTML = obras.map((o) =>
       `<option value="${esc(o.codigo)}">${esc(o.codigo)} — ${esc(o.nombre_obra)}</option>`).join('');
-    if (obras.length) { obraActual = obras[0].codigo; refrescar(); }
+    if (obras.length) { obraActual = obras[0].codigo; restaurarHilo(); refrescar(); }
     else $('avance').innerHTML = '<div class="aviso">No hay obras cargadas en el sistema.</div>';
   } catch (err) {
     $('avance').innerHTML = `<div class="aviso mal">No se pudo leer la lista de obras: ${esc(err.message)}</div>`;

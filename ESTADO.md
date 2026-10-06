@@ -1,5 +1,8 @@
 # Estado del proyecto SOTICA-COSTOS
 
+> **Desactualizado.** El estado vigente está en [ESTADO_ACTUAL.md](ESTADO_ACTUAL.md). Este
+> documento se conserva como historia de las decisiones de septiembre.
+
 **Última actualización:** 10 de septiembre de 2026
 **Rama activa:** `openai-version` · **Rama anterior (Claude Agent SDK):** `anthropic-version`
 
