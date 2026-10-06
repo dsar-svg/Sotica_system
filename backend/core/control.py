@@ -381,6 +381,14 @@ async def estado_obra(
         "SELECT max(fecha_avance) FROM avances_partida WHERE proyecto_id = $1", proyecto_id
     )
     dias = (corte - ultima).days if ultima else None
+    # El plan y el monto presupuestado no dependen de que exista avance: se leen
+    # del presupuesto base al corte pedido, haya o no consolidado previo.
+    pct_plan = await conn.fetchval("SELECT fn_pct_plan_obra($1, $2)", proyecto_id, corte)
+    presupuestado = await conn.fetchval(
+        "SELECT COALESCE(sum(monto), 0) FROM partidas WHERE presupuesto_id = $1",
+        base["id"] if base else None,
+    )
+    pct_real = float(cab["pct_fisico_real"]) if cab else 0.0
 
     partidas = await conn.fetch(
         """
@@ -410,15 +418,14 @@ async def estado_obra(
             "tipo_obra": proyecto["tipo_obra"],
         },
         "corte": corte.isoformat(),
-        "avance_fisico_real_pct": float(cab["pct_fisico_real"]) if cab else 0.0,
-        "avance_fisico_plan_pct": float(cab["pct_fisico_plan"]) if cab and cab["pct_fisico_plan"] is not None else None,
+        "avance_fisico_real_pct": pct_real,
+        "avance_fisico_plan_pct": float(pct_plan) if pct_plan is not None else None,
         "desviacion_pp": (
-            round(float(cab["pct_fisico_real"]) - float(cab["pct_fisico_plan"]), 2)
-            if cab and cab["pct_fisico_plan"] is not None else None
+            round(pct_real - float(pct_plan), 2) if pct_plan is not None else None
         ),
         "avance_financiero_pct": float(cab["pct_financiero"]) if cab else 0.0,
         "monto_ejecutado": float(cab["monto_ejecutado"]) if cab else 0.0,
-        "monto_presupuestado": float(cab["monto_presupuestado"]) if cab else 0.0,
+        "monto_presupuestado": float(presupuestado or 0),
         # Regla del dato viejo — estos tres campos vienen siempre.
         "ultima_fecha_avance": ultima.isoformat() if ultima else None,
         "dias_sin_reporte": dias,

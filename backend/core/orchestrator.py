@@ -45,6 +45,10 @@ async def contexto_obra(proyecto_ref: str | None) -> str:
         ultima = await conn.fetchval(
             "SELECT max(fecha_avance) FROM avances_partida WHERE proyecto_id=$1", p["id"]
         )
+        pendientes = await conn.fetchval(
+            "SELECT count(*) FROM reportes_avance WHERE proyecto_id=$1 AND estado='pendiente'",
+            p["id"],
+        )
 
     dias = (dt.date.today() - ultima).days if ultima else None
     return f"""## Contexto de sesión — memoria de proyecto
@@ -57,6 +61,7 @@ async def contexto_obra(proyecto_ref: str | None) -> str:
 - Presupuesto base de control: {'v' + str(base['version']) if base else 'NO DEFINIDO — el seguimiento de obra no puede medir sin él'}
 - Último avance registrado: {ultima.strftime('%d/%m/%Y') + f' (hace {dias} días)' if ultima else 'NINGUNO'}
 - Bloqueos abiertos: {bloqueos}
+- Reportes de campo pendientes de procesar por SUB-AVA: {pendientes}
 - Umbrales de desviación (pp): {cfg.get('umbral_media_pp')} / {cfg.get('umbral_alta_pp')} / {cfg.get('umbral_critica_pp')} · Ponderación: {cfg.get('base_ponderacion')} · Ratificados por SOTICA: {'sí' if cfg.get('ratificado_por_sotica') else 'NO'}
 
 Cuando llames a una herramienta, usa `proyecto = "{p['codigo']}"`.

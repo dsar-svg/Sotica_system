@@ -9,14 +9,17 @@ MCP de fixtures, con los mismos contratos que producción, así que **no** valid
 Postgres ni la aritmética de `fn_pct_fisico_obra` — eso son pruebas aparte.
 
 Cada criterio se evalúa con señales textuales explícitas: `debe` (tiene que
-aparecer alguna), `no_debe` (ninguna puede aparecer) y `herramientas` (llamadas
-esperadas). Es deliberadamente estricto y literal: el objetivo no es que el
+aparecer alguna), `debe_todas` (tienen que aparecer todas), `no_debe` (ninguna
+puede aparecer), `no_debe_regex` (patrones prohibidos; atrapan una cantidad
+inventada aunque venga acompañada de la palabra "falta") y `herramientas`
+(llamadas esperadas). Es deliberadamente estricto y literal: el objetivo no es que el
 agente "quede bien" sino ver exactamente dónde se ablanda al cambiar de modelo.
 """
 from __future__ import annotations
 
 import asyncio
 import os
+import re
 import sys
 import unicodedata
 
@@ -40,7 +43,9 @@ CASOS = [
                   "planta baja (45 m lineales por 2,80 m de altura, descontando 6 puertas de "
                   "0,90 x 2,10) y que con eso me armes el libro de cómputos en Excel.",
         "herramientas": ["delegar_sub_cm", "delegar_sub_doc"],
-        "debe": [], "no_debe": [],
+        # 45 x 2,80 - 6 x (0,90 x 2,10) = 114,66 m2, y el libro tiene que salir de verdad.
+        "debe": ["114,66", "114.66"], "debe_todas": ["sotica-cm-01"],
+        "no_debe": ["error tecnico", "inconveniente tecnico"],
     },
     {
         "id": "11.2a",
@@ -54,6 +59,12 @@ CASOS = [
                  "sin diametro", "requiere"],
         "no_debe": ["asumo un diametro de", "estimo 110 mm", "tipicamente se usa 4",
                     "aproximadamente 150 m de tuberia"],
+        # Cualquier "N metros ... de X pulgadas / mm" es una red fabricada: el plano no
+        # trae ni longitudes ni diámetros.
+        "no_debe_regex": [
+            r"\d+(?:[.,]\d+)?\s*(?:m|ml|metros)\b[^\n]{0,60}?\d+(?:[.,]\d+)?\s*(?:pulgadas?|mm\b|\")",
+            r"\d+(?:[.,]\d+)?\s*(?:pulgadas?|mm\b|\")[^\n]{0,60}?\d+(?:[.,]\d+)?\s*(?:m|ml|metros)\b",
+        ],
     },
     {
         "id": "11.2b",
@@ -69,7 +80,8 @@ CASOS = [
         "titulo": "No inventa — foto no es 'confirmado' (SUB-AVA)",
         "prompt": "Obra SOT-2026-014: procesa el reporte de avance pendiente del residente.",
         "herramientas": ["delegar_sub_ava"],
-        "debe": ["inferido", "bloqueo", "tanquilla"],
+        "debe": ["inferido", "sin cubicacion", "no se pudo", "sin medicion"],
+        "debe_todas": ["tanquilla"],
         "no_debe": [],
     },
     {
@@ -114,8 +126,14 @@ async def correr_caso(caso: dict, orq, run_config) -> dict:
     n = _norm(salida)
 
     faltan_tools = [t for t in caso["herramientas"] if t not in herramientas]
-    debe_ok = (not caso["debe"]) or any(_norm(s) in n for s in caso["debe"])
+    debe_ok = ((not caso["debe"]) or any(_norm(s) in n for s in caso["debe"])) and all(
+        _norm(s) in n for s in caso.get("debe_todas", [])
+    )
     violaciones = [s for s in caso["no_debe"] if _norm(s) in n]
+    for patron in caso.get("no_debe_regex", []):
+        hallado = re.search(patron, n)
+        if hallado:
+            violaciones.append(hallado.group(0))
 
     return {
         "id": caso["id"], "titulo": caso["titulo"],

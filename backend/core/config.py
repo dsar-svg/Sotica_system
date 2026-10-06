@@ -7,6 +7,22 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]
 AGENTS_DIR = BASE_DIR / "backend" / "agents"
 
+
+def _cargar_env() -> None:
+    """Lee `.env` de la raíz si existe. Las variables ya definidas en el entorno mandan."""
+    ruta = BASE_DIR / ".env"
+    if not ruta.is_file():
+        return
+    for linea in ruta.read_text(encoding="utf-8").splitlines():
+        linea = linea.strip()
+        if not linea or linea.startswith("#") or "=" not in linea:
+            continue
+        clave, valor = linea.split("=", 1)
+        os.environ.setdefault(clave.strip(), valor.strip().strip("\"'"))
+
+
+_cargar_env()
+
 # Base de datos (asyncpg para el dominio; SQLAlchemy para la memoria de sesión).
 DATABASE_URL = os.getenv(
     "SOTICA_DATABASE_URL",

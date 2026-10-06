@@ -161,6 +161,18 @@ def _herramienta_de_delegacion(subagente: Agent, af: AgentFile, run_config: RunC
     return delegar
 
 
+def _servidores_de(af: AgentFile, servidores: dict[str, MCPServerStdio]) -> list[MCPServerStdio]:
+    """Servidores del agente, sin repetir proceso: si dos nombres apuntan al mismo
+    servidor (los criterios §11 lo hacen con fixtures), el SDK vería cada
+    herramienta duplicada y rechazaría al agente."""
+    unicos: list[MCPServerStdio] = []
+    for nombre in af.mcp_servers:
+        servidor = servidores.get(nombre)
+        if servidor is not None and all(servidor is not u for u in unicos):
+            unicos.append(servidor)
+    return unicos
+
+
 def construir(
     servidores: dict[str, MCPServerStdio], run_config: RunConfig | None = None
 ) -> tuple[Agent, dict[str, Agent]]:
@@ -178,7 +190,7 @@ def construir(
             name=codigo,
             instructions=af.prompt,
             model=MODEL,
-            mcp_servers=[servidores[s] for s in af.mcp_servers if s in servidores],
+            mcp_servers=_servidores_de(af, servidores),
             output_type=RespuestaSubagente,
         )
 
@@ -193,7 +205,7 @@ def construir(
         name="ORQ-COST",
         instructions=orq_file.prompt,
         model=MODEL,
-        mcp_servers=[servidores[s] for s in orq_file.mcp_servers if s in servidores],
+        mcp_servers=_servidores_de(orq_file, servidores),
         tools=herramientas,
     )
     return orquestador, subagentes
