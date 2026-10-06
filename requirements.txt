@@ -1,4 +1,4 @@
-openai-agents[sqlalchemy]>=0.22
+claude-agent-sdk>=0.2.163
 mcp>=2.2
 asyncpg>=0.29
 fastapi>=0.110

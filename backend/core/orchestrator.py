@@ -1,8 +1,9 @@
-"""Arranque de ORQ-COST sobre OpenAI Agents SDK.
+"""Arranque de ORQ-COST sobre Claude Agent SDK.
 
-Una sesión **persistente por obra**: el historial vive en el mismo Postgres del
-sistema, no en memoria del proceso. Si el usuario pregunta "¿cómo va tal obra?"
-tres días después y tras un reinicio, el contexto sigue ahí.
+Una sesión **persistente por obra**: el SDK guarda el historial de la
+conversación y aquí se recuerda qué sesión corresponde a cada obra, para
+retomarla tras un reinicio. Si el usuario pregunta "¿cómo va tal obra?" tres
+días después, el contexto sigue ahí.
 
 Los subagentes se invocan como herramientas (agents-as-tools) con contexto
 aislado: ven su briefing, no la conversación del usuario.
@@ -10,16 +11,38 @@ aislado: ven su briefing, no la conversación del usuario.
 from __future__ import annotations
 
 import datetime as dt
+import json
 from typing import AsyncIterator
 
-from agents import RunConfig, Runner
-from agents.extensions.memory import SQLAlchemySession
-from agents.mcp import MCPServerStdio
-from openai.types.responses import ResponseTextDeltaEvent
+from claude_agent_sdk import (
+    AssistantMessage,
+    ClaudeSDKClient,
+    ResultMessage,
+    TextBlock,
+    ToolUseBlock,
+)
 
 from . import db
-from .agents import construir, crear_servidores_mcp
-from .config import MAX_TURNS_ORQUESTADOR, MODEL, session_url
+from .agents import nombre_corto, opciones_orquestador
+from .config import MAX_TURNS_ORQUESTADOR, STORAGE_DIR
+
+_SESIONES = STORAGE_DIR / ".sesiones.json"
+
+
+def _sesiones_guardadas() -> dict[str, str]:
+    try:
+        return json.loads(_SESIONES.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _guardar_sesion(clave: str, session_id: str) -> None:
+    sesiones = _sesiones_guardadas()
+    if sesiones.get(clave) == session_id:
+        return
+    sesiones[clave] = session_id
+    _SESIONES.parent.mkdir(parents=True, exist_ok=True)
+    _SESIONES.write_text(json.dumps(sesiones, indent=2), encoding="utf-8")
 
 
 async def contexto_obra(proyecto_ref: str | None) -> str:
@@ -69,70 +92,56 @@ class SesionObra:
 
     def __init__(self, proyecto_ref: str | None = None) -> None:
         self.proyecto_ref = proyecto_ref
-        self._servidores: dict[str, MCPServerStdio] = {}
-        self._orquestador = None
-        self._session: SQLAlchemySession | None = None
-        self._run_config = RunConfig(model=MODEL)
+        self._clave = f"obra:{proyecto_ref or '_sin_obra'}"
+        self._client: ClaudeSDKClient | None = None
 
     async def abrir(self) -> None:
-        # Los servidores MCP son procesos: se levantan una vez por sesión.
-        self._servidores = crear_servidores_mcp()
-        for servidor in self._servidores.values():
-            await servidor.connect()
+        contexto = await contexto_obra(self.proyecto_ref)
+        previa = _sesiones_guardadas().get(self._clave)
+        try:
+            await self._conectar(contexto, previa)
+        except Exception:  # noqa: BLE001 — la sesión previa pudo haberse borrado
+            if previa is None:
+                raise
+            await self._conectar(contexto, None)
 
-        orquestador, _ = construir(self._servidores, self._run_config)
-        # La memoria de proyecto se antepone a las instrucciones del orquestador.
-        orquestador.instructions = (
-            orquestador.instructions + "\n\n---\n\n" + await contexto_obra(self.proyecto_ref)
+    async def _conectar(self, contexto: str, resume: str | None) -> None:
+        opciones = opciones_orquestador(
+            contexto, max_turns=MAX_TURNS_ORQUESTADOR, resume=resume
         )
-        self._orquestador = orquestador
-
-        self._session = SQLAlchemySession.from_url(
-            session_id=f"obra:{self.proyecto_ref or '_sin_obra'}",
-            url=session_url(),
-            engine_kwargs={"echo": False},
-            create_tables=True,
-        )
+        self._client = ClaudeSDKClient(options=opciones)
+        await self._client.connect()
 
     async def cerrar(self) -> None:
-        for servidor in self._servidores.values():
+        if self._client is not None:
             try:
-                await servidor.cleanup()
+                await self._client.disconnect()
             except Exception:  # noqa: BLE001 — cerrar no debe romper el apagado
                 pass
-        self._servidores = {}
-        self._orquestador = None
+            self._client = None
 
     async def preguntar(self, mensaje: str) -> AsyncIterator[dict]:
         """Emite eventos {tipo, ...} — mismo contrato SSE que antes, para no tocar
         el frontend."""
-        if self._orquestador is None:
+        if self._client is None:
             await self.abrir()
+        assert self._client is not None
 
-        resultado = Runner.run_streamed(
-            self._orquestador,
-            mensaje,
-            session=self._session,
-            max_turns=MAX_TURNS_ORQUESTADOR,
-            run_config=self._run_config,
-        )
-
-        async for evento in resultado.stream_events():
-            if evento.type == "raw_response_event" and isinstance(
-                evento.data, ResponseTextDeltaEvent
-            ):
-                yield {"tipo": "texto", "texto": evento.data.delta}
-            elif evento.type == "run_item_stream_event":
-                item = evento.item
-                if item.type == "tool_call_item":
-                    yield {
-                        "tipo": "herramienta",
-                        "nombre": _nombre_herramienta(item),
-                        "entrada": {},
-                    }
-        yield {"tipo": "fin", "resultado": "completado"}
-
-
-def _nombre_herramienta(item) -> str:
-    crudo = getattr(item, "raw_item", None)
-    return getattr(crudo, "name", None) or getattr(item, "name", None) or "herramienta"
+        await self._client.query(mensaje)
+        async for msg in self._client.receive_response():
+            if isinstance(msg, AssistantMessage):
+                for bloque in msg.content:
+                    if isinstance(bloque, TextBlock):
+                        yield {"tipo": "texto", "texto": bloque.text}
+                    elif isinstance(bloque, ToolUseBlock):
+                        yield {
+                            "tipo": "herramienta",
+                            "nombre": nombre_corto(bloque.name),
+                            "entrada": {},
+                        }
+            elif isinstance(msg, ResultMessage):
+                if msg.session_id:
+                    _guardar_sesion(self._clave, msg.session_id)
+                if msg.is_error:
+                    yield {"tipo": "error", "texto": msg.result or msg.subtype}
+                yield {"tipo": "fin", "resultado": msg.subtype}

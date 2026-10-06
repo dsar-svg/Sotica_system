@@ -1,7 +1,7 @@
 # SOTICA-COSTOS — Arquitectura del sistema multiagente
 
 Sistema: **SOTICA-IA-COST-VE-001**
-Base: **OpenAI Agents SDK** (orquestador + subagentes como herramientas) + servidores **MCP stdio** como capa de herramientas + Postgres + bucket de archivos.
+Base: **Claude Agent SDK** (orquestador + subagentes como herramientas) + servidores **MCP stdio** como capa de herramientas + Postgres + bucket de archivos.
 
 > Migrado desde Claude Agent SDK. Lo que cambió es la capa de orquestación; el esquema de base de datos,
 > la lógica de negocio de los agentes y los contratos de las herramientas MCP se mantienen intactos.
@@ -15,7 +15,7 @@ Base: **OpenAI Agents SDK** (orquestador + subagentes como herramientas) + servi
 
 | Capa | Decisión |
 |---|---|
-| Orquestador | ORQ-COST = `Agent` principal del OpenAI Agents SDK. Único interlocutor del usuario. |
+| Orquestador | ORQ-COST = agente principal del Claude Agent SDK. Único interlocutor del usuario. |
 | Subagentes | 8 subagentes (7 del documento + SUB-AVA) expuestos como **herramientas** del orquestador (*agents-as-tools*), cada uno con system prompt propio, herramientas permitidas y contexto aislado. **No handoffs**: un handoff transfiere la conversación y el control no vuelve, lo que rompería §2, §5.2 y §5.3. |
 | Herramientas | Servidores **MCP stdio reales** (`python -m backend.mcp.stdio_server <servidor>`). **MCP es la capa de herramientas, nunca el orquestador.** Al ser MCP de verdad, sirven a cualquier runtime que hable el protocolo. |
 | Persistencia | Postgres (proyecto, presupuesto, partidas, avances, estado consolidado, trazabilidad) **y la memoria de conversación por obra** (`SQLAlchemySession`, session_id `obra:<código>`), persistente entre procesos. |

@@ -3,8 +3,8 @@
     python -m backend.mcp.stdio_server sotica_obra
     python -m backend.mcp.stdio_server sotica_docs
 
-El runtime de agentes (hoy OpenAI Agents SDK) lanza estos procesos con
-`MCPServerStdio`. Al ser MCP de verdad —y no un objeto in-process atado a un
+El runtime de agentes (hoy Claude Agent SDK) lanza estos procesos como
+servidores MCP stdio. Al ser MCP de verdad —y no un objeto in-process atado a un
 SDK— las mismas herramientas sirven a cualquier cliente que hable el protocolo,
 que era el punto de haber puesto MCP como capa de herramientas.
 

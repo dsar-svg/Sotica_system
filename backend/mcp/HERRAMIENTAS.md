@@ -3,7 +3,7 @@
 MCP es **la capa de herramientas**, no el orquestador. Cada servidor se conecta a Postgres con su propio
 rol, de modo que los límites de cada agente son del motor de base de datos y no solo del prompt.
 
-Desde la migración a OpenAI Agents SDK son **servidores MCP stdio reales**, no objetos in-process atados a
+Son **servidores MCP stdio reales**, no objetos in-process atados a
 un SDK: `python -m backend.mcp.stdio_server sotica_obra`. Los JSON Schema (enums, `required`, descripciones)
 se publican tal cual — el contrato no cambió al cambiar de runtime. El límite por agente se aplica con un
 filtro dinámico sobre `ToolFilterContext.agent`, así que basta un proceso por servidor.

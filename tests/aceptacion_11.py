@@ -1,4 +1,4 @@
-"""Criterios de aceptación §11 del documento SOTICA, contra el modelo de OpenAI.
+"""Criterios de aceptación §11 del documento SOTICA, contra el modelo de Claude.
 
     python -m tests.aceptacion_11            # todos
     python -m tests.aceptacion_11 11.2       # uno
@@ -16,15 +16,17 @@ agente "quede bien" sino ver exactamente dónde se ablanda al cambiar de modelo.
 from __future__ import annotations
 
 import asyncio
-import os
 import sys
 import unicodedata
 
-from agents import RunConfig, Runner
-from agents.mcp import MCPServerStdio
+from claude_agent_sdk import AssistantMessage, ResultMessage, ToolUseBlock, query
 
-from backend.core.agents import _filtro_por_agente, _permisos, construir
-from backend.core.config import BASE_DIR, MODEL
+from backend.core.agents import nombre_corto, opciones_orquestador
+from backend.core.config import MODEL
+
+# Todos los agentes apuntan al registro de fixtures.
+FIXTURES = {"sotica_obra": "sotica_fixtures", "sotica_docs": "sotica_fixtures"}
+CONTEXTO = "## Contexto de sesión\nCorrida de criterios de aceptación §11 sobre datos de prueba."
 
 
 def _norm(t: str) -> str:
@@ -101,16 +103,16 @@ CASOS = [
 ]
 
 
-async def correr_caso(caso: dict, orq, run_config) -> dict:
-    resultado = Runner.run_streamed(orq, caso["prompt"], max_turns=30, run_config=run_config)
+async def correr_caso(caso: dict) -> dict:
+    opciones = opciones_orquestador(CONTEXTO, FIXTURES, max_turns=30)
     herramientas: list[str] = []
-    async for evento in resultado.stream_events():
-        if evento.type == "run_item_stream_event" and evento.item.type == "tool_call_item":
-            crudo = getattr(evento.item, "raw_item", None)
-            nombre = getattr(crudo, "name", None)
-            if nombre:
-                herramientas.append(nombre)
-    salida = str(resultado.final_output or "")
+    salida = ""
+    async for msg in query(prompt=caso["prompt"], options=opciones):
+        if isinstance(msg, AssistantMessage):
+            herramientas += [nombre_corto(b.name) for b in msg.content
+                             if isinstance(b, ToolUseBlock)]
+        elif isinstance(msg, ResultMessage):
+            salida = str(msg.result or "")
     n = _norm(salida)
 
     faltan_tools = [t for t in caso["herramientas"] if t not in herramientas]
@@ -129,28 +131,11 @@ async def correr_caso(caso: dict, orq, run_config) -> dict:
 
 
 async def main(filtro: str | None) -> int:
-    if not os.getenv("OPENAI_API_KEY"):
-        print("FALTA OPENAI_API_KEY. Exporta la clave o ponla en .env antes de correr §11.")
-        return 2
-
-    permisos = _permisos()
-    servidor = MCPServerStdio(
-        params={"command": sys.executable,
-                "args": ["-m", "backend.mcp.stdio_server", "sotica_fixtures"],
-                "cwd": str(BASE_DIR)},
-        name="sotica_fixtures", cache_tools_list=True,
-        tool_filter=_filtro_por_agente(permisos), client_session_timeout_seconds=60,
-    )
-    await servidor.connect()
-    run_config = RunConfig(model=MODEL)
-    # Todos los agentes apuntan al servidor de fixtures.
-    orq, _ = construir({"sotica_obra": servidor, "sotica_docs": servidor}, run_config)
-
     casos = [c for c in CASOS if not filtro or c["id"].startswith(filtro)]
     print(f"Modelo: {MODEL} · {len(casos)} criterios\n" + "=" * 70)
     resultados = []
     for caso in casos:
-        r = await correr_caso(caso, orq, run_config)
+        r = await correr_caso(caso)
         resultados.append(r)
         estado = "PASA" if r["pasa"] else "FALLA"
         print(f"\n[{estado}] {r['id']} — {r['titulo']}")
@@ -163,7 +148,6 @@ async def main(filtro: str | None) -> int:
             print(f"  INVENTÓ: {r['violaciones']}")
         print("  ---\n  " + r["salida"][:900].replace("\n", "\n  "))
 
-    await servidor.cleanup()
     pasan = sum(1 for r in resultados if r["pasa"])
     print("\n" + "=" * 70 + f"\nRESULTADO: {pasan}/{len(resultados)} criterios pasan")
     return 0 if pasan == len(resultados) else 1

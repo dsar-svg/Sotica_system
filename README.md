@@ -3,7 +3,7 @@
 > **¿Retomas el proyecto sin contexto?** Empieza por [ESTADO.md](ESTADO.md): dónde vamos, qué está
 > verificado, qué falta para arrancar y la conversación abierta con SOTICA sobre precios y licencias.
 
-ORQ-COST (**OpenAI Agents SDK**) + SUB-CM + SUB-DOC (Excel) + SUB-AVA, con **MCP stdio** como capa de
+ORQ-COST (**Claude Agent SDK**) + SUB-CM + SUB-DOC (Excel) + SUB-AVA, con **MCP stdio** como capa de
 herramientas y Postgres como estado. Arquitectura completa en [ARQUITECTURA.md](ARQUITECTURA.md);
 contratos de herramientas en [backend/mcp/HERRAMIENTAS.md](backend/mcp/HERRAMIENTAS.md).
 
@@ -15,7 +15,7 @@ contratos de herramientas en [backend/mcp/HERRAMIENTAS.md](backend/mcp/HERRAMIEN
 ```bash
 python -m venv .venv && .venv/Scripts/activate
 pip install -r requirements.txt
-cp .env.example .env   # completar SOTICA_DATABASE_URL y OPENAI_API_KEY
+cp .env.example .env   # completar SOTICA_DATABASE_URL y ANTHROPIC_API_KEY (o iniciar sesión con `claude`)
 ```
 
 Base de datos (Postgres 14+):
@@ -71,7 +71,7 @@ depender de Postgres. No sustituye a las pruebas de base de datos.
 - Grafo de agentes verificado: permisos por agente correctos, `output_type=RespuestaSubagente` en los
   tres subagentes, briefing §5.1 exigido como esquema requerido.
 - **`db/schema.sql` y el seed siguen sin ejecutarse** — no hay Postgres ni Docker en esta máquina.
-- **Los criterios §11 siguen sin correrse** — falta `OPENAI_API_KEY`.
+- **Los criterios §11 siguen sin correrse** — falta `ANTHROPIC_API_KEY` o una sesión iniciada en el CLI `claude`.
 
 ## Pendiente de ratificación por SOTICA
 
